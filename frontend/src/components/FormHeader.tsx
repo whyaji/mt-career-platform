@@ -24,7 +24,7 @@ export function FormHeader({
   withDetail?: boolean;
 }) {
   return (
-    <Container p={0} size="lg" py="xl" w="100%">
+    <Container p={0} size="lg" w="100%">
       <Paper
         shadow="sm"
         p={isMobile ? 'sm' : 'xl'}
@@ -36,7 +36,7 @@ export function FormHeader({
           <Group justify="center" mb="md">
             <Image src="/images/ssms-badge-icon.png" alt="SSMS Badge" w={150} fit="contain" />
             <div>
-              <Title order={1} ta="center" c="blue">
+              <Title order={1} ta="center" c="orange">
                 FORMULIR CAMPUS HIRING
               </Title>
               <Text size="lg" fw={600} ta="center" c="dimmed">
@@ -48,8 +48,8 @@ export function FormHeader({
           {withDetail && (
             <>
               {/* Company Info */}
-              <Paper p="md" bg="blue.0" radius="md">
-                <Title order={3} mb="md" c="blue.8">
+              <Paper p="md" bg="orange.0" radius="md">
+                <Title order={3} mb="md" c="orange">
                   PT. Sawit Sumbermas Sarana, Tbk. / CBI GROUP
                 </Title>
                 <Text size="sm" mb="md">
@@ -62,7 +62,7 @@ export function FormHeader({
 
               {/* Programs */}
               <div>
-                <Title order={3} mb="md" c="blue.8">
+                <Title order={3} mb="md" c="orange">
                   Program yang Tersedia
                 </Title>
                 <Stack gap="md">
@@ -79,7 +79,7 @@ export function FormHeader({
 
                   <Paper p="md" withBorder>
                     <Group mb="xs">
-                      <Badge color="blue" variant="light">
+                      <Badge color="orange" variant="light">
                         PKPP KTU
                       </Badge>
                     </Group>
@@ -102,14 +102,14 @@ export function FormHeader({
 
               {/* Requirements */}
               <div>
-                <Title order={3} mb="md" c="blue.8">
+                <Title order={3} mb="md" c="orange">
                   Ketentuan Umum
                 </Title>
                 <List
                   spacing="xs"
                   size="sm"
                   icon={
-                    <ThemeIcon size="sm" color="blue" variant="light">
+                    <ThemeIcon size="sm" color="orange" variant="light">
                       <IconSchool size={12} />
                     </ThemeIcon>
                   }>
@@ -126,7 +126,7 @@ export function FormHeader({
 
               {/* Program Description */}
               <Paper p="md" bg="gray.0" radius="md">
-                <Title order={3} mb="md" c="blue.8">
+                <Title order={3} mb="md" c="orange">
                   Tentang Program
                 </Title>
                 <Text size="sm">

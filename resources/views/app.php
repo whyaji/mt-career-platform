@@ -41,10 +41,82 @@
     <html lang="en">
 
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MT Career Platform</title>
-        <link rel="icon" type="image/png" href="/favicon.png">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Primary Meta Tags -->
+        <title>MT - CBI Career | Program Kepemimpinan Perkebunan Pratama</title>
+        <meta
+            name="title"
+            content="MT - CBI Career | Program Kepemimpinan Perkebunan Pratama" />
+        <meta
+            name="description"
+            content="PT. Sawit Sumbermas Sarana, Tbk. / CBI GROUP membuka kesempatan berkarir bagi fresh graduate untuk mengikuti Program Kepemimpinan Perkebunan Pratama (PKPP). Program Estate, KTU, dan Mill tersedia untuk lulusan D3-S1." />
+        <meta
+            name="keywords"
+            content="CBI Career, SSMS, Sawit Sumbermas Sarana, PKPP, Program Kepemimpinan Perkebunan Pratama, fresh graduate, career, plantation, estate, mill, KTU, Kalimantan Tengah, campus hiring" />
+        <meta name="author" content="PT. Sawit Sumbermas Sarana, Tbk." />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="Indonesian" />
+
+        <!-- Canonical URL -->
+        <link rel="canonical" href="https://mt.cbicareer.com/" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://mt.cbicareer.com/" />
+        <meta
+            property="og:title"
+            content="MT - CBI Career | Program Kepemimpinan Perkebunan Pratama" />
+        <meta
+            property="og:description"
+            content="PT. Sawit Sumbermas Sarana, Tbk. / CBI GROUP membuka kesempatan berkarir bagi fresh graduate untuk mengikuti Program Kepemimpinan Perkebunan Pratama (PKPP). Program Estate, KTU, dan Mill tersedia untuk lulusan D3-S1." />
+        <meta
+            property="og:image"
+            content="https://mt.cbicareer.com/mt-cbicareer-social-share.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content="MT - CBI Career Program Kepemimpinan Perkebunan Pratama" />
+        <meta property="og:site_name" content="MT - CBI Career" />
+        <meta property="og:locale" content="id_ID" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://mt.cbicareer.com/" />
+        <meta
+            property="twitter:title"
+            content="MT - CBI Career | Program Kepemimpinan Perkebunan Pratama" />
+        <meta
+            property="twitter:description"
+            content="PT. Sawit Sumbermas Sarana, Tbk. / CBI GROUP membuka kesempatan berkarir bagi fresh graduate untuk mengikuti Program Kepemimpinan Perkebunan Pratama (PKPP). Program Estate, KTU, dan Mill tersedia untuk lulusan D3-S1." />
+        <meta
+            property="twitter:image"
+            content="https://mt.cbicareer.com/mt-cbicareer-social-share.jpg" />
+        <meta
+            property="twitter:image:alt"
+            content="MT - CBI Career Program Kepemimpinan Perkebunan Pratama" />
+
+        <!-- Additional Meta Tags -->
+        <meta name="theme-color" content="#228be6" />
+        <meta name="msapplication-TileColor" content="#228be6" />
+        <meta name="application-name" content="MT - CBI Career" />
+        <meta name="apple-mobile-web-app-title" content="MT - CBI Career" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+        <!-- Security Headers -->
+        <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+        <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+        <!-- Favicon and Icons -->
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/logo192.png" />
+        <link rel="manifest" href="/manifest.json" />
+
+        <!-- CSS -->
         <link rel="stylesheet" href="/assets/index.css">
     </head>
 

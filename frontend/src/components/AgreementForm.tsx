@@ -18,7 +18,7 @@ export function AgreementForm({ form, isMobile = false }: AgreementFormProps) {
       shadow={isMobile ? 'none' : undefined}>
       <Stack gap="lg">
         <div>
-          <Title order={2} mb="xs" c="blue.8">
+          <Title order={2} mb="xs" c="orange">
             PROGRAM KEPEMIMPINAN PERKEBUNAN PRATAMA (PKPP) ANGKATAN XXV
           </Title>
           <Text size="sm" c="dimmed" mb="md">

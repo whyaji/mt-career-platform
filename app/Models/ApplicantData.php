@@ -11,7 +11,7 @@ class ApplicantData extends Model
     use HasUuids, SoftDeletes;
 
     protected $table = 'applicant_data';
-    
+
     protected $fillable = [
         'nama_lengkap',
         'jenis_kelamin',
@@ -28,6 +28,17 @@ class ApplicantData extends Model
         'kota_domisili',
         'alamat_domisili',
         'program_terpilih',
+        'jurusan_pendidikan',
+        'jenjang_pendidikan',
+        'instansi_pendidikan',
+        'nim',
+        'status_ijazah',
+        'nomor_whatsapp',
+        'email',
+        'status_perkawinan',
+        'melanjutkan_pendidikan',
+        'ukuran_baju',
+        'riwayat_penyakit',
         'batch_id',
     ];
 

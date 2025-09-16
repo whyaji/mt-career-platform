@@ -28,7 +28,7 @@ class FormController extends Controller
             // Validate request data
             $validator = Validator::make($request->json()->all(), [
                 'nama_lengkap' => 'required|string|min:1',
-                'jenis_kelamin' => 'required|string|in:L,P',
+                'jenis_kelamin' => ['required', 'string', Rule::in(['L', 'P'])],
                 'tempat_lahir' => 'required|string|min:1',
                 'tanggal_lahir' => 'required|date',
                 'usia' => 'required|integer|min:0',
@@ -42,6 +42,17 @@ class FormController extends Controller
                 'kota_domisili' => 'required|string|min:1',
                 'alamat_domisili' => 'required|string|min:1',
                 'program_terpilih' => ['required', 'string', Rule::in(['pkpp-estate', 'pkpp-ktu', 'pkpp-mill'])],
+                'jurusan_pendidikan' => 'required|string|min:1',
+                'jenjang_pendidikan' => ['required', 'string', Rule::in(['D3', 'D4', 'S1', 'S2'])],
+                'instansi_pendidikan' => 'required|string|min:1',
+                'status_ijazah' => 'required|string|min:1',
+                'nomor_whatsapp' => 'required|string|min:1',
+                'email' => 'required|email',
+                'status_perkawinan' => ['required', 'string', Rule::in(['Lajang', 'Kawin', 'Cerai'])],
+                'melanjutkan_pendidikan' => ['required', 'string', Rule::in(['Ya', 'Tidak'])],
+                'ukuran_baju' => ['required', 'string', Rule::in(['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'])],
+                'riwayat_penyakit' => 'required|string|min:1',
+                'nim' => 'nullable|string|min:1',
                 'batch_id' => 'required|uuid|exists:batch,id',
                 'agreement1' => 'required|string|min:1',
                 'agreement2' => 'required|string|min:1',
@@ -89,7 +100,21 @@ class FormController extends Controller
                 $data['daerah_lahir'],
                 $data['provinsi_lahir'],
                 $data['program_terpilih'],
+                $data['jurusan_pendidikan'],
+                $data['jenjang_pendidikan'],
+                $data['instansi_pendidikan'],
+                $data['status_ijazah'],
+                $data['nomor_whatsapp'],
+                $data['email'],
+                $data['status_perkawinan'],
+                $data['melanjutkan_pendidikan'],
+                $data['ukuran_baju'],
+                $data['riwayat_penyakit'],
             ];
+
+            if ($data['nim']) {
+                $textFields[] = $data['nim'];
+            }
 
             foreach ($textFields as $field) {
                 if ($this->securityService->containsSuspiciousPatterns($field)) {
@@ -133,6 +158,17 @@ class FormController extends Controller
                 'kota_domisili' => $this->securityService->sanitizeText(strtoupper($data['kota_domisili'])),
                 'alamat_domisili' => $this->securityService->sanitizeText(strtoupper($data['alamat_domisili'])),
                 'program_terpilih' => $this->securityService->sanitizeText($data['program_terpilih']),
+                'jurusan_pendidikan' => $this->securityService->sanitizeText(strtoupper($data['jurusan_pendidikan'])),
+                'jenjang_pendidikan' => $this->securityService->sanitizeText(strtoupper($data['jenjang_pendidikan'])),
+                'instansi_pendidikan' => $this->securityService->sanitizeText(strtoupper($data['instansi_pendidikan'])),
+                'nim' => $data['nim'] ? $this->securityService->sanitizeText($data['nim']) : null,
+                'status_ijazah' => $this->securityService->sanitizeText(strtoupper($data['status_ijazah'])),
+                'nomor_whatsapp' => $this->securityService->sanitizeText(strtoupper($data['nomor_whatsapp'])),
+                'email' => $this->securityService->sanitizeText(strtolower($data['email'])),
+                'status_perkawinan' => $this->securityService->sanitizeText(strtoupper($data['status_perkawinan'])),
+                'melanjutkan_pendidikan' => $this->securityService->sanitizeText(strtoupper($data['melanjutkan_pendidikan'])),
+                'ukuran_baju' => $this->securityService->sanitizeText(strtoupper($data['ukuran_baju'])),
+                'riwayat_penyakit' => $this->securityService->sanitizeText(strtoupper($data['riwayat_penyakit'])),
                 'batch_id' => $data['batch_id'],
             ];
 
@@ -150,7 +186,8 @@ class FormController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR',
-                'message' => 'Internal server error'
+                'message' => 'Internal server error',
+                'error_message' => $e->getMessage()
             ], 500);
         }
     }

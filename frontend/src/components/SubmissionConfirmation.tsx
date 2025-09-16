@@ -39,7 +39,7 @@ export function SubmissionConfirmation({ onReset, batch }: SubmissionConfirmatio
               </Title>
 
               <Text size="lg" c="dimmed" mb="lg">
-                Terima kasih telah mendaftar Program Kepemimpinan Perkebunan Pratama (PKPP) Angkatan
+                Terima kasih telah mendaftar Program Kepemimpinan Perkebunan Pratama (PKPP) Angkatan{' '}
                 {batch.number_code} {batch.location}. Data Anda telah berhasil disimpan.
               </Text>
             </div>

@@ -16,6 +16,17 @@ export type ApplicantDataType = {
   alamat_domisili: string;
   program_terpilih: string;
   batch_id: string;
+  jurusan_pendidikan: string;
+  jenjang_pendidikan: string;
+  instansi_pendidikan: string;
+  nim: string | null;
+  status_ijazah: string;
+  nomor_whatsapp: string;
+  email: string;
+  status_perkawinan: string;
+  melanjutkan_pendidikan: string;
+  ukuran_baju: string;
+  riwayat_penyakit: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

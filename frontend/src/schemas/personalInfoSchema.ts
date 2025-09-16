@@ -6,11 +6,7 @@ export const personalInfoSchema = z.object({
     .string()
     .min(1, 'Nama lengkap harus diisi')
     .max(64, 'Nama lengkap maksimal 64 karakter'),
-  nik: z
-    .string()
-    .min(1, 'NIK harus diisi')
-    .length(16, 'NIK harus 16 digit')
-    .regex(/^\d+$/, 'NIK harus berupa angka'),
+
   jenis_kelamin: z.enum(['L', 'P'], {
     message: 'Jenis kelamin harus dipilih',
   }),
@@ -39,6 +35,11 @@ export const personalInfoSchema = z.object({
     z.number().min(40, 'Berat badan minimal 40 kg').max(150, 'Berat badan maksimal 150 kg'),
     z.string().min(1, 'Berat badan harus diisi'),
   ]),
+  nik: z
+    .string()
+    .min(1, 'NIK harus diisi')
+    .length(16, 'NIK harus 16 digit')
+    .regex(/^\d+$/, 'NIK harus berupa angka'),
   daerah_domisili: z
     .string()
     .min(1, 'Daerah domisili harus diisi')
@@ -58,6 +59,30 @@ export const personalInfoSchema = z.object({
   program_terpilih: z.enum(['pkpp-estate', 'pkpp-ktu', 'pkpp-mill'], {
     message: 'Program harus dipilih',
   }),
+  jurusan_pendidikan: z.string().min(1, 'Jurusan pendidikan harus diisi'),
+  jenjang_pendidikan: z.enum(['D3', 'D4', 'S1', 'S2'], {
+    message: 'Jenjang pendidikan terakhir harus dipilih',
+  }),
+  instansi_pendidikan: z.string().min(1, 'Instansi pendidikan harus diisi'),
+  nim: z.string().optional(),
+  status_ijazah: z.enum(['Ada', 'Surat Keterangan Lulus', 'Tidak Ada'], {
+    message: 'Status ijazah harus dipilih',
+  }),
+  nomor_whatsapp: z
+    .string()
+    .min(1, 'Nomor whatsapp harus diisi')
+    .regex(/^\d+$/, 'Nomor whatsapp harus berupa angka'),
+  email: z.email('Email tidak valid'),
+  status_perkawinan: z.enum(['Lajang', 'Kawin', 'Cerai'], {
+    message: 'Status perkawinan harus dipilih',
+  }),
+  melanjutkan_pendidikan: z.enum(['Ya', 'Tidak'], {
+    message: 'Melanjutkan pendidikan harus dipilih',
+  }),
+  ukuran_baju: z.enum(['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'], {
+    message: 'Ukuran baju harus dipilih',
+  }),
+  riwayat_penyakit: z.string().min(1, 'Tulis SEHAT jika tidak ada riwayat penyakit'),
 });
 
 export type PersonalInfoData = z.infer<typeof personalInfoSchema>;

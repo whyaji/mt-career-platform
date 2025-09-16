@@ -12,6 +12,7 @@ import { NotFoundScreenComponent } from './components/NotFoundScreenComponent';
 import { PendingScreenComponent } from './components/PendingScreenComponent';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
+import { theme } from './theme/theme';
 
 // Create a new router instance
 const router = createRouter({
@@ -33,16 +34,14 @@ const queryClient = new QueryClient();
 
 // Render the app
 const rootElement = document.getElementById('root')!;
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <MantineProvider>
-          <Notifications />
-          <RouterProvider router={router} />
-        </MantineProvider>
-      </QueryClientProvider>
-    </StrictMode>
-  );
-}
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider theme={theme}>
+        <Notifications />
+        <RouterProvider router={router} />
+      </MantineProvider>
+    </QueryClientProvider>
+  </StrictMode>
+);
