@@ -22,6 +22,7 @@ class BatchSeeder extends Seeder
                 'location_code' => 'JKT',
                 'year' => 2024,
                 'status' => Batch::STATUS_ACTIVE,
+                'institutes' => ['INSTITUTE-001'],
             ],
             [
                 'id' => Str::uuid(),
@@ -31,6 +32,7 @@ class BatchSeeder extends Seeder
                 'location_code' => 'SBY',
                 'year' => 2024,
                 'status' => Batch::STATUS_ACTIVE,
+                'institutes' => ['INSTITUTE-002'],
             ],
             [
                 'id' => Str::uuid(),
@@ -40,6 +42,7 @@ class BatchSeeder extends Seeder
                 'location_code' => 'MDN',
                 'year' => 2024,
                 'status' => Batch::STATUS_INACTIVE,
+                'institutes' => ['INSTITUTE-003'],
             ],
         ];
 

@@ -11,7 +11,7 @@ class Batch extends Model
     use HasUuids, SoftDeletes;
 
     protected $table = 'batch';
-    
+
     protected $fillable = [
         'number',
         'number_code',
@@ -19,12 +19,14 @@ class Batch extends Model
         'location_code',
         'year',
         'status',
+        'institutes',
     ];
 
     protected $casts = [
         'number' => 'integer',
         'year' => 'integer',
         'status' => 'integer',
+        'institutes' => 'array',
     ];
 
     const STATUS_INACTIVE = 0;
@@ -42,6 +44,8 @@ class Batch extends Model
 
     public static function isPathValid($location, $number)
     {
-        return self::select('id', 'number', 'number_code', 'location', 'location_code', 'year')->where(array('location_code' => strtoupper($location), 'number_code' => strtoupper($number)))->first();
+        return self::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes')
+            ->where(array('location_code' => strtoupper($location), 'number_code' => strtoupper($number)))
+            ->first();
     }
 }

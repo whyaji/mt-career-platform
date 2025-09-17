@@ -674,7 +674,9 @@ export default function FormScreen() {
           {/* Form Content */}
           <Box p={isMobile ? undefined : 'lg'}>
             {activeStep === 0 && <AgreementForm form={agreementForm} isMobile={isMobile} />}
-            {activeStep === 1 && <PersonalInfoForm form={personalInfoForm} isMobile={isMobile} />}
+            {activeStep === 1 && (
+              <PersonalInfoForm form={personalInfoForm} isMobile={isMobile} batch={batch} />
+            )}
           </Box>
 
           {/* Validation Errors Display */}

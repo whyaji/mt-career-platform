@@ -3,6 +3,8 @@ import type { UseFormReturnType } from '@mantine/form';
 import { IconCalendar, IconMapPin, IconRuler, IconUser, IconWeight } from '@tabler/icons-react';
 import { useEffect } from 'react';
 
+import type { BatchType } from '@/types/batch.type';
+
 import type { PersonalInfoData } from '../schemas/personalInfoSchema';
 import { FormField, type FormFieldProps } from './FormField';
 
@@ -10,6 +12,7 @@ interface PersonalInfoFormProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturnType<PersonalInfoData, any>;
   isMobile?: boolean;
+  batch: BatchType;
 }
 
 const provinsiList = [
@@ -67,7 +70,7 @@ const daerahList = [
   'PAPUA',
 ];
 
-export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormProps) {
+export function PersonalInfoForm({ form, isMobile = false, batch }: PersonalInfoFormProps) {
   const birthDateString = form.values.tanggal_lahir;
   // Calculate age when birth date changes
   useEffect(() => {
@@ -119,7 +122,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
 
   const selectedListMajor = getListMajorBasedOnProgram(selectedProgram);
 
-  const listEduacationInstitution = ['Politeknik LPP Yogyakarta'];
+  const listEduacationInstitution = batch.institutes ?? [];
 
   const questions: FormFieldProps[] = [
     {
@@ -200,7 +203,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
         label: 'PROVINSI LAHIR',
         placeholder: 'Pilih provinsi lahir',
         required: true,
-        description: 'Provinsi tempat kelahiran sesuai yang tertera di KTP',
+        description: 'Provinsi tempat kelahiran anda',
         data: uppercaseProvinsiList,
         leftSection: <IconMapPin size={16} />,
         ...form.getInputProps('provinsi_lahir'),
@@ -330,7 +333,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
             radioGroupProps: {
               required: true,
               label: 'JURUSAN PENDIDIKAN',
-              description: 'Pilih jurusan pendidikan sesuai yang tertera di KTP',
+              description: 'Pilih jurusan pendidikan anda',
               data: selectedListMajor.map((major) => ({
                 value: major,
                 label: major,
@@ -348,7 +351,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
             radioGroupProps: {
               required: true,
               label: 'JENJANG PENDIDIKAN',
-              description: 'Pilih jenjang pendidikan sesuai yang tertera di KTP',
+              description: 'Pilih jenjang pendidikan anda',
               data: ['D3', 'D4', 'S1', 'S2'].map((jenjang) => ({
                 value: jenjang,
                 label: jenjang,
@@ -362,24 +365,35 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
               },
             },
           },
-          {
-            key: 'instansi_pendidikan',
-            radioGroupProps: {
-              required: true,
-              label: 'INSTANSI PENDIDIKAN',
-              description: 'Pilih instansi pendidikan sesuai yang tertera di KTP',
-              data: listEduacationInstitution.map((instansi) => ({
-                value: instansi,
-                label: instansi,
-              })),
-              value: form.values.instansi_pendidikan,
-              error: form.errors.instansi_pendidikan,
-              onChange: (value: string) => {
-                form.setFieldValue('instansi_pendidikan', value);
+          listEduacationInstitution.length > 0
+            ? {
+                key: 'instansi_pendidikan',
+                radioGroupProps: {
+                  required: true,
+                  label: 'INSTANSI PENDIDIKAN',
+                  description: 'Pilih instansi pendidikan anda',
+                  data: listEduacationInstitution.map((instansi) => ({
+                    value: instansi,
+                    label: instansi,
+                  })),
+                  value: form.values.instansi_pendidikan,
+                  error: form.errors.instansi_pendidikan,
+                  onChange: (value: string) => {
+                    form.setFieldValue('instansi_pendidikan', value);
+                  },
+                  withOther: true,
+                },
+              }
+            : {
+                key: 'instansi_pendidikan',
+                textInputProps: {
+                  required: true,
+                  label: 'INSTANSI PENDIDIKAN',
+                  placeholder: 'Masukkan instansi pendidikan',
+                  description: 'Masukkan instansi pendidikan anda',
+                  ...form.getInputProps('instansi_pendidikan'),
+                },
               },
-              withOther: true,
-            },
-          },
           ...(listEduacationInstitution.includes(form.values.instansi_pendidikan)
             ? [
                 {
@@ -401,7 +415,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
                   radioGroupProps: {
                     required: true,
                     label: 'STATUS IJAZAH',
-                    description: 'Pilih status ijazah sesuai yang tertera di KTP',
+                    description: 'Pilih status ijazah anda',
                     data: ['Ada', 'Surat Keterangan Lulus', 'Tidak Ada'].map((status) => ({
                       value: status,
                       label: status,
@@ -485,7 +499,7 @@ export function PersonalInfoForm({ form, isMobile = false }: PersonalInfoFormPro
                   radioGroupProps: {
                     required: true,
                     label: 'UKURAN BAJU',
-                    description: 'Pilih ukuran baju sesuai yang tertera di KTP',
+                    description: 'Pilih ukuran baju anda',
                     data: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'].map((ukuran) => ({
                       value: ukuran,
                       label: ukuran,

@@ -5,4 +5,5 @@ export type BatchType = {
   location: string;
   location_code: string;
   year: number;
+  institutes: string[] | null;
 };

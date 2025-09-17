@@ -12,14 +12,13 @@ class BatchController extends Controller
     {
         try {
             $batches = Batch::active()
-                ->select('id', 'number', 'number_code', 'location', 'location_code', 'year')
+                ->select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes')
                 ->get();
-                
+
             return response()->json([
                 'success' => true,
                 'data' => $batches
             ], 200);
-
         } catch (\Exception $e) {
             Log::error("Error getting active batches: {$e->getMessage()}");
             return response()->json([
