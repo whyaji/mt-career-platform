@@ -117,12 +117,12 @@
         <link rel="manifest" href="/manifest.json" />
 
         <!-- CSS -->
-        <link rel="stylesheet" href="/assets/index.css">
+        <link rel="stylesheet" href="<?php echo \App\Helpers\AssetHelper::css(); ?>">
     </head>
 
     <body>
         <div id="root"></div>
-        <script type="module" src="/assets/index.js"></script>
+        <script type="module" src="<?php echo \App\Helpers\AssetHelper::js(); ?>"></script>
     </body>
 
     </html>
