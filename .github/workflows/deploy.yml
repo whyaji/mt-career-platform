@@ -87,16 +87,7 @@ jobs:
             echo "==> 2. Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
-            echo "==> 3. Enabling maintenance mode..."
-            php artisan down
-
-            echo "==> 4. Running database migrations..."
+            echo "==> 3. Running database migrations..."
             php artisan migrate --force
-
-            echo "==> 5. Optimizing application caches..."
-            php artisan optimize
-
-            echo "==> 6. Disabling maintenance mode..."
-            php artisan up
 
             echo "==> Deployment completed successfully! ✅"
