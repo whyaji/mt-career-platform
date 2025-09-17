@@ -64,8 +64,9 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "public/assets/."
-          target: "${{ secrets.SSH_HOME_PROJECT }}/public/assets"
+          source: "public/assets"
+          target: "${{ secrets.SSH_HOME_PROJECT }}/public"
+          strip_components: 1
 
       # Step 6: Deploy backend to VPS via SSH
       # Running a series of commands on the server to update and restart the backend
