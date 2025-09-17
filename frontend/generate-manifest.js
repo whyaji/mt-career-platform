@@ -29,23 +29,10 @@ function generateManifest() {
   }
 
   // Load existing manifest to preserve PWA data
-  const manifestPath = path.resolve('../public/manifest.json');
-  let existingManifest = {};
-
-  if (fs.existsSync(manifestPath)) {
-    try {
-      const existingContent = fs.readFileSync(manifestPath, 'utf8');
-      existingManifest = JSON.parse(existingContent);
-    } catch (error) {
-      console.warn('Could not parse existing manifest.json, creating new one');
-    }
-  }
-
-  // Merge asset mappings with existing manifest
-  const mergedManifest = { ...existingManifest, ...manifest };
+  const manifestPath = path.resolve('../public/assets/manifest.json');
 
   // Write merged manifest file
-  fs.writeFileSync(manifestPath, JSON.stringify(mergedManifest, null, 2));
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
   console.log('Manifest generated:', manifest);
 }

@@ -32,7 +32,7 @@ class AssetHelper
      */
     private static function loadManifest()
     {
-        $manifestPath = __DIR__ . '/../../public/manifest.json';
+        $manifestPath = __DIR__ . '/../../public/assets/manifest.json';
 
         if (file_exists($manifestPath)) {
             $content = file_get_contents($manifestPath);

@@ -39,8 +39,7 @@ jobs:
         working-directory: ./frontend
 
       # Step 4: Upload frontend build to VPS
-      # Only the 'dist' folder containing static files is uploaded
-      # Step 4: Upload frontend build files to VPS
+      # Only the 'assets' folder containing static files is uploaded
       - name: Upload frontend build to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -48,10 +47,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            public/assets/*
-            public/manifest.json
-          target: "${{ secrets.SSH_HOME_PROJECT }}/public"
+          source: "public/assets/*"
+          target: "${{ secrets.SSH_HOME_PROJECT }}/public/assets"
 
       # Step 5: Deploy backend to VPS via SSH
       # Running a series of commands on the server to update and restart the backend
