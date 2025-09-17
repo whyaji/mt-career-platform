@@ -38,19 +38,38 @@ jobs:
         run: npm run build:prod
         working-directory: ./frontend
 
-      # Step 4: Upload frontend build to VPS
+      # Step 4: Prepare server folder and backup old assets
+      - name: Prepare server folder
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.SSH_HOME_PROJECT }}/public
+            if [ -d "assets-old" ]; then
+              rm -rf assets-old
+            fi
+            if [ -d "assets" ]; then
+              mv assets assets-old
+            fi
+
+      # Step 5: Upload frontend build to VPS
       # Only the 'assets' folder containing static files is uploaded
       - name: Upload frontend build to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "public/assets/*"
+          port: ${{ secrets.SSH_PORT }}
+          source: "public/assets/"
           target: "${{ secrets.SSH_HOME_PROJECT }}/public/assets"
+          rm: true
+          overwrite: true
 
-      # Step 5: Deploy backend to VPS via SSH
+      # Step 6: Deploy backend to VPS via SSH
       # Running a series of commands on the server to update and restart the backend
       - name: Deploy backend and restart server
         uses: appleboy/ssh-action@v1.0.3
@@ -61,17 +80,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.SSH_HOME_PROJECT }}
-
-            echo "==> 0. Backing up manifest.json..."
-            cp public/manifest.json public/manifest.json.bak
-
             echo "==> 1. Fetching and applying latest changes..."
             git fetch origin main
             git reset --hard origin/main
-
-            echo "==> 1.1. Restoring manifest.json..."
-            rm public/manifest.json
-            mv public/manifest.json.bak public/manifest.json
 
             echo "==> 2. Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
