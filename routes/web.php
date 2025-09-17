@@ -25,17 +25,32 @@ $router->get('/api', function () use ($router) {
 
 // API Routes with versioning
 $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function () use ($router) {
-    
+
+    // Authentication routes
+    $router->group(['prefix' => 'auth'], function () use ($router) {
+        $router->post('/login', 'AuthController@login');
+        $router->post('/logout', ['middleware' => 'jwt.auth', 'uses' => 'AuthController@logout']);
+        $router->post('/refresh', ['middleware' => 'jwt.auth', 'uses' => 'AuthController@refresh']);
+        $router->get('/user-profile', ['middleware' => 'jwt.auth', 'uses' => 'AuthController@userProfile']);
+    });
+
+    // Admin routes
+    $router->group(['prefix' => 'admin', 'middleware' => ['jwt.auth', 'admin']], function () use ($router) {
+        $router->get('/dashboard', function () {
+            return response()->json(['message' => 'Admin dashboard accessed']);
+        });
+    });
+
     // Verification routes
     $router->group(['prefix' => 'verification'], function () use ($router) {
         $router->get('/path/{batchLocation}/{batchNumber}', 'VerificationController@path');
     });
-    
+
     // Batch routes with rate limiting
     $router->group(['prefix' => 'batch', 'middleware' => 'rate_limit:60,1'], function () use ($router) {
         $router->get('/active', 'BatchController@getActive');
     });
-    
+
     // Form routes with stricter rate limiting
     $router->group(['prefix' => 'form', 'middleware' => 'rate_limit:5,1'], function () use ($router) {
         $router->post('/', 'FormController@submit');
@@ -45,11 +60,11 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
 // Serve static files (uploads)
 $router->get('/uploads/{filename:.*}', function ($filename) {
     $path = storage_path('app/public/uploads/' . $filename);
-    
+
     if (!file_exists($path)) {
         abort(404);
     }
-    
+
     return response()->file($path);
 });
 

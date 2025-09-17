@@ -1,13 +1,26 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 
-import { BackgroundLayer } from '@/components/BackgroundLayer';
+import type { AuthState } from '@/lib/auth';
 
-const RootLayout = () => (
-  <BackgroundLayer>
-    <Outlet />
-  </BackgroundLayer>
-);
+interface MyRouterContext {
+  auth: AuthState;
+}
 
-export const Route = createRootRoute({
-  component: RootLayout,
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  component: () => (
+    <>
+      <Outlet />
+      {/* <TanstackDevtools
+          config={{
+            position: 'bottom-left',
+          }}
+          plugins={[
+            {
+              name: 'Tanstack Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+          ]}
+        /> */}
+    </>
+  ),
 });

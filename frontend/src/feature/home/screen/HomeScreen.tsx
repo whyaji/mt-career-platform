@@ -48,14 +48,18 @@ export default function HomeScreen() {
     const years = [...new Set(batches.map((batch: BatchType) => batch.year))];
     return years
       .sort((a, b) => (b as number) - (a as number))
-      .map((year) => ({ value: (year as number).toString(), label: (year as number).toString() }));
+      .map((year) => ({
+        value: (year as number).toString(),
+        label: (year as number).toString(),
+      }));
   }, [batches]);
 
   const uniqueLocations = useMemo(() => {
     const locations = [...new Set(batches.map((batch: BatchType) => batch.location))];
-    return locations
-      .sort()
-      .map((location) => ({ value: location as string, label: location as string }));
+    return locations.sort().map((location) => ({
+      value: location as string,
+      label: location as string,
+    }));
   }, [batches]);
 
   // Filter batches based on search term and filters
@@ -170,7 +174,9 @@ export default function HomeScreen() {
                     <Grid.Col key={batch.id} span={isMobile ? 12 : 6}>
                       <Link
                         to={`/${batch.location_code}/${batch.number_code}` as never}
-                        style={{ textDecoration: 'none' }}>
+                        style={{
+                          textDecoration: 'none',
+                        }}>
                         <Card
                           shadow="sm"
                           padding="lg"

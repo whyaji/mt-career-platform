@@ -766,10 +766,10 @@ export default function FormScreen() {
             viewportRef={viewport}
             styles={{
               scrollbar: {
-                '&[data-orientation="vertical"] .mantine-ScrollArea-thumb': {
+                '&[dataOrientation="vertical"] .mantineScrollAreaThumb': {
                   backgroundColor: 'var(--mantine-color-gray-8)',
                 },
-                '&[data-orientation="horizontal"] .mantine-ScrollArea-thumb': {
+                '&[dataOrientation="horizontal"] .mantineScrollAreaThumb': {
                   backgroundColor: 'var(--mantine-color-gray-8)',
                 },
               },

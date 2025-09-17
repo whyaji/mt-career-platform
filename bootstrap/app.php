@@ -62,6 +62,7 @@ $app->singleton(
 $app->configure('app');
 $app->configure('database');
 $app->configure('view');
+$app->configure('jwt');
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +83,8 @@ $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'security' => App\Http\Middleware\SecurityMiddleware::class,
     'rate_limit' => App\Http\Middleware\RateLimitMiddleware::class,
+    'jwt.auth' => App\Http\Middleware\JWTMiddleware::class,
+    'admin' => App\Http\Middleware\AdminMiddleware::class,
 ]);
 
 /*
@@ -96,7 +99,8 @@ $app->routeMiddleware([
 */
 
 $app->register(App\Providers\AppServiceProvider::class);
-// $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(App\Providers\AuthServiceProvider::class);
+$app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 
 // Enable view service provider for Blade templates

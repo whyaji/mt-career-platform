@@ -8,55 +8,168 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batch/index'
+import { createFileRoute } from '@tanstack/react-router'
 
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TalenthubIndexRouteImport } from './routes/talenthub/index'
+import { Route as TalenthubAuthenticatedRouteImport } from './routes/talenthub/_authenticated'
+import { Route as TalenthubLoginIndexRouteImport } from './routes/talenthub/login/index'
+import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batch/index'
+import { Route as TalenthubAuthenticatedDashboardIndexRouteImport } from './routes/talenthub/_authenticated/dashboard/index'
+
+const TalenthubRouteImport = createFileRoute('/talenthub')()
+
+const TalenthubRoute = TalenthubRouteImport.update({
+  id: '/talenthub',
+  path: '/talenthub',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnauthorizedRoute = UnauthorizedRouteImport.update({
+  id: '/unauthorized',
+  path: '/unauthorized',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TalenthubIndexRoute = TalenthubIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TalenthubRoute,
+} as any)
+const TalenthubAuthenticatedRoute = TalenthubAuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => TalenthubRoute,
+} as any)
+const TalenthubLoginIndexRoute = TalenthubLoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => TalenthubRoute,
 } as any)
 const LocationBatchIndexRoute = LocationBatchIndexRouteImport.update({
   id: '/$location/$batch/',
   path: '/$location/$batch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TalenthubAuthenticatedDashboardIndexRoute =
+  TalenthubAuthenticatedDashboardIndexRouteImport.update({
+    id: '/dashboard/',
+    path: '/dashboard/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/unauthorized': typeof UnauthorizedRoute
+  '/talenthub': typeof TalenthubAuthenticatedRouteWithChildren
+  '/talenthub/': typeof TalenthubIndexRoute
   '/$location/$batch': typeof LocationBatchIndexRoute
+  '/talenthub/login': typeof TalenthubLoginIndexRoute
+  '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/unauthorized': typeof UnauthorizedRoute
+  '/talenthub': typeof TalenthubIndexRoute
   '/$location/$batch': typeof LocationBatchIndexRoute
+  '/talenthub/login': typeof TalenthubLoginIndexRoute
+  '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/unauthorized': typeof UnauthorizedRoute
+  '/talenthub': typeof TalenthubRouteWithChildren
+  '/talenthub/_authenticated': typeof TalenthubAuthenticatedRouteWithChildren
+  '/talenthub/': typeof TalenthubIndexRoute
   '/$location/$batch/': typeof LocationBatchIndexRoute
+  '/talenthub/login/': typeof TalenthubLoginIndexRoute
+  '/talenthub/_authenticated/dashboard/': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$location/$batch'
+  fullPaths:
+    | '/'
+    | '/unauthorized'
+    | '/talenthub'
+    | '/talenthub/'
+    | '/$location/$batch'
+    | '/talenthub/login'
+    | '/talenthub/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$location/$batch'
-  id: '__root__' | '/' | '/$location/$batch/'
+  to:
+    | '/'
+    | '/unauthorized'
+    | '/talenthub'
+    | '/$location/$batch'
+    | '/talenthub/login'
+    | '/talenthub/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/unauthorized'
+    | '/talenthub'
+    | '/talenthub/_authenticated'
+    | '/talenthub/'
+    | '/$location/$batch/'
+    | '/talenthub/login/'
+    | '/talenthub/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  UnauthorizedRoute: typeof UnauthorizedRoute
+  TalenthubRoute: typeof TalenthubRouteWithChildren
   LocationBatchIndexRoute: typeof LocationBatchIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/talenthub': {
+      id: '/talenthub'
+      path: '/talenthub'
+      fullPath: '/talenthub'
+      preLoaderRoute: typeof TalenthubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unauthorized': {
+      id: '/unauthorized'
+      path: '/unauthorized'
+      fullPath: '/unauthorized'
+      preLoaderRoute: typeof UnauthorizedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/talenthub/': {
+      id: '/talenthub/'
+      path: '/'
+      fullPath: '/talenthub/'
+      preLoaderRoute: typeof TalenthubIndexRouteImport
+      parentRoute: typeof TalenthubRoute
+    }
+    '/talenthub/_authenticated': {
+      id: '/talenthub/_authenticated'
+      path: '/talenthub'
+      fullPath: '/talenthub'
+      preLoaderRoute: typeof TalenthubAuthenticatedRouteImport
+      parentRoute: typeof TalenthubRoute
+    }
+    '/talenthub/login/': {
+      id: '/talenthub/login/'
+      path: '/login'
+      fullPath: '/talenthub/login'
+      preLoaderRoute: typeof TalenthubLoginIndexRouteImport
+      parentRoute: typeof TalenthubRoute
     }
     '/$location/$batch/': {
       id: '/$location/$batch/'
@@ -65,11 +178,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationBatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/talenthub/_authenticated/dashboard/': {
+      id: '/talenthub/_authenticated/dashboard/'
+      path: '/dashboard'
+      fullPath: '/talenthub/dashboard'
+      preLoaderRoute: typeof TalenthubAuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
   }
 }
 
+interface TalenthubAuthenticatedRouteChildren {
+  TalenthubAuthenticatedDashboardIndexRoute: typeof TalenthubAuthenticatedDashboardIndexRoute
+}
+
+const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
+  {
+    TalenthubAuthenticatedDashboardIndexRoute:
+      TalenthubAuthenticatedDashboardIndexRoute,
+  }
+
+const TalenthubAuthenticatedRouteWithChildren =
+  TalenthubAuthenticatedRoute._addFileChildren(
+    TalenthubAuthenticatedRouteChildren,
+  )
+
+interface TalenthubRouteChildren {
+  TalenthubAuthenticatedRoute: typeof TalenthubAuthenticatedRouteWithChildren
+  TalenthubIndexRoute: typeof TalenthubIndexRoute
+  TalenthubLoginIndexRoute: typeof TalenthubLoginIndexRoute
+}
+
+const TalenthubRouteChildren: TalenthubRouteChildren = {
+  TalenthubAuthenticatedRoute: TalenthubAuthenticatedRouteWithChildren,
+  TalenthubIndexRoute: TalenthubIndexRoute,
+  TalenthubLoginIndexRoute: TalenthubLoginIndexRoute,
+}
+
+const TalenthubRouteWithChildren = TalenthubRoute._addFileChildren(
+  TalenthubRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  UnauthorizedRoute: UnauthorizedRoute,
+  TalenthubRoute: TalenthubRouteWithChildren,
   LocationBatchIndexRoute: LocationBatchIndexRoute,
 }
 export const routeTree = rootRouteImport

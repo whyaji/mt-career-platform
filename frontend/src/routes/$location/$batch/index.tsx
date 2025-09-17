@@ -1,9 +1,16 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
+import { BackgroundLayer } from '@/components/BackgroundLayer';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import FormScreen from '@/feature/form/screen/FormScreen';
 import { getVerificationPath } from '@/lib/api/verification.api';
 import type { BatchType } from '@/types/batch.type';
+
+const RouteComponent = () => (
+  <BackgroundLayer>
+    <FormScreen />
+  </BackgroundLayer>
+);
 
 export const Route = createFileRoute('/$location/$batch/')({
   loader: async ({ params }) => {
@@ -18,6 +25,6 @@ export const Route = createFileRoute('/$location/$batch/')({
       throw new Error();
     }
   },
-  component: FormScreen,
+  component: RouteComponent,
   notFoundComponent: NotFoundScreenComponent,
 });
