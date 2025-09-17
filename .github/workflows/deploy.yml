@@ -1,0 +1,94 @@
+name: Deploy Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment: Production
+
+    steps:
+      # Step 1: checkout code from repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x" # Or any other LTS version you prefer
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      # Step 3: Install & Build Frontend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      # Creates the .env file in the frontend directory from your GitHub secret
+      - name: Create frontend .env file
+        run: echo "${{ secrets.FRONTEND_ENV_FILE }}" > .env
+        working-directory: ./frontend
+
+      - name: Build frontend
+        run: npm run build:prod
+        working-directory: ./frontend
+
+      # Step 4: Upload frontend build to VPS
+      # Only the 'dist' folder containing static files is uploaded
+      # Step 4: Upload frontend build files to VPS
+      - name: Upload frontend build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: |
+            public/assets/*
+            public/manifest.json
+          target: "${{ secrets.SSH_HOME_PROJECT }}/public"
+
+      # Step 5: Deploy backend to VPS via SSH
+      # Running a series of commands on the server to update and restart the backend
+      - name: Deploy backend and restart server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SSH_HOME_PROJECT }}
+
+            echo "==> 0. Backing up manifest.json..."
+            cp public/manifest.json public/manifest.json.bak
+
+            echo "==> 1. Fetching and applying latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> 1.1. Restoring manifest.json..."
+            rm public/manifest.json
+            mv public/manifest.json.bak public/manifest.json
+
+            echo "==> 2. Installing Composer dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "==> 3. Enabling maintenance mode..."
+            php artisan down
+
+            echo "==> 4. Running database migrations..."
+            php artisan migrate --force
+
+            echo "==> 5. Optimizing application caches..."
+            php artisan optimize
+
+            echo "==> 6. Disabling maintenance mode..."
+            php artisan up
+
+            echo "==> Deployment completed successfully! ✅"
