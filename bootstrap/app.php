@@ -63,6 +63,7 @@ $app->configure('app');
 $app->configure('database');
 $app->configure('view');
 $app->configure('jwt');
+$app->configure('pagination');
 // Only configure cors if the file exists
 if (file_exists(__DIR__ . '/../config/cors.php')) {
     $app->configure('cors');

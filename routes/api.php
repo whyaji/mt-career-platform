@@ -51,6 +51,11 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->get('/active', 'BatchController@getActive');
     });
 
+    // Batch routes with JWT auth
+    $router->group(['prefix' => 'batch', 'middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('/', 'BatchController@getBatches');
+    });
+
     // Form routes with stricter rate limiting
     $router->group(['prefix' => 'form', 'middleware' => 'rate_limit:5,1'], function () use ($router) {
         $router->post('/', 'FormController@submit');
