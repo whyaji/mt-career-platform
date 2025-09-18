@@ -1,3 +1,74 @@
 @import '@mantine/core/styles.css';
 @import '@mantine/dates/styles.css';
 @import '@mantine/notifications/styles.css';
+
+/* DefaultTable Responsive Styles */
+.responsive-table-container {
+  position: relative;
+}
+
+.responsive-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.responsive-table-container::-webkit-scrollbar-track {
+  background: var(--mantine-color-gray-1);
+  border-radius: 4px;
+}
+
+.responsive-table-container::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 4px;
+}
+
+.responsive-table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-gray-5);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .responsive-table-container {
+    /* Add a subtle shadow to indicate scrollable content */
+    box-shadow: inset -10px 0 10px -10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Firefox scrollbar styling */
+.responsive-table-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-4) var(--mantine-color-gray-1);
+}
+
+/* Table cell content overflow handling */
+.table-cell-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Sticky header enhancement */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--mantine-color-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile table improvements */
+@media (max-width: 480px) {
+  .responsive-table-container {
+    margin: 0 -1rem;
+    border-radius: 0;
+  }
+
+  .responsive-table-container table {
+    font-size: 0.875rem;
+  }
+
+  .responsive-table-container th,
+  .responsive-table-container td {
+    padding: 0.5rem 0.25rem;
+  }
+}
