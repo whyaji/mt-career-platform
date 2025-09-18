@@ -1,5 +1,3 @@
-import './DefaultTable.css';
-
 import {
   ActionIcon,
   Alert,
