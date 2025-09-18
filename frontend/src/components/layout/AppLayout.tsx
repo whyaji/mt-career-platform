@@ -55,19 +55,18 @@ const navItems: NavItemProps[] = [
     icon: IconUsers,
     label: 'Users',
     href: '/talenthub/users',
-    badge: '12',
+    // badge: '12',
   },
   {
     icon: IconDatabase,
     label: 'Batches',
     href: '/talenthub/batches',
-    badge: '5',
   },
   {
     icon: IconFileText,
     label: 'Applications',
     href: '/talenthub/applications',
-    badge: 'New',
+    // badge: 'New',
   },
   {
     icon: IconChartBar,

@@ -7,10 +7,6 @@ import { getVerificationPath } from '@/lib/api/verification.api';
 import type { BatchType } from '@/types/batch.type';
 
 const RouteComponent = () => {
-  const { location, batch } = Route.useParams();
-  if (location === 'talenthub' && batch) {
-    return <NotFoundScreenComponent />;
-  }
   return (
     <BackgroundLayer>
       <FormScreen />
@@ -21,7 +17,7 @@ const RouteComponent = () => {
 export const Route = createFileRoute('/$location/$batch/')({
   loader: async ({ params }) => {
     if (params.location === 'talenthub') {
-      return null;
+      throw notFound();
     }
     const { location, batch } = params;
     const response = await getVerificationPath(location, batch);

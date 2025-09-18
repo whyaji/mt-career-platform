@@ -1,6 +1,37 @@
-import { baseApiUrl } from './api';
+import type { BatchType } from '@/types/batch.type';
+import type { PaginatedResponse, PaginationParams } from '@/types/pagination.type';
 
-export const getActiveBatches = async () => {
+import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
+
+export const getActiveBatches = async (): Promise<DefaultResponseType<BatchType[]>> => {
   const response = await fetch(`${baseApiUrl}/batch/active`);
+  return response.json();
+};
+
+export const getBatches = async (
+  params: PaginationParams = {}
+): Promise<PaginatedResponse<BatchType>> => {
+  const searchParams = new URLSearchParams();
+
+  if (params.page) {
+    searchParams.append('page', params.page.toString());
+  }
+  if (params.limit) {
+    searchParams.append('limit', params.limit.toString());
+  }
+  if (params.search) {
+    searchParams.append('search', params.search);
+  }
+  if (params.sort_by) {
+    searchParams.append('sort_by', params.sort_by);
+  }
+  if (params.order) {
+    searchParams.append('order', params.order);
+  }
+  if (params.filter) {
+    searchParams.append('filter', params.filter);
+  }
+
+  const response = await authenticatedFetch(`${baseApiUrl}/batch?${searchParams.toString()}`);
   return response.json();
 };

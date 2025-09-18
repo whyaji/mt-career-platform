@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/talenthub/_authenticated/batches/')({
-  component: RouteComponent,
-});
+import { BatchesListScreen } from '@/feature/talenthub/screen/batches/screen/BatchesListScreen';
+import { defaultPaginationSearchSchema } from '@/types/pagination.type';
 
-function RouteComponent() {
-  return <div>Hello "/talenthub/_authenticated/batches/"!</div>;
-}
+export const Route = createFileRoute('/talenthub/_authenticated/batches/')({
+  component: BatchesListScreen,
+  validateSearch: defaultPaginationSearchSchema,
+});
