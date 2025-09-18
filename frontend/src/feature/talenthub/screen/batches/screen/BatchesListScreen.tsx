@@ -1,8 +1,16 @@
 import { ActionIcon, Badge, Button, Container, Group, Text, Title, Tooltip } from '@mantine/core';
 import { IconEdit, IconEye, IconPlus, IconTrash } from '@tabler/icons-react';
+import { useState } from 'react';
 
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
-import { useBatchesQuery } from '@/hooks/useBatchesQuery';
+import { BatchDeleteModal } from '@/feature/talenthub/screen/batches/components/modals/BatchDeleteModal';
+import { BatchDetailModal } from '@/feature/talenthub/screen/batches/components/modals/BatchDetailModal';
+import { BatchFormModal } from '@/feature/talenthub/screen/batches/components/modals/BatchFormModal';
+import { useBatchesQuery } from '@/hooks/query/batch/useBatchesQuery';
+import { useCreateBatchQuery } from '@/hooks/query/batch/useCreateBatchQuery';
+import { useDeleteBatchQuery } from '@/hooks/query/batch/useDeleteBatchQuery';
+import { useGetBatchByIdQuery } from '@/hooks/query/batch/useGetBatchByIdQuery';
+import { useUpdateBatchQuery } from '@/hooks/query/batch/useUpdateBatchQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
 import { Route } from '@/routes/talenthub/_authenticated/batches/index';
 import type { BatchType } from '@/types/batch.type';
@@ -23,13 +31,64 @@ export function BatchesListScreen() {
     handleFilterClear,
   } = usePaginationConfig({ search, navigate });
 
+  // Modal states
+  const [detailModalOpened, setDetailModalOpened] = useState(false);
+  const [formModalOpened, setFormModalOpened] = useState(false);
+  const [deleteModalOpened, setDeleteModalOpened] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<BatchType | null>(null);
+
   // Use TanStack Query for data fetching
   const { data: queryData, isLoading, error, isError, refetch } = useBatchesQuery(queryParams);
+
+  // Mutations
+  const createBatchMutation = useCreateBatchQuery();
+  const updateBatchMutation = useUpdateBatchQuery();
+  const deleteBatchMutation = useDeleteBatchQuery();
+
+  // Get batch details query (only when needed)
+  const { data: batchDetailData, isLoading: batchDetailLoading } = useGetBatchByIdQuery(
+    selectedBatch?.id || ''
+  );
 
   // Extract data from query response
   const data = queryData?.data || [];
   const pagination = queryData?.pagination;
   const errorMessage = isError ? (error as Error)?.message || 'An error occurred' : null;
+
+  // Handler functions
+  const handleViewDetails = (batch: BatchType) => {
+    setSelectedBatch(batch);
+    setDetailModalOpened(true);
+  };
+
+  const handleEdit = (batch: BatchType) => {
+    setSelectedBatch(batch);
+    setFormModalOpened(true);
+  };
+
+  const handleDelete = (batch: BatchType) => {
+    setSelectedBatch(batch);
+    setDeleteModalOpened(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedBatch(null);
+    setFormModalOpened(true);
+  };
+
+  const handleFormSubmit = async (data: Omit<BatchType, 'id'>) => {
+    if (selectedBatch) {
+      await updateBatchMutation.mutateAsync({ id: selectedBatch.id, data });
+    } else {
+      await createBatchMutation.mutateAsync(data);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (selectedBatch) {
+      await deleteBatchMutation.mutateAsync(selectedBatch.id);
+    }
+  };
 
   // Filter options for the table
   const filterOptions: FilterOption[] = [
@@ -176,20 +235,20 @@ export function BatchesListScreen() {
       key: 'actions',
       title: 'Actions',
       dataIndex: 'id',
-      render: (_id: unknown, _record: BatchType) => (
+      render: (_id: unknown, record: BatchType) => (
         <Group gap="xs">
           <Tooltip label="View Details">
-            <ActionIcon variant="subtle" size="sm">
+            <ActionIcon variant="subtle" size="sm" onClick={() => handleViewDetails(record)}>
               <IconEye size={16} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Edit">
-            <ActionIcon variant="subtle" size="sm">
+            <ActionIcon variant="subtle" size="sm" onClick={() => handleEdit(record)}>
               <IconEdit size={16} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Delete">
-            <ActionIcon variant="subtle" size="sm" color="red">
+            <ActionIcon variant="subtle" size="sm" color="red" onClick={() => handleDelete(record)}>
               <IconTrash size={16} />
             </ActionIcon>
           </Tooltip>
@@ -209,7 +268,9 @@ export function BatchesListScreen() {
             Manage and view all batches in the system
           </Text>
         </div>
-        <Button leftSection={<IconPlus size={16} />}>Add New Batch</Button>
+        <Button leftSection={<IconPlus size={16} />} onClick={handleCreate}>
+          Add New Batch
+        </Button>
       </Group>
 
       <DefaultTable
@@ -239,6 +300,35 @@ export function BatchesListScreen() {
         minTableWidth="1000px"
         stickyHeader
         responsive
+      />
+
+      {/* Modals */}
+      <BatchDetailModal
+        opened={detailModalOpened}
+        onClose={() => setDetailModalOpened(false)}
+        batch={
+          batchDetailData?.success && 'data' in batchDetailData
+            ? (batchDetailData.data ?? null)
+            : selectedBatch
+        }
+        loading={batchDetailLoading}
+      />
+
+      <BatchFormModal
+        opened={formModalOpened}
+        onClose={() => setFormModalOpened(false)}
+        batch={selectedBatch}
+        onSubmit={handleFormSubmit}
+        loading={createBatchMutation.isPending || updateBatchMutation.isPending}
+        title={selectedBatch ? 'Edit Batch' : 'Create New Batch'}
+      />
+
+      <BatchDeleteModal
+        opened={deleteModalOpened}
+        onClose={() => setDeleteModalOpened(false)}
+        batch={selectedBatch}
+        onConfirm={handleDeleteConfirm}
+        loading={deleteBatchMutation.isPending}
       />
     </Container>
   );

@@ -35,3 +35,42 @@ export const getBatches = async (
   const response = await authenticatedFetch(`${baseApiUrl}/batch?${searchParams.toString()}`);
   return response.json();
 };
+
+export const getBatchById = async (id: string): Promise<DefaultResponseType<BatchType>> => {
+  const response = await authenticatedFetch(`${baseApiUrl}/batch/${id}`);
+  return response.json();
+};
+
+export const createBatch = async (
+  data: Omit<BatchType, 'id'>
+): Promise<DefaultResponseType<BatchType>> => {
+  const response = await authenticatedFetch(`${baseApiUrl}/batch`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const updateBatch = async (
+  id: string,
+  data: Partial<Omit<BatchType, 'id'>>
+): Promise<DefaultResponseType<BatchType>> => {
+  const response = await authenticatedFetch(`${baseApiUrl}/batch/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const deleteBatch = async (id: string): Promise<DefaultResponseType<void>> => {
+  const response = await authenticatedFetch(`${baseApiUrl}/batch/${id}`, {
+    method: 'DELETE',
+  });
+  return response.json();
+};
