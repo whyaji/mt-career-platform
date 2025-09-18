@@ -3,29 +3,25 @@ import './index.css';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createRouter } from '@tanstack/react-router';
+import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { ErrorScreenComponent } from './components/ErrorScreenComponent';
 import { NotFoundScreenComponent } from './components/NotFoundScreenComponent';
 import { PendingScreenComponent } from './components/PendingScreenComponent';
-import { AuthProvider, type AuthState } from './lib/auth';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
 import { theme } from './theme/theme';
+
+const queryClient = new QueryClient();
 
 // Define the router context type
 // Create a new router instance
 const router = createRouter({
   routeTree,
   context: {
-    auth: {
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      access_token: null,
-    } as AuthState,
+    queryClient,
   },
   defaultPreload: 'intent',
   defaultErrorComponent: ErrorScreenComponent,
@@ -41,8 +37,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const queryClient = new QueryClient();
-
 // Render the app
 const rootElement = document.getElementById('root')!;
 const root = ReactDOM.createRoot(rootElement);
@@ -51,7 +45,7 @@ root.render(
     <QueryClientProvider client={queryClient}>
       <MantineProvider theme={theme}>
         <Notifications />
-        <AuthProvider router={router} />
+        <RouterProvider router={router} />
       </MantineProvider>
     </QueryClientProvider>
   </StrictMode>

@@ -63,29 +63,10 @@ $app->configure('app');
 $app->configure('database');
 $app->configure('view');
 $app->configure('jwt');
-
-/*
-|--------------------------------------------------------------------------
-| Register Middleware
-|--------------------------------------------------------------------------
-|
-| Next, we will register the middleware with the application. These can
-| be global middleware that run before and after each request into a
-| route or middleware that'll be assigned to some specific routes.
-|
-*/
-
-$app->middleware([
-    App\Http\Middleware\CorsMiddleware::class,
-]);
-
-$app->routeMiddleware([
-    'auth' => App\Http\Middleware\Authenticate::class,
-    'security' => App\Http\Middleware\SecurityMiddleware::class,
-    'rate_limit' => App\Http\Middleware\RateLimitMiddleware::class,
-    'jwt.auth' => App\Http\Middleware\JWTMiddleware::class,
-    'admin' => App\Http\Middleware\AdminMiddleware::class,
-]);
+// Only configure cors if the file exists
+if (file_exists(__DIR__ . '/../config/cors.php')) {
+    $app->configure('cors');
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -98,13 +79,35 @@ $app->routeMiddleware([
 |
 */
 
+// FIXED: Register service providers BEFORE middleware
 $app->register(App\Providers\AppServiceProvider::class);
-$app->register(App\Providers\AuthServiceProvider::class);
-$app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
-// $app->register(App\Providers\EventServiceProvider::class);
-
-// Enable view service provider for Blade templates
+// FIXED: Only register ViewServiceProvider once
 $app->register(Illuminate\View\ViewServiceProvider::class);
+$app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+
+/*
+|--------------------------------------------------------------------------
+| Register Middleware
+|--------------------------------------------------------------------------
+|
+| Next, we will register the middleware with the application. These can
+| be global middleware that run before and after each request into a
+| route or middleware that'll be assigned to some specific routes.
+|
+*/
+
+// FIXED: CORS middleware should be first in global middleware
+$app->middleware([
+    App\Http\Middleware\CorsMiddleware::class,
+]);
+
+$app->routeMiddleware([
+    'auth' => App\Http\Middleware\Authenticate::class,
+    'security' => App\Http\Middleware\SecurityMiddleware::class,
+    'rate_limit' => App\Http\Middleware\RateLimitMiddleware::class,
+    'jwt.auth' => Tymon\JWTAuth\Http\Middleware\Authenticate::class,
+    'jwt.refresh' => Tymon\JWTAuth\Http\Middleware\RefreshToken::class,
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +123,7 @@ $app->register(Illuminate\View\ViewServiceProvider::class);
 $app->router->group([
     'namespace' => 'App\Http\Controllers',
 ], function ($router) {
+    require __DIR__ . '/../routes/api.php';
     require __DIR__ . '/../routes/web.php';
 });
 

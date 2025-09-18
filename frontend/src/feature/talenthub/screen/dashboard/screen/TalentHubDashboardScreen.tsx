@@ -14,10 +14,12 @@ import {
   IconChartBar,
   IconDatabase,
   IconFileText,
+  IconForms,
   IconReportAnalytics,
   IconSettings,
   IconUsers,
 } from '@tabler/icons-react';
+import { Link } from '@tanstack/react-router';
 
 const TalentHubDashboardScreen = () => {
   const dashboardCards = [
@@ -85,14 +87,22 @@ const TalentHubDashboardScreen = () => {
           color: 'white',
           border: 'none',
         }}>
-        <Stack gap="xs">
-          <Title order={1} c="white" size="h2">
-            Welcome to Talent Hub Dashboard
-          </Title>
-          <Text c="rgba(255, 255, 255, 0.8)" size="lg">
-            Manage your talent acquisition process efficiently
-          </Text>
-        </Stack>
+        <Group justify="space-between" align="center">
+          <Stack gap="xs">
+            <Title order={1} c="white" size="h2">
+              Welcome to Talent Hub - MT Dashboard
+            </Title>
+            <Text c="rgba(255, 255, 255, 0.8)" size="lg">
+              Manage your talent acquisition process efficiently
+            </Text>
+          </Stack>
+          {/* button to candidate form */}
+          <Link to="/">
+            <Button leftSection={<IconForms size="1rem" />} variant="light" color="white" size="md">
+              Applicant Form
+            </Button>
+          </Link>
+        </Group>
       </Paper>
 
       {/* Dashboard Cards */}

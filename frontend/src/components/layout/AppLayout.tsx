@@ -5,15 +5,17 @@ import {
   Badge,
   Box,
   Burger,
+  em,
   Group,
   Menu,
   ScrollArea,
   Stack,
   Text,
-  TextInput,
   ThemeIcon,
   UnstyledButton,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import {
   IconBell,
   IconChartBar,
@@ -22,21 +24,18 @@ import {
   IconHome,
   IconLogout,
   IconReportAnalytics,
-  IconSearch,
   IconSettings,
   IconSun,
   IconUser,
   IconUsers,
 } from '@tabler/icons-react';
-import { useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
+
+import { useUserStore } from '@/lib/store/userStore';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  user?: {
-    name?: string;
-    email?: string;
-  };
-  onLogout: () => void;
 }
 
 interface NavItemProps {
@@ -89,50 +88,87 @@ const navItems: NavItemProps[] = [
 
 function NavItem({ icon: Icon, label, href, badge }: NavItemProps) {
   return (
-    <UnstyledButton
-      component="a"
-      href={href}
+    <Link
+      to={href}
       style={{
-        display: 'block',
-        width: '100%',
-        padding: '12px 16px',
-        borderRadius: '8px',
         textDecoration: 'none',
-        color: 'var(--mantine-color-text)',
-        transition: 'all 0.2s ease',
-        background: 'transparent',
-        border: 'none',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'var(--mantine-color-blue-0)';
-        e.currentTarget.style.color = 'var(--mantine-color-blue-6)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = 'var(--mantine-color-text)';
       }}>
-      <Group gap="md" justify="space-between">
-        <Group gap="md">
-          <ThemeIcon size="md" variant="light" color="blue" radius="md">
-            <Icon size="1rem" />
-          </ThemeIcon>
-          <Text size="sm" fw={500}>
-            {label}
-          </Text>
+      <UnstyledButton
+        component="a"
+        style={{
+          display: 'block',
+          width: '100%',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          textDecoration: 'none',
+          color: 'var(--mantine-color-text)',
+          transition: 'all 0.2s ease',
+          background: 'transparent',
+          border: 'none',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--mantine-color-blue-0)';
+          e.currentTarget.style.color = 'var(--mantine-color-blue-6)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = 'var(--mantine-color-text)';
+        }}>
+        <Group gap="md" justify="space-between">
+          <Group gap="md">
+            <ThemeIcon size="md" variant="light" color="blue" radius="md">
+              <Icon size="1rem" />
+            </ThemeIcon>
+            <Text size="sm" fw={500}>
+              {label}
+            </Text>
+          </Group>
+          {badge && (
+            <Badge size="sm" variant="light" color="blue" radius="xl">
+              {badge}
+            </Badge>
+          )}
         </Group>
-        {badge && (
-          <Badge size="sm" variant="light" color="blue" radius="xl">
-            {badge}
-          </Badge>
-        )}
-      </Group>
-    </UnstyledButton>
+      </UnstyledButton>
+    </Link>
   );
 }
 
-export function AppLayout({ children, user, onLogout }: AppLayoutProps) {
-  const [opened, setOpened] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+export function AppLayout({ children }: AppLayoutProps) {
+  const navigate = useNavigate();
+  const { clearUser, user } = useUserStore();
+
+  const onLogout = async () => {
+    const { authApi } = await import('@/lib/api/authApi');
+    try {
+      await authApi.logout();
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to logout',
+        color: 'red',
+      });
+    } finally {
+      // Clear local storage and user store
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      clearUser();
+      navigate({
+        to: '/talenthub',
+      });
+    }
+  };
+
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
+  const [opened, setOpened] = useState(true);
+
+  const isFirstMobileMount = useRef(true);
+  useEffect(() => {
+    if (isMobile && isFirstMobileMount.current) {
+      setOpened(false);
+      isFirstMobileMount.current = false;
+    }
+  }, [isMobile]);
 
   const handleToggle = () => setOpened(!opened);
 
@@ -142,7 +178,7 @@ export function AppLayout({ children, user, onLogout }: AppLayoutProps) {
       navbar={{
         width: 280,
         breakpoint: 'sm',
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: !opened, desktop: !opened },
       }}
       padding="md"
       style={{
@@ -175,28 +211,6 @@ export function AppLayout({ children, user, onLogout }: AppLayoutProps) {
               </Text>
             </Box>
           </Group>
-
-          {/* Center Section - Search */}
-          <Box style={{ flex: 1, maxWidth: 400 }}>
-            <TextInput
-              placeholder="Search users, batches, applications..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.currentTarget.value)}
-              leftSection={<IconSearch size="1rem" />}
-              size="sm"
-              radius="xl"
-              style={{
-                '& .mantine-TextInput-input': {
-                  background: 'var(--mantine-color-gray-0)',
-                  border: '1px solid var(--mantine-color-gray-3)',
-                  '&:focus': {
-                    borderColor: 'var(--mantine-color-blue-4)',
-                    background: 'white',
-                  },
-                },
-              }}
-            />
-          </Box>
 
           {/* Right Section */}
           <Group gap="sm">
@@ -270,6 +284,47 @@ export function AppLayout({ children, user, onLogout }: AppLayoutProps) {
                     }}>
                     {user?.name?.charAt(0) || 'A'}
                   </Avatar>
+                  {!isMobile && (
+                    <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="sm" fw={500} c="dark" truncate>
+                        {user?.name || 'Admin User'}
+                      </Text>
+                      <Text size="xs" c="dimmed" truncate>
+                        {user?.email || 'admin@example.com'}
+                      </Text>
+                    </Stack>
+                  )}
+                </Group>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Group
+                  gap="sm"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    background: 'var(--mantine-color-gray-0)',
+                    border: '1px solid var(--mantine-color-gray-3)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--mantine-color-blue-0)';
+                    e.currentTarget.style.borderColor = 'var(--mantine-color-blue-3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--mantine-color-gray-0)';
+                    e.currentTarget.style.borderColor = 'var(--mantine-color-gray-3)';
+                  }}>
+                  <Avatar
+                    size="md"
+                    radius="xl"
+                    color="blue"
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    }}>
+                    {user?.name?.charAt(0) || 'A'}
+                  </Avatar>
                   <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                     <Text size="sm" fw={500} c="dark" truncate>
                       {user?.name || 'Admin User'}
@@ -279,9 +334,7 @@ export function AppLayout({ children, user, onLogout }: AppLayoutProps) {
                     </Text>
                   </Stack>
                 </Group>
-              </Menu.Target>
-
-              <Menu.Dropdown>
+                <Menu.Divider />
                 <Menu.Label>Account</Menu.Label>
                 <Menu.Item leftSection={<IconUser size="1rem" />}>Profile Settings</Menu.Item>
                 <Menu.Item leftSection={<IconSettings size="1rem" />}>Preferences</Menu.Item>

@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of jwt-auth.
+ *
+ * (c) Sean Tymon <tymon148@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 return [
 
     /*
@@ -44,6 +53,8 @@ return [
         |
         | A path or resource to your public key.
         |
+        | E.g. 'file://path/to/public/key'
+        |
         */
 
         'public' => env('JWT_PUBLIC_KEY'),
@@ -54,6 +65,8 @@ return [
         |--------------------------------------------------------------------------
         |
         | A path or resource to your private key.
+        |
+        | E.g. 'file://path/to/private/key'
         |
         */
 
@@ -100,8 +113,8 @@ return [
     | the original token being created until they must re-authenticate.
     | Defaults to 2 weeks.
     |
-    | You can also set this to null, to yield a never expiring refresh token.
-    | Some may want this behaviour for e.g. a mobile app.
+    | You can also set this to null, to yield an infinite refresh time.
+    | Some may want this instead of never expiring tokens for e.g. a mobile app.
     | This is not particularly recommended, so make sure you have appropriate
     | systems in place to revoke the token if necessary.
     |
@@ -116,12 +129,9 @@ return [
     |
     | Specify the hashing algorithm that will be used to sign the token.
     |
-    | See here: https://github.com/namshi/jose/tree/master/src/Namshi/JOSE/Signer/OpenSSL
-    | for possible values.
-    |
     */
 
-    'algo' => env('JWT_ALGO', 'HS256'),
+    'algo' => env('JWT_ALGO', Tymon\JWTAuth\Providers\JWT\Provider::ALGO_HS256),
 
     /*
     |--------------------------------------------------------------------------

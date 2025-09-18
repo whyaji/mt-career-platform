@@ -14,11 +14,14 @@ import {
 import { IconAlertTriangle, IconHome, IconSearch } from '@tabler/icons-react';
 import { useNavigate } from '@tanstack/react-router';
 
+import { useUserStore } from '@/lib/store/userStore';
+
 export function NotFoundScreenComponent() {
   const navigate = useNavigate();
+  const { user } = useUserStore();
 
   const handleGoHome = () => {
-    navigate({ to: '/' });
+    navigate({ to: user ? '/talenthub/dashboard' : '/' });
   };
 
   return (
@@ -144,7 +147,7 @@ export function NotFoundScreenComponent() {
               transform: translate(-50%, -50%) translateY(-10px);
             }
           }
-          
+
           @keyframes fadeIn {
             from {
               opacity: 0;

@@ -7,24 +7,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Services\TurnstileService;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-use App\Services\TurnstileService;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
 class AuthController extends Controller
 {
     protected $turnstileService;
+
     /**
      * Create a new AuthController instance.
      */
     public function __construct(TurnstileService $turnstileService)
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('jwt.auth', ['except' => ['login']]);
         $this->turnstileService = $turnstileService;
     }
 
     /**
-     * Get a JWT via given credentials.
+     * User login
      */
     public function login(Request $request)
     {
@@ -58,77 +61,95 @@ class AuthController extends Controller
             ], 400);
         }
 
-        // Find user by email
-        $user = User::where('email', $credentials['email'])->first();
+        $credentials = $request->only(['email', 'password']);
 
-        // Check if user exists and password is correct
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$token = auth('api')->attempt($credentials)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
-        // Generate JWT token
-        try {
-            $token = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
-
-        return $this->createNewToken($token, $user);
+        return $this->respondWithToken($token);
     }
 
     /**
-     * Log the user out (Invalidate the token).
+     * Get authenticated user
+     */
+    public function me()
+    {
+        return response()->json([
+            "success" => true,
+            "message" => "User profile fetched successfully",
+            "data" => auth('api')->user()
+        ], 200);
+    }
+
+    /**
+     * Logout user (invalidate token)
      */
     public function logout()
     {
-        try {
-            JWTAuth::invalidate(JWTAuth::getToken());
-            return response()->json(['message' => 'User successfully signed out']);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Token invalid'], 401);
-        }
+        auth('api')->logout();
+
+        return response()->json([
+            "success" => true,
+            "message" => "User logged out successfully",
+            "data" => []
+        ], 200);
     }
 
     /**
-     * Refresh a token.
+     * Get user profile with additional information
+     */
+    public function userProfile()
+    {
+        $user = auth('api')->user();
+
+        return response()->json([
+            "success" => true,
+            "message" => "User profile fetched successfully",
+            "data" => [
+                'user' => $user,
+                'token_payload' => auth('api')->payload()->toArray()
+            ]
+        ], 200);
+    }
+
+    /**
+     * Refresh JWT token
      */
     public function refresh()
     {
         try {
-            $newToken = JWTAuth::refresh(JWTAuth::getToken());
-            $user = JWTAuth::parseToken()->authenticate();
-            return $this->createNewToken($newToken, $user);
+            $token = auth('api')->refresh();
+            return $this->respondWithToken($token);
+        } catch (TokenInvalidException $e) {
+            return response()->json([
+                "success" => false,
+                "error" => 'Token is invalid',
+                "message" => 'Token is invalid'
+            ], 401);
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Token refresh failed'], 401);
+            return response()->json([
+                "success" => false,
+                "error" => 'Token cannot be refreshed',
+                "message" => 'Token cannot be refreshed'
+            ], 401);
         }
     }
 
     /**
-     * Get the authenticated User.
+     * Get token array structure
      */
-    public function userProfile()
-    {
-        try {
-            $user = JWTAuth::parseToken()->authenticate();
-            return response()->json($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Token invalid'], 401);
-        }
-    }
-
-    /**
-     * Get the token array structure.
-     */
-    protected function createNewToken($token, $user = null)
+    protected function respondWithToken(string $token)
     {
         return response()->json([
-            "success" => true,
-            "data" => [
+            'success' => true,
+            'message' => 'Login successful',
+            'data' => [
+                'user' => auth('api')->user(),
                 'access_token' => $token,
                 'token_type' => 'bearer',
-                'expires_in' => config('jwt.ttl') * 60,
-                'user' => $user
+                'expires_in' => auth('api')->factory()->getTTL() * 60
             ]
-        ]);
+        ], 200);
     }
 }

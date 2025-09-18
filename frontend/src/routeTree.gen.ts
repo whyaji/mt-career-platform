@@ -18,6 +18,7 @@ import { Route as TalenthubAuthenticatedRouteImport } from './routes/talenthub/_
 import { Route as TalenthubLoginIndexRouteImport } from './routes/talenthub/login/index'
 import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batch/index'
 import { Route as TalenthubAuthenticatedDashboardIndexRouteImport } from './routes/talenthub/_authenticated/dashboard/index'
+import { Route as TalenthubAuthenticatedBatchesIndexRouteImport } from './routes/talenthub/_authenticated/batches/index'
 
 const TalenthubRouteImport = createFileRoute('/talenthub')()
 
@@ -61,6 +62,12 @@ const TalenthubAuthenticatedDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => TalenthubAuthenticatedRoute,
   } as any)
+const TalenthubAuthenticatedBatchesIndexRoute =
+  TalenthubAuthenticatedBatchesIndexRouteImport.update({
+    id: '/batches/',
+    path: '/batches/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/talenthub/': typeof TalenthubIndexRoute
   '/$location/$batch': typeof LocationBatchIndexRoute
   '/talenthub/login': typeof TalenthubLoginIndexRoute
+  '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +85,7 @@ export interface FileRoutesByTo {
   '/talenthub': typeof TalenthubIndexRoute
   '/$location/$batch': typeof LocationBatchIndexRoute
   '/talenthub/login': typeof TalenthubLoginIndexRoute
+  '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +97,7 @@ export interface FileRoutesById {
   '/talenthub/': typeof TalenthubIndexRoute
   '/$location/$batch/': typeof LocationBatchIndexRoute
   '/talenthub/login/': typeof TalenthubLoginIndexRoute
+  '/talenthub/_authenticated/batches/': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/_authenticated/dashboard/': typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/talenthub/'
     | '/$location/$batch'
     | '/talenthub/login'
+    | '/talenthub/batches'
     | '/talenthub/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/talenthub'
     | '/$location/$batch'
     | '/talenthub/login'
+    | '/talenthub/batches'
     | '/talenthub/dashboard'
   id:
     | '__root__'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/talenthub/'
     | '/$location/$batch/'
     | '/talenthub/login/'
+    | '/talenthub/_authenticated/batches/'
     | '/talenthub/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -185,15 +198,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalenthubAuthenticatedDashboardIndexRouteImport
       parentRoute: typeof TalenthubAuthenticatedRoute
     }
+    '/talenthub/_authenticated/batches/': {
+      id: '/talenthub/_authenticated/batches/'
+      path: '/batches'
+      fullPath: '/talenthub/batches'
+      preLoaderRoute: typeof TalenthubAuthenticatedBatchesIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
   }
 }
 
 interface TalenthubAuthenticatedRouteChildren {
+  TalenthubAuthenticatedBatchesIndexRoute: typeof TalenthubAuthenticatedBatchesIndexRoute
   TalenthubAuthenticatedDashboardIndexRoute: typeof TalenthubAuthenticatedDashboardIndexRoute
 }
 
 const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
   {
+    TalenthubAuthenticatedBatchesIndexRoute:
+      TalenthubAuthenticatedBatchesIndexRoute,
     TalenthubAuthenticatedDashboardIndexRoute:
       TalenthubAuthenticatedDashboardIndexRoute,
   }

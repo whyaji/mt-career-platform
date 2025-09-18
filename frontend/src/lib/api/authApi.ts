@@ -1,3 +1,5 @@
+import { queryOptions } from '@tanstack/react-query';
+
 import type { UserType } from '@/types/user.type';
 
 import { baseApiUrl, type DefaultResponseType } from './api';
@@ -14,23 +16,36 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface AuthResponse {
-  success: boolean;
-  data: {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-    user: UserType;
-  };
-}
+export type AuthResponse = DefaultResponseType<{
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: UserType;
+}>;
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
-}
+const getUserProfileFunction = async (): Promise<
+  DefaultResponseType<{ user: UserType; token_payload: Record<string, unknown> }>
+> => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  const response = await fetch(`${baseApiUrl}/auth/user-profile`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to get user profile');
+  }
+
+  return response.json();
+};
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
@@ -39,6 +54,7 @@ export const authApi = {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(credentials),
     });
 
@@ -50,25 +66,8 @@ export const authApi = {
     return response.json() as Promise<AuthResponse>;
   },
 
-  register: async (userData: RegisterRequest): Promise<DefaultResponseType<User>> => {
-    const response = await fetch(`${baseApiUrl}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
-    }
-
-    return response.json();
-  },
-
   logout: async (): Promise<void> => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('access_token');
     if (!token) {
       return;
     }
@@ -79,6 +78,7 @@ export const authApi = {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -88,7 +88,7 @@ export const authApi = {
   },
 
   refresh: async (): Promise<AuthResponse> => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('No token found');
     }
@@ -109,25 +109,11 @@ export const authApi = {
     return response.json();
   },
 
-  getUserProfile: async (): Promise<User> => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      throw new Error('No token found');
-    }
-
-    const response = await fetch(`${baseApiUrl}/auth/user-profile`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get user profile');
-    }
-
-    return response.json();
-  },
+  getUserProfile: getUserProfileFunction,
 };
+
+export const userQueryOptions = queryOptions({
+  queryKey: ['get-current-user'],
+  queryFn: getUserProfileFunction,
+  staleTime: Infinity,
+});
