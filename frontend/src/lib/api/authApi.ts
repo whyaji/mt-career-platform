@@ -17,14 +17,27 @@ export interface RegisterRequest {
 }
 
 export type AuthResponse = DefaultResponseType<{
-  access_token: string;
-  token_type: string;
-  expires_in: number;
   user: UserType;
+  tokens: {
+    access_token: {
+      token: string;
+      expires_at: string;
+      token_type: string;
+    };
+    refresh_token: {
+      token: string;
+      expires_at: string;
+      token_type: string;
+    };
+  };
 }>;
 
 const getUserProfileFunction = async (): Promise<
-  DefaultResponseType<{ user: UserType; token_payload: Record<string, unknown> }>
+  DefaultResponseType<{
+    local_user: UserType;
+    parent_user: UserType;
+    token_payload: Record<string, unknown>;
+  }>
 > => {
   const token = localStorage.getItem('access_token');
   if (!token) {

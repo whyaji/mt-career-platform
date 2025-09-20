@@ -106,8 +106,8 @@ $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'security' => App\Http\Middleware\SecurityMiddleware::class,
     'rate_limit' => App\Http\Middleware\RateLimitMiddleware::class,
-    'jwt.auth' => Tymon\JWTAuth\Http\Middleware\Authenticate::class,
-    'jwt.refresh' => Tymon\JWTAuth\Http\Middleware\RefreshToken::class,
+    'jwt.auth' => App\Http\Middleware\JWTMiddleware::class,
+    'jwt.refresh' => App\Http\Middleware\RefreshTokenMiddleware::class,
 ]);
 
 /*

@@ -60,7 +60,8 @@ export const LoginScreen = () => {
         turnstileToken,
       });
       if (result.success && 'data' in result && result.data) {
-        localStorage.setItem('access_token', result.data.access_token);
+        localStorage.setItem('access_token', result.data.tokens.access_token.token);
+        localStorage.setItem('refresh_token', result.data.tokens.refresh_token.token);
         localStorage.setItem('user', JSON.stringify(result.data.user));
         setUser(result.data.user);
         navigate({ to: redirect ? (redirect as never) : '/talenthub/dashboard' });

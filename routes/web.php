@@ -31,6 +31,11 @@ $router->get('/uploads/{filename:.*}', function ($filename) {
 });
 
 // Catch-all route for React Router (must be last)
-$router->get('/{any:.*}', function () use ($router) {
+// Exclude API routes from the catch-all
+$router->get('/{any:.*}', function ($any) use ($router) {
+    // If it's an API route, let it fall through to 404 handling
+    if (str_starts_with($any, 'api/')) {
+        abort(404);
+    }
     return view('app');
 });

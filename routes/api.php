@@ -24,13 +24,13 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
     // Auth routes
     $router->group(['prefix' => 'auth'], function () use ($router) {
         $router->post('/login', 'AuthController@login');
+        $router->post('/refresh', 'AuthController@refresh');
     });
 
     // Protected auth routes
     $router->group(['prefix' => 'auth', 'middleware' => 'jwt.auth'], function () use ($router) {
         $router->get('/me', 'AuthController@me');
         $router->post('/logout', 'AuthController@logout');
-        $router->post('/refresh', 'AuthController@refresh');
         $router->get('/user-profile', 'AuthController@userProfile');
     });
 

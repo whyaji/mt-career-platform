@@ -167,8 +167,13 @@ return [
     */
 
     'persistent_claims' => [
-        // 'foo',
-        // 'bar',
+        'parent_access_token',
+        'parent_refresh_token',
+        'parent_access_expires_at',
+        'parent_refresh_expires_at',
+        'parent_service',
+        'parent_admin_id',
+        'parent_role',
     ],
 
     /*

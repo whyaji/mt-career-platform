@@ -42,7 +42,7 @@ function AuthenticatedLayout() {
 
       // If we have user data from context (from beforeLoad), use it
       if (userDataFromContext) {
-        setUser(userDataFromContext.user);
+        setUser(userDataFromContext.local_user);
       }
       // If we don't have user data from context and no user in store, redirect to login
       else if (!user) {
