@@ -1,9 +1,11 @@
 import {
+  ActionIcon,
   AppShell,
   Avatar,
   Badge,
   Box,
   Burger,
+  Collapse,
   em,
   Group,
   Menu,
@@ -16,11 +18,15 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
+  IconChevronRight,
+  IconClipboardList,
   IconDatabase,
   IconFileText,
   IconHome,
   IconLogout,
+  IconSchool,
   IconSettings,
+  IconTable,
   IconUser,
 } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -37,6 +43,7 @@ interface NavItemProps {
   label: string;
   href?: string;
   badge?: string;
+  subItems?: NavItemProps[];
 }
 interface NavItemComponentProps {
   item: NavItemProps;
@@ -50,9 +57,25 @@ const navItems: NavItemProps[] = [
     href: '/talenthub/dashboard',
   },
   {
-    icon: IconDatabase,
-    label: 'Batches',
-    href: '/talenthub/batches',
+    icon: IconTable,
+    label: 'Master Data',
+    subItems: [
+      {
+        icon: IconSchool,
+        label: 'Educational Institute',
+        href: '/talenthub/master-data/educational-institution',
+      },
+      {
+        icon: IconClipboardList,
+        label: 'Form Field Score',
+        href: '/talenthub/master-data/form-field-score',
+      },
+      {
+        icon: IconDatabase,
+        label: 'Batches',
+        href: '/talenthub/batches',
+      },
+    ],
   },
   {
     icon: IconFileText,
@@ -77,8 +100,129 @@ const navItems: NavItemProps[] = [
   // },
 ];
 
+function SubNavItem({ item, onClick }: NavItemComponentProps) {
+  const { icon: Icon, label, href } = item;
+  return (
+    <Link
+      onClick={onClick}
+      to={href}
+      style={{
+        textDecoration: 'none',
+      }}>
+      <UnstyledButton
+        component="a"
+        style={{
+          display: 'block',
+          width: '100%',
+          padding: '8px 16px 8px 48px',
+          borderRadius: '6px',
+          textDecoration: 'none',
+          color: 'var(--mantine-color-text)',
+          transition: 'all 0.2s ease',
+          background: 'transparent',
+          border: 'none',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--mantine-color-blue-0)';
+          e.currentTarget.style.color = 'var(--mantine-color-blue-6)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = 'var(--mantine-color-text)';
+        }}>
+        <Group gap="sm">
+          <ThemeIcon size="sm" variant="light" color="blue" radius="sm">
+            <Icon size="0.875rem" />
+          </ThemeIcon>
+          <Text size="sm" fw={400}>
+            {label}
+          </Text>
+        </Group>
+      </UnstyledButton>
+    </Link>
+  );
+}
+
 function NavItem({ item, onClick }: NavItemComponentProps) {
-  const { icon: Icon, label, href, badge } = item;
+  const { icon: Icon, label, href, badge, subItems } = item;
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleToggleExpand = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
+  if (subItems && subItems.length > 0) {
+    return (
+      <Box>
+        <UnstyledButton
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            color: 'var(--mantine-color-text)',
+            transition: 'all 0.2s ease',
+            background: 'transparent',
+            border: 'none',
+          }}
+          onClick={handleToggleExpand}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--mantine-color-blue-0)';
+            e.currentTarget.style.color = 'var(--mantine-color-blue-6)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--mantine-color-text)';
+          }}>
+          <Group gap="md" justify="space-between">
+            <Group gap="md">
+              <ThemeIcon size="md" variant="light" color="blue" radius="md">
+                <Icon size="1rem" />
+              </ThemeIcon>
+              <Text size="sm" fw={500}>
+                {label}
+              </Text>
+            </Group>
+            <Group gap="xs">
+              {badge && (
+                <Badge size="sm" variant="light" color="blue" radius="xl">
+                  {badge}
+                </Badge>
+              )}
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                style={{
+                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}>
+                <IconChevronRight size="0.875rem" />
+              </ActionIcon>
+            </Group>
+          </Group>
+        </UnstyledButton>
+        <Collapse in={isExpanded}>
+          <Stack gap="xs" mt="xs">
+            {subItems.map((subItem, index) => (
+              <SubNavItem
+                key={index}
+                item={subItem}
+                onClick={() => {
+                  if (onClick) {
+                    onClick();
+                  }
+                }}
+              />
+            ))}
+          </Stack>
+        </Collapse>
+      </Box>
+    );
+  }
+
   return (
     <Link
       onClick={onClick}
