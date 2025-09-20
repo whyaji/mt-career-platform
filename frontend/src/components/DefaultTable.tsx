@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Divider,
+  em,
   Flex,
   Group,
   Loader,
@@ -21,6 +22,7 @@ import {
   Tooltip,
   Transition,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -128,6 +130,7 @@ export function DefaultTable<T = Record<string, unknown>>({
   headerActions,
   rowActions = [],
 }: DefaultTableProps<T>) {
+  const addPadding = useMediaQuery(`(max-width: ${em(480)})`);
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
   const [newFilter, setNewFilter] = React.useState<Partial<AppliedFilter>>({
     column: '',
@@ -380,6 +383,8 @@ export function DefaultTable<T = Record<string, unknown>>({
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0, // Important for flex child to shrink
+          paddingRight: addPadding ? '1rem' : '0',
+          paddingLeft: addPadding ? '1rem' : '0',
         }}>
         <Box
           ref={scrollContainerRef}
