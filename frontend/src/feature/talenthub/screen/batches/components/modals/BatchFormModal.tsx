@@ -11,9 +11,11 @@ import {
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
+import { useActiveEducationalInstitutionsQuery } from '@/hooks/query/educational-institution/useActiveEducationalInstitutionsQuery';
 import type { BatchType } from '@/types/batch.type';
+import type { EducationalInstitutionType } from '@/types/educationalInstitution.type';
 
 interface BatchFormModalProps {
   opened: boolean;
@@ -32,6 +34,23 @@ export function BatchFormModal({
   loading = false,
   title,
 }: BatchFormModalProps) {
+  const { data: educationalInstitutionsData, isLoading: isLoadingInstitutions } =
+    useActiveEducationalInstitutionsQuery();
+
+  const institutionOptions = useMemo(() => {
+    if (
+      !educationalInstitutionsData ||
+      'error' in educationalInstitutionsData ||
+      !educationalInstitutionsData.data
+    ) {
+      return [];
+    }
+    return educationalInstitutionsData.data.map((institution: EducationalInstitutionType) => ({
+      value: institution.name,
+      label: institution.name,
+    }));
+  }, [educationalInstitutionsData]);
+
   const form = useForm<Omit<BatchType, 'id' | 'status'> & { status: string }>({
     initialValues: {
       number: 0,
@@ -163,9 +182,10 @@ export function BatchFormModal({
           <MultiSelect
             label="Institutes"
             placeholder="Select institutes"
-            data={['MTI', 'SSMS', 'MTSS', 'MTCC', 'MTCS', 'MTBS', 'MTCB', 'MTIS']}
+            data={institutionOptions}
             searchable
             clearable
+            disabled={isLoadingInstitutions}
             {...form.getInputProps('institutes')}
           />
 
