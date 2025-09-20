@@ -17,6 +17,7 @@ import { Route as TalenthubIndexRouteImport } from './routes/talenthub/index'
 import { Route as TalenthubAuthenticatedRouteImport } from './routes/talenthub/_authenticated'
 import { Route as TalenthubLoginIndexRouteImport } from './routes/talenthub/login/index'
 import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batch/index'
+import { Route as TalenthubAuthenticatedEducationalInstitutionIndexRouteImport } from './routes/talenthub/_authenticated/educational-institution/index'
 import { Route as TalenthubAuthenticatedDashboardIndexRouteImport } from './routes/talenthub/_authenticated/dashboard/index'
 import { Route as TalenthubAuthenticatedBatchesIndexRouteImport } from './routes/talenthub/_authenticated/batches/index'
 import { Route as TalenthubAuthenticatedApplicationsIndexRouteImport } from './routes/talenthub/_authenticated/applications/index'
@@ -57,6 +58,12 @@ const LocationBatchIndexRoute = LocationBatchIndexRouteImport.update({
   path: '/$location/$batch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TalenthubAuthenticatedEducationalInstitutionIndexRoute =
+  TalenthubAuthenticatedEducationalInstitutionIndexRouteImport.update({
+    id: '/educational-institution/',
+    path: '/educational-institution/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
 const TalenthubAuthenticatedDashboardIndexRoute =
   TalenthubAuthenticatedDashboardIndexRouteImport.update({
     id: '/dashboard/',
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/talenthub/applications': typeof TalenthubAuthenticatedApplicationsIndexRoute
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
+  '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -96,6 +104,7 @@ export interface FileRoutesByTo {
   '/talenthub/applications': typeof TalenthubAuthenticatedApplicationsIndexRoute
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
+  '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -109,6 +118,7 @@ export interface FileRoutesById {
   '/talenthub/_authenticated/applications/': typeof TalenthubAuthenticatedApplicationsIndexRoute
   '/talenthub/_authenticated/batches/': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/_authenticated/dashboard/': typeof TalenthubAuthenticatedDashboardIndexRoute
+  '/talenthub/_authenticated/educational-institution/': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/talenthub/applications'
     | '/talenthub/batches'
     | '/talenthub/dashboard'
+    | '/talenthub/educational-institution'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/talenthub/applications'
     | '/talenthub/batches'
     | '/talenthub/dashboard'
+    | '/talenthub/educational-institution'
   id:
     | '__root__'
     | '/'
@@ -144,6 +156,7 @@ export interface FileRouteTypes {
     | '/talenthub/_authenticated/applications/'
     | '/talenthub/_authenticated/batches/'
     | '/talenthub/_authenticated/dashboard/'
+    | '/talenthub/_authenticated/educational-institution/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationBatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/talenthub/_authenticated/educational-institution/': {
+      id: '/talenthub/_authenticated/educational-institution/'
+      path: '/educational-institution'
+      fullPath: '/talenthub/educational-institution'
+      preLoaderRoute: typeof TalenthubAuthenticatedEducationalInstitutionIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
     '/talenthub/_authenticated/dashboard/': {
       id: '/talenthub/_authenticated/dashboard/'
       path: '/dashboard'
@@ -232,6 +252,7 @@ interface TalenthubAuthenticatedRouteChildren {
   TalenthubAuthenticatedApplicationsIndexRoute: typeof TalenthubAuthenticatedApplicationsIndexRoute
   TalenthubAuthenticatedBatchesIndexRoute: typeof TalenthubAuthenticatedBatchesIndexRoute
   TalenthubAuthenticatedDashboardIndexRoute: typeof TalenthubAuthenticatedDashboardIndexRoute
+  TalenthubAuthenticatedEducationalInstitutionIndexRoute: typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
 }
 
 const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
@@ -242,6 +263,8 @@ const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
       TalenthubAuthenticatedBatchesIndexRoute,
     TalenthubAuthenticatedDashboardIndexRoute:
       TalenthubAuthenticatedDashboardIndexRoute,
+    TalenthubAuthenticatedEducationalInstitutionIndexRoute:
+      TalenthubAuthenticatedEducationalInstitutionIndexRoute,
   }
 
 const TalenthubAuthenticatedRouteWithChildren =

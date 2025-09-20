@@ -63,12 +63,12 @@ const navItems: NavItemProps[] = [
       {
         icon: IconSchool,
         label: 'Educational Institute',
-        href: '/talenthub/master-data/educational-institution',
+        href: '/talenthub/educational-institution',
       },
       {
         icon: IconClipboardList,
         label: 'Form Field Score',
-        href: '/talenthub/master-data/form-field-score',
+        href: '/talenthub/form-field-score',
       },
       {
         icon: IconDatabase,

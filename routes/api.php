@@ -60,6 +60,20 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->delete('/{id}', 'BatchController@deleteBatch');
     });
 
+    // Educational Institution routes with rate limiting for active endpoint
+    $router->group(['prefix' => 'educational-institution', 'middleware' => 'rate_limit:60,1'], function () use ($router) {
+        $router->get('/active', 'EducationalInstitutionController@getActive');
+    });
+
+    // Educational Institution routes with JWT auth
+    $router->group(['prefix' => 'educational-institution', 'middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('/', 'EducationalInstitutionController@getInstitutions');
+        $router->get('/{id}', 'EducationalInstitutionController@getInstitutionById');
+        $router->post('/', 'EducationalInstitutionController@createInstitution');
+        $router->put('/{id}', 'EducationalInstitutionController@updateInstitution');
+        $router->delete('/{id}', 'EducationalInstitutionController@deleteInstitution');
+    });
+
     // Application routes with JWT auth
     $router->group(['prefix' => 'applications', 'middleware' => 'jwt.auth'], function () use ($router) {
         $router->get('/', 'ApplicantDataController@getApplications');
