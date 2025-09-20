@@ -120,7 +120,7 @@ export function BatchFormModal({
             label="Batch Code"
             placeholder="Enter batch code"
             required
-            maxLength={10}
+            maxLength={64}
             {...form.getInputProps('number_code')}
           />
 
@@ -128,6 +128,7 @@ export function BatchFormModal({
             label="Location"
             placeholder="Enter location"
             required
+            maxLength={64}
             {...form.getInputProps('location')}
           />
 
@@ -135,7 +136,7 @@ export function BatchFormModal({
             label="Location Code"
             placeholder="Enter location code"
             required
-            maxLength={10}
+            maxLength={64}
             {...form.getInputProps('location_code')}
           />
 

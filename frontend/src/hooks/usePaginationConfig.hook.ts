@@ -129,6 +129,22 @@ export const usePaginationConfig = ({
     });
   };
 
+  // Handle page size change
+  const handlePageSizeChange = (newLimit: number) => {
+    const currentPage = searchRef.current.page;
+    const currentLimit = searchRef.current.limit;
+
+    // Calculate the new page based on current position
+    // Formula: newPage = Math.ceil(((currentPage - 1) * currentLimit + 1) / newLimit)
+    const firstItemIndex = (currentPage - 1) * currentLimit;
+    const newPage = Math.ceil((firstItemIndex + 1) / newLimit);
+
+    updateSearchParams({
+      limit: newLimit,
+      page: newPage,
+    });
+  };
+
   return {
     tempSearch,
     setTempSearch,
@@ -139,5 +155,6 @@ export const usePaginationConfig = ({
     handleFilterAdd,
     handleFilterRemove,
     handleFilterClear,
+    handlePageSizeChange,
   };
 };

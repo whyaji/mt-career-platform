@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   AppShell,
   Avatar,
   Badge,
@@ -17,17 +16,12 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
-  IconBell,
-  IconChartBar,
   IconDatabase,
   IconFileText,
   IconHome,
   IconLogout,
-  IconReportAnalytics,
   IconSettings,
-  IconSun,
   IconUser,
-  IconUsers,
 } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -44,18 +38,16 @@ interface NavItemProps {
   href?: string;
   badge?: string;
 }
+interface NavItemComponentProps {
+  item: NavItemProps;
+  onClick?: () => void;
+}
 
 const navItems: NavItemProps[] = [
   {
     icon: IconHome,
     label: 'Dashboard',
     href: '/talenthub/dashboard',
-  },
-  {
-    icon: IconUsers,
-    label: 'Users',
-    href: '/talenthub/users',
-    // badge: '12',
   },
   {
     icon: IconDatabase,
@@ -68,26 +60,28 @@ const navItems: NavItemProps[] = [
     href: '/talenthub/applications',
     // badge: 'New',
   },
-  {
-    icon: IconChartBar,
-    label: 'Analytics',
-    href: '/talenthub/analytics',
-  },
-  {
-    icon: IconReportAnalytics,
-    label: 'Reports',
-    href: '/talenthub/reports',
-  },
-  {
-    icon: IconSettings,
-    label: 'Settings',
-    href: '/talenthub/settings',
-  },
+  // {
+  //   icon: IconChartBar,
+  //   label: 'Analytics',
+  //   href: '/talenthub/analytics',
+  // },
+  // {
+  //   icon: IconReportAnalytics,
+  //   label: 'Reports',
+  //   href: '/talenthub/reports',
+  // },
+  // {
+  //   icon: IconSettings,
+  //   label: 'Settings',
+  //   href: '/talenthub/settings',
+  // },
 ];
 
-function NavItem({ icon: Icon, label, href, badge }: NavItemProps) {
+function NavItem({ item, onClick }: NavItemComponentProps) {
+  const { icon: Icon, label, href, badge } = item;
   return (
     <Link
+      onClick={onClick}
       to={href}
       style={{
         textDecoration: 'none',
@@ -214,7 +208,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Right Section */}
           <Group gap="sm">
             {/* Theme Toggle */}
-            <ActionIcon
+            {/* <ActionIcon
               variant="subtle"
               color="gray"
               size="lg"
@@ -227,7 +221,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </ActionIcon>
 
             {/* Notifications */}
-            <ActionIcon
+            {/* <ActionIcon
               variant="subtle"
               color="gray"
               size="lg"
@@ -251,7 +245,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 }}>
                 3
               </Badge>
-            </ActionIcon>
+            </ActionIcon> */}
 
             {/* User Menu */}
             <Menu shadow="md" width={280} position="bottom-end">
@@ -384,7 +378,15 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppShell.Section grow component={ScrollArea} p="md">
           <Stack gap="xs">
             {navItems.map((item, index) => (
-              <NavItem key={index} {...item} />
+              <NavItem
+                key={index}
+                item={item}
+                onClick={() => {
+                  if (isMobile) {
+                    setOpened(false);
+                  }
+                }}
+              />
             ))}
           </Stack>
         </AppShell.Section>
@@ -409,7 +411,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Box
           style={{
             background: 'transparent',
-            minHeight: 'calc(100vh - 70px)',
+            height: 'calc(100vh - 70px - 32px)', // Account for header + padding (md = 16px top + 16px bottom)
+            overflow: 'hidden',
           }}>
           {children}
         </Box>

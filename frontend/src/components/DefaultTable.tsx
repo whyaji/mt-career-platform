@@ -9,6 +9,7 @@ import {
   Flex,
   Group,
   Loader,
+  Menu,
   Modal,
   Pagination,
   Paper,
@@ -55,6 +56,15 @@ export interface FilterOption {
   conditions?: { value: string; label: string }[];
 }
 
+export interface RowAction<T = Record<string, unknown>> {
+  label: string;
+  icon?: React.ReactNode;
+  color?: string;
+  onClick: (record: T) => void;
+  disabled?: (record: T) => boolean;
+  hidden?: (record: T) => boolean;
+}
+
 export interface DefaultTableProps<T = Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
@@ -82,8 +92,9 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   pageSizeOptions?: number[];
   onPageSizeChange?: (size: number) => void;
   minTableWidth?: string;
-  stickyHeader?: boolean;
   responsive?: boolean;
+  headerActions?: React.ReactNode;
+  rowActions?: RowAction<T>[];
 }
 
 export function DefaultTable<T = Record<string, unknown>>({
@@ -113,8 +124,9 @@ export function DefaultTable<T = Record<string, unknown>>({
   pageSizeOptions = [10, 15, 25, 50, 100],
   onPageSizeChange,
   minTableWidth = '800px',
-  stickyHeader = true,
   responsive = true,
+  headerActions,
+  rowActions = [],
 }: DefaultTableProps<T>) {
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
   const [newFilter, setNewFilter] = React.useState<Partial<AppliedFilter>>({
@@ -123,6 +135,9 @@ export function DefaultTable<T = Record<string, unknown>>({
     condition: 'eq',
   });
   const [showScrollIndicator, setShowScrollIndicator] = React.useState(false);
+  const [contextMenuOpened, setContextMenuOpened] = React.useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = React.useState({ x: 0, y: 0 });
+  const [selectedRecord, setSelectedRecord] = React.useState<T | null>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -145,6 +160,17 @@ export function DefaultTable<T = Record<string, unknown>>({
       setNewFilter({ column: '', value: '', condition: 'eq' });
       setFilterModalOpened(false);
     }
+  };
+
+  const handleRowContextMenu = (event: React.MouseEvent, record: T) => {
+    if (rowActions.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    setSelectedRecord(record);
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setContextMenuOpened(true);
   };
 
   const getSortIcon = (column: string) => {
@@ -220,114 +246,151 @@ export function DefaultTable<T = Record<string, unknown>>({
   }
 
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder className={className}>
-      {/* Header Section */}
-      {(title || description) && (
-        <Box mb="md">
-          {title && (
-            <Text size="xl" fw={600} mb={description ? 4 : 0}>
-              {title}
-            </Text>
-          )}
-          {description && (
-            <Text size="sm" c="dimmed">
-              {description}
-            </Text>
-          )}
-        </Box>
-      )}
-      {/* Search and Filter Bar */}
-      <Paper p="md" withBorder radius="md" mb="md" bg="gray.0">
-        <Group justify="space-between" wrap="wrap">
-          <Group wrap="wrap">
-            {onSearchChange && (
-              <TextInput
-                placeholder={searchPlaceholder}
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                leftSection={<IconSearch size={16} />}
-                style={{ minWidth: 300 }}
-                size="sm"
-                radius="md"
-              />
-            )}
-            {filterOptions.length > 0 && onFilterAdd && (
-              <Button
-                leftSection={<IconFilter size={16} />}
-                variant="light"
-                size="sm"
-                radius="md"
-                onClick={() => setFilterModalOpened(true)}>
-                Add Filter
-              </Button>
-            )}
-            {onRefresh && (
-              <Tooltip label="Refresh data">
-                <ActionIcon
+    <Box
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--mantine-color-gray-0)',
+      }}
+      className={className}>
+      {/* Fixed Header Section */}
+      <Box
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backgroundColor: 'white',
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          padding: '1rem',
+        }}>
+        {(title || description || headerActions) && (
+          <Box mb="md">
+            <Group justify="space-between" align="flex-start">
+              <Box>
+                {title && (
+                  <Text size="xl" fw={600} mb={description ? 4 : 0}>
+                    {title}
+                  </Text>
+                )}
+                {description && (
+                  <Text size="sm" c="dimmed">
+                    {description}
+                  </Text>
+                )}
+              </Box>
+              {headerActions && <Box>{headerActions}</Box>}
+            </Group>
+          </Box>
+        )}
+
+        {/* Search and Filter Bar */}
+        <Paper p="md" withBorder radius="md" bg="gray.0">
+          <Group justify="space-between" wrap="wrap">
+            <Group wrap="wrap">
+              {onSearchChange && (
+                <TextInput
+                  placeholder={searchPlaceholder}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  leftSection={<IconSearch size={16} />}
+                  style={{ minWidth: 300 }}
+                  size="sm"
+                  radius="md"
+                />
+              )}
+              {filterOptions.length > 0 && onFilterAdd && (
+                <Button
+                  leftSection={<IconFilter size={16} />}
                   variant="light"
                   size="sm"
                   radius="md"
-                  onClick={onRefresh}
-                  loading={loading}>
-                  <IconRefresh size={16} />
-                </ActionIcon>
-              </Tooltip>
+                  onClick={() => setFilterModalOpened(true)}>
+                  Add Filter
+                </Button>
+              )}
+              {onRefresh && (
+                <Tooltip label="Refresh data">
+                  <ActionIcon
+                    variant="light"
+                    size="sm"
+                    radius="md"
+                    onClick={onRefresh}
+                    loading={loading}>
+                    <IconRefresh size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </Group>
+
+            {appliedFilters.length > 0 && (
+              <Group gap="xs">
+                <Text size="sm" c="dimmed">
+                  {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
+                </Text>
+                {onFilterClear && (
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    radius="md"
+                    onClick={onFilterClear}
+                    color="red">
+                    Clear All
+                  </Button>
+                )}
+              </Group>
             )}
           </Group>
 
-          {appliedFilters.length > 0 && (
-            <Group gap="xs">
-              <Text size="sm" c="dimmed">
-                {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
-              </Text>
-              {onFilterClear && (
-                <Button variant="subtle" size="xs" radius="md" onClick={onFilterClear} color="red">
-                  Clear All
-                </Button>
-              )}
-            </Group>
-          )}
-        </Group>
+          {/* Applied Filters */}
+          <Transition mounted={appliedFilters.length > 0} transition="slide-down" duration={200}>
+            {(styles) => (
+              <Group mt="md" gap="xs" style={styles}>
+                {appliedFilters.map((filter, index) => (
+                  <Badge
+                    key={index}
+                    variant="light"
+                    color="blue"
+                    rightSection={
+                      onFilterRemove ? (
+                        <ActionIcon
+                          size="xs"
+                          variant="transparent"
+                          color="blue"
+                          onClick={() => onFilterRemove(index)}>
+                          <IconX size={10} />
+                        </ActionIcon>
+                      ) : null
+                    }
+                    radius="md">
+                    {filter.column}: {filter.value} ({filter.condition})
+                  </Badge>
+                ))}
+              </Group>
+            )}
+          </Transition>
+        </Paper>
+      </Box>
 
-        {/* Applied Filters */}
-        <Transition mounted={appliedFilters.length > 0} transition="slide-down" duration={200}>
-          {(styles) => (
-            <Group mt="md" gap="xs" style={styles}>
-              {appliedFilters.map((filter, index) => (
-                <Badge
-                  key={index}
-                  variant="light"
-                  color="blue"
-                  rightSection={
-                    onFilterRemove ? (
-                      <ActionIcon
-                        size="xs"
-                        variant="transparent"
-                        color="blue"
-                        onClick={() => onFilterRemove(index)}>
-                        <IconX size={10} />
-                      </ActionIcon>
-                    ) : null
-                  }
-                  radius="md">
-                  {filter.column}: {filter.value} ({filter.condition})
-                </Badge>
-              ))}
-            </Group>
-          )}
-        </Transition>
-      </Paper>
-
-      {/* Table Container */}
-      <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+      {/* Scrollable Table Container */}
+      <Box
+        style={{
+          flex: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0, // Important for flex child to shrink
+        }}>
         <Box
           ref={scrollContainerRef}
           style={{
             overflowX: 'auto',
-            overflowY: 'hidden',
+            overflowY: 'auto',
+            flex: 1,
             position: 'relative',
             scrollbarWidth: 'thin',
             scrollbarColor: 'var(--mantine-color-gray-4) var(--mantine-color-gray-1)',
+            minHeight: 0, // Important for flex child to shrink
           }}
           className={responsive ? 'responsive-table-container' : ''}>
           {/* Scroll Indicator for Mobile */}
@@ -369,10 +432,10 @@ export function DefaultTable<T = Record<string, unknown>>({
                       minWidth: column.width,
                       cursor: column.sortable ? 'pointer' : 'default',
                       textAlign: column.align || 'left',
-                      position: stickyHeader ? 'sticky' : 'relative',
-                      top: stickyHeader ? 0 : 'auto',
-                      backgroundColor: stickyHeader ? 'var(--mantine-color-white)' : 'transparent',
-                      zIndex: stickyHeader ? 10 : 'auto',
+                      position: 'sticky',
+                      top: 0,
+                      backgroundColor: 'var(--mantine-color-white)',
+                      zIndex: 10,
                       borderBottom: '1px solid var(--mantine-color-gray-3)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -438,7 +501,10 @@ export function DefaultTable<T = Record<string, unknown>>({
                 </Table.Tr>
               ) : (
                 data.map((record, index) => (
-                  <Table.Tr key={index}>
+                  <Table.Tr
+                    key={index}
+                    onContextMenu={(e) => handleRowContextMenu(e, record)}
+                    style={{ cursor: rowActions.length > 0 ? 'context-menu' : 'default' }}>
                     {columns.map((column) => (
                       <Table.Td
                         key={column.key}
@@ -474,55 +540,69 @@ export function DefaultTable<T = Record<string, unknown>>({
             </Table.Tbody>
           </Table>
         </Box>
-      </Paper>
+      </Box>
 
-      {/* Enhanced Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <Paper p="md" withBorder radius="md" mt="md">
-          <Group justify="space-between" wrap="wrap">
-            <Group gap="md">
-              {showTotal && (
-                <Text size="sm" c="dimmed">
-                  {getPaginationInfo()}
-                </Text>
-              )}
-              {onPageSizeChange && (
-                <Group gap="xs">
+      {/* Fixed Bottom Pagination */}
+      {pagination && (
+        <Box
+          style={{
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+            backgroundColor: 'white',
+            borderTop: '1px solid var(--mantine-color-gray-3)',
+            padding: '1rem',
+          }}>
+          <Paper withBorder radius="md">
+            <Group justify="space-between" wrap="wrap" p="md">
+              <Group gap="md">
+                {showTotal && (
                   <Text size="sm" c="dimmed">
-                    Show:
+                    {getPaginationInfo()}
                   </Text>
-                  <Select
-                    size="xs"
-                    value={pagination.per_page.toString()}
-                    onChange={(value) => onPageSizeChange(Number(value))}
-                    data={pageSizeOptions.map((size) => ({
-                      value: size.toString(),
-                      label: `${size} per page`,
-                    }))}
-                    style={{ width: 120 }}
-                  />
-                </Group>
-              )}
-            </Group>
+                )}
+                {onPageSizeChange && pageSizeOptions.length > 0 && (
+                  <Group gap="xs">
+                    <Text size="sm" c="dimmed">
+                      Show:
+                    </Text>
+                    <Select
+                      size="xs"
+                      value={pagination.per_page.toString()}
+                      onChange={(value) => {
+                        if (value) {
+                          onPageSizeChange(Number(value));
+                        }
+                      }}
+                      data={pageSizeOptions.map((size) => ({
+                        value: size.toString(),
+                        label: `${size} per page`,
+                      }))}
+                      style={{ width: 120 }}
+                    />
+                  </Group>
+                )}
+              </Group>
 
-            <Group gap="xs">
-              <Pagination
-                value={pagination.current_page}
-                onChange={onPageChange}
-                total={pagination.total_pages}
-                size="sm"
-                radius="md"
-                withEdges
-                siblings={1}
-                boundaries={1}
-                nextIcon={IconChevronRight}
-                previousIcon={IconChevronLeft}
-                firstIcon={IconChevronsLeft}
-                lastIcon={IconChevronsRight}
-              />
+              <Group gap="xs">
+                <Pagination
+                  value={pagination.current_page}
+                  onChange={onPageChange}
+                  total={pagination.total_pages}
+                  size="sm"
+                  radius="md"
+                  withEdges
+                  siblings={1}
+                  boundaries={1}
+                  nextIcon={IconChevronRight}
+                  previousIcon={IconChevronLeft}
+                  firstIcon={IconChevronsLeft}
+                  lastIcon={IconChevronsRight}
+                />
+              </Group>
             </Group>
-          </Group>
-        </Paper>
+          </Paper>
+        </Box>
       )}
 
       {/* Enhanced Filter Modal */}
@@ -588,6 +668,57 @@ export function DefaultTable<T = Record<string, unknown>>({
           </Group>
         </Stack>
       </Modal>
-    </Card>
+
+      {/* Context Menu */}
+      {rowActions.length > 0 && (
+        <Menu
+          opened={contextMenuOpened}
+          onClose={() => setContextMenuOpened(false)}
+          position="bottom-start"
+          shadow="md"
+          width={200}
+          withinPortal
+          zIndex={1000}>
+          <Menu.Target>
+            <div
+              style={{
+                position: 'fixed',
+                left: contextMenuPosition.x,
+                top: contextMenuPosition.y,
+                width: 1,
+                height: 1,
+                pointerEvents: 'none',
+                opacity: 0,
+              }}
+            />
+          </Menu.Target>
+          <Menu.Dropdown>
+            {selectedRecord &&
+              rowActions.map((action, index) => {
+                const isHidden = action.hidden?.(selectedRecord) ?? false;
+                const isDisabled = action.disabled?.(selectedRecord) ?? false;
+
+                if (isHidden) {
+                  return null;
+                }
+
+                return (
+                  <Menu.Item
+                    key={index}
+                    leftSection={action.icon}
+                    color={action.color}
+                    disabled={isDisabled}
+                    onClick={() => {
+                      action.onClick(selectedRecord);
+                      setContextMenuOpened(false);
+                    }}>
+                    {action.label}
+                  </Menu.Item>
+                );
+              })}
+          </Menu.Dropdown>
+        </Menu>
+      )}
+    </Box>
   );
 }

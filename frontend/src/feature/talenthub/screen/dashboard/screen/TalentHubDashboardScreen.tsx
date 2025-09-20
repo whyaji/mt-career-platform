@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Container,
   Grid,
@@ -10,27 +9,19 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core';
-import {
-  IconChartBar,
-  IconDatabase,
-  IconFileText,
-  IconForms,
-  IconReportAnalytics,
-  IconSettings,
-  IconUsers,
-} from '@tabler/icons-react';
+import { IconDatabase, IconFileText, IconForms } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
 
 const TalentHubDashboardScreen = () => {
   const dashboardCards = [
-    {
-      title: 'Users',
-      description: 'Manage system users',
-      icon: IconUsers,
-      color: 'blue',
-      count: '1,234',
-      trend: '+12%',
-    },
+    // {
+    //   title: 'Users',
+    //   description: 'Manage system users',
+    //   icon: IconUsers,
+    //   color: 'blue',
+    //   count: '1,234',
+    //   trend: '+12%',
+    // },
     {
       title: 'Batches',
       description: 'Manage application batches',
@@ -47,30 +38,30 @@ const TalentHubDashboardScreen = () => {
       count: '2,567',
       trend: '+15%',
     },
-    {
-      title: 'Analytics',
-      description: 'View system analytics',
-      icon: IconChartBar,
-      color: 'purple',
-      count: '98.5%',
-      trend: '+2.1%',
-    },
-    {
-      title: 'Settings',
-      description: 'System configuration',
-      icon: IconSettings,
-      color: 'gray',
-      count: 'Active',
-      trend: 'Updated',
-    },
-    {
-      title: 'Reports',
-      description: 'Generate reports',
-      icon: IconReportAnalytics,
-      color: 'teal',
-      count: '24',
-      trend: 'This week',
-    },
+    // {
+    //   title: 'Analytics',
+    //   description: 'View system analytics',
+    //   icon: IconChartBar,
+    //   color: 'purple',
+    //   count: '98.5%',
+    //   trend: '+2.1%',
+    // },
+    // {
+    //   title: 'Settings',
+    //   description: 'System configuration',
+    //   icon: IconSettings,
+    //   color: 'gray',
+    //   count: 'Active',
+    //   trend: 'Updated',
+    // },
+    // {
+    //   title: 'Reports',
+    //   description: 'Generate reports',
+    //   icon: IconReportAnalytics,
+    //   color: 'teal',
+    //   count: '24',
+    //   trend: 'This week',
+    // },
   ];
 
   return (
@@ -140,9 +131,9 @@ const TalentHubDashboardScreen = () => {
                     }}>
                     <card.icon size="1.5rem" />
                   </ThemeIcon>
-                  <Badge color={card.color} variant="light" size="sm">
+                  {/* <Badge color={card.color} variant="light" size="sm">
                     {card.trend}
-                  </Badge>
+                  </Badge> */}
                 </Group>
 
                 <Stack gap="xs">
@@ -163,7 +154,7 @@ const TalentHubDashboardScreen = () => {
       </Grid>
 
       {/* Quick Actions */}
-      <Paper withBorder shadow="sm" p="xl" radius="lg" mt="xl" style={{ background: 'white' }}>
+      {/* <Paper withBorder shadow="sm" p="xl" radius="lg" mt="xl" style={{ background: 'white' }}>
         <Title order={3} mb="lg" c="dark">
           Quick Actions
         </Title>
@@ -193,7 +184,7 @@ const TalentHubDashboardScreen = () => {
             Generate Report
           </Button>
         </Group>
-      </Paper>
+      </Paper> */}
     </Container>
   );
 };

@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button, Container, Group, Text, Title, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, Tooltip } from '@mantine/core';
 import { IconEdit, IconEye, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 
@@ -29,6 +29,7 @@ export function BatchesListScreen() {
     handleFilterAdd,
     handleFilterRemove,
     handleFilterClear,
+    handlePageSizeChange,
   } = usePaginationConfig({ search, navigate });
 
   // Modal states
@@ -260,19 +261,7 @@ export function BatchesListScreen() {
   ];
 
   return (
-    <Container size="2xl" py="md">
-      <Group justify="space-between" mb="md">
-        <div>
-          <Title order={2}>Batches Management</Title>
-          <Text c="dimmed" size="sm">
-            Manage and view all batches in the system
-          </Text>
-        </div>
-        <Button leftSection={<IconPlus size={16} />} onClick={handleCreate}>
-          Add New Batch
-        </Button>
-      </Group>
-
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <DefaultTable
         columns={columns}
         data={data}
@@ -293,13 +282,36 @@ export function BatchesListScreen() {
         onRefresh={() => refetch()}
         searchPlaceholder="Search batches by number, location, or year..."
         emptyMessage="No batches found. Try adjusting your search or filters."
-        title="Batches List"
-        description="View and manage all batches in the system"
+        title="Batches Management"
+        description="Manage and view all batches in the system"
         showTotal
-        pageSizeOptions={[10, 15, 25, 50]}
+        pageSizeOptions={[5, 10, 15, 25, 50]}
+        onPageSizeChange={handlePageSizeChange}
         minTableWidth="1000px"
-        stickyHeader
         responsive
+        headerActions={
+          <Button leftSection={<IconPlus size={16} />} onClick={handleCreate}>
+            Add New Batch
+          </Button>
+        }
+        rowActions={[
+          {
+            label: 'View Details',
+            icon: <IconEye size={16} />,
+            onClick: (batch: BatchType) => handleViewDetails(batch),
+          },
+          {
+            label: 'Edit',
+            icon: <IconEdit size={16} />,
+            onClick: (batch: BatchType) => handleEdit(batch),
+          },
+          {
+            label: 'Delete',
+            icon: <IconTrash size={16} />,
+            color: 'red',
+            onClick: (batch: BatchType) => handleDelete(batch),
+          },
+        ]}
       />
 
       {/* Modals */}
@@ -330,6 +342,6 @@ export function BatchesListScreen() {
         onConfirm={handleDeleteConfirm}
         loading={deleteBatchMutation.isPending}
       />
-    </Container>
+    </div>
   );
 }
