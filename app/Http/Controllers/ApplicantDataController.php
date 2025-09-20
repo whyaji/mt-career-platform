@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\ApplicantData;
+use App\Traits\PaginationTrait;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
+class ApplicantDataController extends Controller
+{
+    use PaginationTrait;
+
+    public function __construct()
+    {
+        $this->middleware('jwt.auth');
+    }
+
+    public function getApplications(Request $request)
+    {
+        try {
+            // Get pagination parameters
+            $paginationParams = $this->getPaginationParams($request);
+
+            // Define searchable fields
+            $searchableFields = [
+                'nama_lengkap',
+                'email',
+                'nomor_whatsapp',
+                'nik',
+                'instansi_pendidikan',
+                'program_terpilih',
+                'jurusan_pendidikan'
+            ];
+
+            // Build query with batch relationship
+            $query = ApplicantData::with('batch')
+                ->select([
+                    'id',
+                    'nama_lengkap',
+                    'email',
+                    'nomor_whatsapp',
+                    'nik',
+                    'instansi_pendidikan',
+                    'program_terpilih',
+                    'jurusan_pendidikan',
+                    'jenjang_pendidikan',
+                    'status_ijazah',
+                    'batch_id',
+                    'created_at',
+                    'updated_at'
+                ]);
+
+            // Apply pagination with search
+            $result = $this->paginateQuery($query, $paginationParams, $searchableFields);
+
+            return $this->paginatedResponse($result, 'Applications retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error("Error getting all applications: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    public function getApplicationById($id)
+    {
+        try {
+            $application = ApplicantData::with('batch')->find($id);
+
+            if (!$application) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'APPLICATION_NOT_FOUND'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $application
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error getting application by ID: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    public function updateApplication(Request $request, $id)
+    {
+        try {
+            $application = ApplicantData::find($id);
+
+            if (!$application) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'APPLICATION_NOT_FOUND'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'nama_lengkap' => 'sometimes|required|string|max:255',
+                'jenis_kelamin' => 'sometimes|required|string|in:L,P',
+                'tempat_lahir' => 'sometimes|required|string|max:255',
+                'tanggal_lahir' => 'sometimes|required|date',
+                'usia' => 'sometimes|required|integer|min:1|max:100',
+                'daerah_lahir' => 'sometimes|required|string|max:255',
+                'provinsi_lahir' => 'sometimes|required|string|max:255',
+                'tinggi_badan' => 'sometimes|required|integer|min:100|max:250',
+                'berat_badan' => 'sometimes|required|integer|min:30|max:200',
+                'nik' => 'sometimes|required|string|max:16',
+                'daerah_domisili' => 'sometimes|required|string|max:255',
+                'provinsi_domisili' => 'sometimes|required|string|max:255',
+                'kota_domisili' => 'sometimes|required|string|max:255',
+                'alamat_domisili' => 'sometimes|required|string|max:500',
+                'program_terpilih' => 'sometimes|required|string|max:255',
+                'jurusan_pendidikan' => 'sometimes|required|string|max:255',
+                'jenjang_pendidikan' => 'sometimes|required|string|max:255',
+                'instansi_pendidikan' => 'sometimes|required|string|max:255',
+                'nim' => 'sometimes|nullable|string|max:50',
+                'status_ijazah' => 'sometimes|required|string|max:255',
+                'nomor_whatsapp' => 'sometimes|required|string|max:20',
+                'email' => 'sometimes|required|email|max:255',
+                'status_perkawinan' => 'sometimes|required|string|max:50',
+                'melanjutkan_pendidikan' => 'sometimes|required|boolean',
+                'ukuran_baju' => 'sometimes|required|string|max:10',
+                'riwayat_penyakit' => 'sometimes|nullable|string|max:1000',
+                'batch_id' => 'sometimes|required|exists:batch,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => $validator->errors()->first()
+                ], 400);
+            }
+
+            $application->update($request->all());
+
+            return response()->json([
+                'success' => true,
+                'data' => $application->load('batch'),
+                'message' => 'Application updated successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error updating application: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    public function deleteApplication($id)
+    {
+        try {
+            $application = ApplicantData::find($id);
+
+            if (!$application) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'APPLICATION_NOT_FOUND'
+                ], 404);
+            }
+
+            $application->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Application deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error deleting application: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+}

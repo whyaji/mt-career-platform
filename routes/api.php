@@ -60,6 +60,14 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->delete('/{id}', 'BatchController@deleteBatch');
     });
 
+    // Application routes with JWT auth
+    $router->group(['prefix' => 'applications', 'middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('/', 'ApplicantDataController@getApplications');
+        $router->get('/{id}', 'ApplicantDataController@getApplicationById');
+        $router->put('/{id}', 'ApplicantDataController@updateApplication');
+        $router->delete('/{id}', 'ApplicantDataController@deleteApplication');
+    });
+
     // Form routes with stricter rate limiting
     $router->group(['prefix' => 'form', 'middleware' => 'rate_limit:5,1'], function () use ($router) {
         $router->post('/', 'FormController@submit');
