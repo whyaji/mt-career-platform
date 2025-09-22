@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Services\ParentAppService;
 use App\Models\User;
+use App\Models\UserRefreshToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Services\TurnstileService;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -105,9 +107,6 @@ class AuthController extends Controller
                 'parent_refresh_token' => $parentTokens['refresh_token']['token'],
                 'parent_access_expires_at' => $parentTokens['access_token']['expires_at'],
                 'parent_refresh_expires_at' => $parentTokens['refresh_token']['expires_at'],
-                'parent_service' => $parentData['service'] ?? 'unknown',
-                'parent_admin_id' => $parentAdmin['id'],
-                'parent_role' => $parentAdmin['role'],
             ];
 
             Log::info('Generating JWT with custom claims', $customClaims);
@@ -120,7 +119,12 @@ class AuthController extends Controller
             $decoded = JWTAuth::setToken($jwtToken)->getPayload()->toArray();
             Log::info('JWT payload after generation', $decoded);
 
-            return $this->respondWithToken($jwtToken, $user);
+            $refreshTokenParentData = [
+                'parent_access_token' => $parentTokens['access_token']['token'],
+                'parent_refresh_token' => $parentTokens['refresh_token']['token'],
+            ];
+
+            return $this->respondWithToken($jwtToken, $user, $refreshTokenParentData, $request->userAgent());
         } catch (\Exception $e) {
             Log::error('Parent login failed', [
                 'email' => $credentials['email'],
@@ -142,8 +146,39 @@ class AuthController extends Controller
     public function refresh(Request $request)
     {
         try {
-            $token = JWTAuth::getToken();
-            $payload = JWTAuth::getPayload($token)->toArray();
+            $refreshToken = $request->header('Authorization');
+            $refreshToken = Str::replace('Bearer ', '', $refreshToken);
+            $refreshToken = explode('|', $refreshToken);
+            $refreshTokenString = $refreshToken[1];
+            $refreshTokenId = $refreshToken[0];
+            $refreshToken = UserRefreshToken::where('id', $refreshTokenId)->first();
+
+            if (!$refreshToken) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'NO_REFRESH_TOKEN',
+                    'message' => 'No refresh token found'
+                ], 400);
+            }
+
+            if ($refreshToken->isExpired()) {
+                $refreshToken->delete();
+                return response()->json([
+                    'success' => false,
+                    'error' => 'EXPIRED_REFRESH_TOKEN',
+                    'message' => 'Refresh token expired'
+                ], 400);
+            }
+
+            if (!Hash::check($refreshTokenString, $refreshToken->refresh_token)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'INVALID_REFRESH_TOKEN',
+                    'message' => 'Invalid refresh token'
+                ], 400);
+            }
+
+            $payload = $refreshToken->parent_tokens;
 
             // Check if we have parent tokens in the JWT payload
             if (!isset($payload['parent_refresh_token'])) {
@@ -171,21 +206,25 @@ class AuthController extends Controller
             $parentTokens = $parentResponse['data']['tokens'];
 
             // Generate new JWT with updated parent tokens
-            $user = auth('api')->user();
+            $user = $refreshToken->user;
             $newCustomClaims = [
                 'parent_access_token' => $parentTokens['access_token']['token'],
                 'parent_refresh_token' => $parentTokens['refresh_token']['token'],
                 'parent_access_expires_at' => $parentTokens['access_token']['expires_at'],
                 'parent_refresh_expires_at' => $parentTokens['refresh_token']['expires_at'],
-                'parent_service' => $payload['parent_service'] ?? 'unknown',
-                'parent_admin_id' => $payload['parent_admin_id'],
-                'parent_role' => $payload['parent_role'],
             ];
 
             JWTAuth::customClaims($newCustomClaims);
             $newJwtToken = JWTAuth::fromUser($user);
 
-            return $this->respondWithToken($newJwtToken, $user);
+            $refreshTokenParentData = [
+                'parent_access_token' => $parentTokens['access_token']['token'],
+                'parent_refresh_token' => $parentTokens['refresh_token']['token'],
+            ];
+
+            $refreshToken->delete();
+
+            return $this->respondWithToken($newJwtToken, $user, $refreshTokenParentData, $request->userAgent());
         } catch (JWTException $e) {
             return response()->json([
                 'success' => false,
@@ -306,11 +345,22 @@ class AuthController extends Controller
     /**
      * Get token array structure for parent authentication
      */
-    protected function respondWithToken(string $token, User $user)
+    protected function respondWithToken(string $token, User $user, array $refreshTokenParentData, string $userAgent)
     {
         $now = Carbon::now();
         $accessTokenExpiry = $now->copy()->addMinutes(config('jwt.ttl'));
-        $refreshTokenExpiry = $now->copy()->addMinutes(config('jwt.refresh_ttl'));
+        $refreshTokenExpiry = $now->copy()->addMinutes(env('USER_REFRESH_TTL'));
+
+        $refreshTokenString = Str::random(255);
+        $refreshTokenHash = Hash::make($refreshTokenString);
+
+        $refreshToken = UserRefreshToken::create([
+            'user_id' => $user->id,
+            'refresh_token' => $refreshTokenHash,
+            'expires_at' => $refreshTokenExpiry,
+            'parent_tokens' => $refreshTokenParentData,
+            'user_agent' => $userAgent
+        ]);
 
         return response()->json([
             'success' => true,
@@ -324,7 +374,7 @@ class AuthController extends Controller
                         'token_type' => 'Bearer'
                     ],
                     'refresh_token' => [
-                        'token' => JWTAuth::fromUser($user),
+                        'token' => $refreshToken->id . '|' . $refreshTokenString,
                         'expires_at' => $refreshTokenExpiry->toISOString(),
                         'token_type' => 'Bearer'
                     ]

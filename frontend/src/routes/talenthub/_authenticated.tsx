@@ -43,11 +43,10 @@ function AuthenticatedLayout() {
       // If we have user data from context (from beforeLoad), use it
       if (userDataFromContext) {
         setUser(userDataFromContext.local_user);
-      }
-      // If we don't have user data from context and no user in store, redirect to login
-      else if (!user) {
+      } else if (!user) {
         clearUser();
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         navigate({
           to: '/talenthub/login',
@@ -57,6 +56,7 @@ function AuthenticatedLayout() {
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userDataFromContext]);
 
   return (

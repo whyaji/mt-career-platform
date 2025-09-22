@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   AppShell,
   Avatar,
   Badge,
@@ -19,7 +18,6 @@ import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
   IconChevronRight,
-  IconClipboardList,
   IconDatabase,
   IconFileText,
   IconHome,
@@ -65,11 +63,11 @@ const navItems: NavItemProps[] = [
         label: 'Educational Institute',
         href: '/talenthub/educational-institution',
       },
-      {
-        icon: IconClipboardList,
-        label: 'Form Field Score',
-        href: '/talenthub/form-field-score',
-      },
+      // {
+      //   icon: IconClipboardList,
+      //   label: 'Form Field Score',
+      //   href: '/talenthub/form-field-score',
+      // },
       {
         icon: IconDatabase,
         label: 'Batches',
@@ -110,7 +108,6 @@ function SubNavItem({ item, onClick }: NavItemComponentProps) {
         textDecoration: 'none',
       }}>
       <UnstyledButton
-        component="a"
         style={{
           display: 'block',
           width: '100%',
@@ -192,15 +189,18 @@ function NavItem({ item, onClick }: NavItemComponentProps) {
                   {badge}
                 </Badge>
               )}
-              <ActionIcon
-                variant="subtle"
-                size="sm"
+              <Box
                 style={{
                   transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
                 }}>
                 <IconChevronRight size="0.875rem" />
-              </ActionIcon>
+              </Box>
             </Group>
           </Group>
         </UnstyledButton>
@@ -231,7 +231,6 @@ function NavItem({ item, onClick }: NavItemComponentProps) {
         textDecoration: 'none',
       }}>
       <UnstyledButton
-        component="a"
         style={{
           display: 'block',
           width: '100%',
@@ -288,6 +287,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     } finally {
       // Clear local storage and user store
       localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       clearUser();
       navigate({

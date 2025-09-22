@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 
 import type { UserType } from '@/types/user.type';
 
-import { baseApiUrl, type DefaultResponseType } from './api';
+import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
 
 export interface LoginRequest {
   email: string;
@@ -44,15 +44,11 @@ const getUserProfileFunction = async (): Promise<
     throw new Error('No token found');
   }
 
-  const response = await fetch(`${baseApiUrl}/auth/user-profile`, {
+  const response = await authenticatedFetch(`${baseApiUrl}/auth/user-profile`, {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
   });
 
-  if (!response.ok) {
+  if (!response.ok && [400, 401, 404].includes(response.status)) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to get user profile');
   }
@@ -85,12 +81,8 @@ export const authApi = {
       return;
     }
 
-    const response = await fetch(`${baseApiUrl}/auth/logout`, {
+    const response = await authenticatedFetch(`${baseApiUrl}/auth/logout`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
       credentials: 'include',
     });
 
@@ -101,20 +93,20 @@ export const authApi = {
   },
 
   refresh: async (): Promise<AuthResponse> => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
       throw new Error('No token found');
     }
 
     const response = await fetch(`${baseApiUrl}/auth/refresh`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${refreshToken}`,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.ok) {
+    if (!response.ok && [400, 401, 404].includes(response.status)) {
       const error = await response.json();
       throw new Error(error.error || 'Token refresh failed');
     }
