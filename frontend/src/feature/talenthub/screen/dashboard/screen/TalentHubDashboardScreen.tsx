@@ -1,33 +1,35 @@
 import {
+  Alert,
   Button,
   Container,
   Grid,
   Group,
+  Loader,
   Paper,
   Stack,
   Text,
   ThemeIcon,
   Title,
 } from '@mantine/core';
-import { IconDatabase, IconFileText, IconForms } from '@tabler/icons-react';
+import { IconAlertCircle, IconDatabase, IconFileText, IconForms } from '@tabler/icons-react';
 import { Link } from '@tanstack/react-router';
 
+import { useGetDashboardCountQuery } from '@/hooks/query/dashboard/useGetDashboardCountQuery';
+
 const TalentHubDashboardScreen = () => {
+  const { data: dashboardData, isLoading, error } = useGetDashboardCountQuery();
+
   const dashboardCards = [
-    // {
-    //   title: 'Users',
-    //   description: 'Manage system users',
-    //   icon: IconUsers,
-    //   color: 'blue',
-    //   count: '1,234',
-    //   trend: '+12%',
-    // },
     {
       title: 'Batches',
       description: 'Manage application batches',
       icon: IconDatabase,
       color: 'green',
-      count: '45',
+      count: isLoading
+        ? '...'
+        : dashboardData && 'data' in dashboardData
+          ? dashboardData.data?.total_batches?.toLocaleString() || '0'
+          : '0',
       trend: '+8%',
     },
     {
@@ -35,34 +37,41 @@ const TalentHubDashboardScreen = () => {
       description: 'Review applications',
       icon: IconFileText,
       color: 'orange',
-      count: '2,567',
+      count: isLoading
+        ? '...'
+        : dashboardData && 'data' in dashboardData
+          ? dashboardData.data?.total_applicants?.toLocaleString() || '0'
+          : '0',
       trend: '+15%',
     },
-    // {
-    //   title: 'Analytics',
-    //   description: 'View system analytics',
-    //   icon: IconChartBar,
-    //   color: 'purple',
-    //   count: '98.5%',
-    //   trend: '+2.1%',
-    // },
-    // {
-    //   title: 'Settings',
-    //   description: 'System configuration',
-    //   icon: IconSettings,
-    //   color: 'gray',
-    //   count: 'Active',
-    //   trend: 'Updated',
-    // },
-    // {
-    //   title: 'Reports',
-    //   description: 'Generate reports',
-    //   icon: IconReportAnalytics,
-    //   color: 'teal',
-    //   count: '24',
-    //   trend: 'This week',
-    // },
+    {
+      title: 'Institutions',
+      description: 'Educational institutions',
+      icon: IconDatabase,
+      color: 'blue',
+      count: isLoading
+        ? '...'
+        : dashboardData && 'data' in dashboardData
+          ? dashboardData.data?.total_institutions?.toLocaleString() || '0'
+          : '0',
+      trend: '+5%',
+    },
   ];
+
+  // Handle error state
+  if (error) {
+    return (
+      <Container size="xl">
+        <Alert
+          icon={<IconAlertCircle size="1rem" />}
+          title="Error loading dashboard data"
+          color="red"
+          variant="light">
+          Unable to fetch dashboard statistics. Please try again later.
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container size="xl">
@@ -95,6 +104,14 @@ const TalentHubDashboardScreen = () => {
           </Link>
         </Group>
       </Paper>
+
+      {/* Loading State */}
+      {isLoading && (
+        <Group justify="center" mb="xl">
+          <Loader size="lg" />
+          <Text size="lg">Loading dashboard data...</Text>
+        </Group>
+      )}
 
       {/* Dashboard Cards */}
       <Grid gutter="xl">
@@ -143,9 +160,12 @@ const TalentHubDashboardScreen = () => {
                   <Text c="dimmed" size="sm">
                     {card.description}
                   </Text>
-                  <Text size="xl" fw={700} c={card.color}>
-                    {card.count}
-                  </Text>
+                  <Group align="center" gap="xs">
+                    <Text size="xl" fw={700} c={card.color}>
+                      {card.count}
+                    </Text>
+                    {isLoading && <Loader size="sm" />}
+                  </Group>
                 </Stack>
               </Stack>
             </Paper>

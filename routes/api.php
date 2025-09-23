@@ -36,8 +36,11 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
 
     // Admin routes
     $router->group(['prefix' => 'talenthub', 'middleware' => 'jwt.auth'], function () use ($router) {
-        $router->get('/dashboard', function () {
-            return response()->json(['message' => 'Admin dashboard accessed']);
+        $router->group(['prefix' => 'dashboard'], function () use ($router) {
+            $router->get('/', function () {
+                return response()->json(['message' => 'Admin dashboard accessed']);
+            });
+            $router->get('/counts', 'DashboardController@getCounts');
         });
     });
 
