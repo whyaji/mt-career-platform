@@ -1,5 +1,6 @@
 import { ActionIcon, Badge, Button, Group, Tooltip } from '@mantine/core';
-import { IconEdit, IconEye, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconEye, IconPlus, IconQuestionMark, IconTrash } from '@tabler/icons-react';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
@@ -275,6 +276,13 @@ export function BatchesListScreen() {
               <IconEye size={16} />
             </ActionIcon>
           </Tooltip>
+          <Tooltip label="View Questions">
+            <Link to={`/talenthub/batches/${record.id}/form-question` as never}>
+              <ActionIcon variant="subtle" size="sm">
+                <IconQuestionMark size={16} />
+              </ActionIcon>
+            </Link>
+          </Tooltip>
           <Tooltip label="Edit">
             <ActionIcon variant="subtle" size="sm" onClick={() => handleEdit(record)}>
               <IconEdit size={16} />
@@ -331,6 +339,12 @@ export function BatchesListScreen() {
             label: 'View Details',
             icon: <IconEye size={16} />,
             onClick: (batch: BatchType) => handleViewDetails(batch),
+          },
+          {
+            label: 'View Questions',
+            icon: <IconQuestionMark size={16} />,
+            onClick: (batch: BatchType) =>
+              navigate({ to: `/talenthub/batches/${batch.id}/form-question` as never }),
           },
           {
             label: 'Edit',

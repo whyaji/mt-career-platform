@@ -130,9 +130,10 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->post('/{batchId}/questions', 'BatchQuestionController@assignQuestionToBatch');
             $router->put('/{batchId}/questions/{questionId}', 'BatchQuestionController@updateBatchQuestion');
             $router->delete('/{batchId}/questions/{questionId}', 'BatchQuestionController@removeQuestionFromBatch');
-            $router->post('/{batchId}/questions/reorder', 'BatchQuestionController@reorderBatchQuestions');
-            $router->get('/{batchId}/questions/available', 'BatchQuestionController@getAvailableQuestionsForBatch');
-            $router->post('/{batchId}/questions/bulk-assign', 'BatchQuestionController@bulkAssignQuestions');
+            $router->post('/{batchId}/questions-list/reorder', 'BatchQuestionController@reorderBatchQuestions');
+            $router->get('/{batchId}/questions-list/available', 'BatchQuestionController@getAvailableQuestionsForBatch');
+            $router->post('/{batchId}/questions-list/bulk-assign', 'BatchQuestionController@bulkAssignQuestions');
+            $router->post('/{batchId}/questions-list/bulk-operations', 'BatchQuestionController@bulkBatchQuestionOperations');
             $router->get('/{batchId}/form-configuration', 'BatchQuestionController@getBatchFormConfiguration');
         });
     });

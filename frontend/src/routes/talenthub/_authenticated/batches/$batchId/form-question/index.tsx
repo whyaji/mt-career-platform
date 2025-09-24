@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 
-import { BatchFromQuestionScreen } from '@/feature/talenthub/screen/batches/screen/BatchFromQuestionScreen';
+import { BatchFormQuestionScreen } from '@/feature/talenthub/screen/batches/screen/BatchFormQuestionScreen';
 import { getBatchById } from '@/lib/api/batchApi';
 import type { BatchType } from '@/types/batch.type';
 
@@ -16,5 +16,5 @@ export const Route = createFileRoute('/talenthub/_authenticated/batches/$batchId
       throw new Error();
     }
   },
-  component: BatchFromQuestionScreen,
+  component: BatchFormQuestionScreen,
 });
