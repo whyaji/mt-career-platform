@@ -21,7 +21,7 @@ class ProgramCategoryController extends Controller
     {
         try {
             $categories = ProgramCategory::active()
-                ->select('id', 'code', 'name', 'description')
+                ->select('id', 'code', 'name')
                 ->get();
 
             return response()->json([

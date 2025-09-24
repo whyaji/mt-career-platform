@@ -149,6 +149,17 @@ export function BatchesListScreen() {
         { value: 'not_between', label: 'Not between' },
       ],
     },
+    {
+      column: 'program_category_id',
+      label: 'Program Category',
+      type: 'select',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'null', label: 'Is empty' },
+        { value: 'not_null', label: 'Is not empty' },
+      ],
+    },
   ];
 
   // Table columns configuration
@@ -191,6 +202,27 @@ export function BatchesListScreen() {
       sortable: true,
       width: '80px',
       align: 'center',
+    },
+    {
+      key: 'program_category',
+      title: 'Program Category',
+      dataIndex: 'program_category',
+      render: (programCategory: unknown) => {
+        const category = programCategory as { code: string; name: string } | null;
+        if (!category) {
+          return (
+            <Badge variant="outline" size="sm">
+              No Category
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant="light" size="sm">
+            {category.code} - {category.name}
+          </Badge>
+        );
+      },
+      width: '200px',
     },
     {
       key: 'institutes',
@@ -280,14 +312,14 @@ export function BatchesListScreen() {
         onFilterRemove={handleFilterRemove}
         onFilterClear={handleFilterClear}
         onRefresh={() => refetch()}
-        searchPlaceholder="Search batches by number, location, or year..."
+        searchPlaceholder="Search batches by number, location, year, or program category..."
         emptyMessage="No batches found. Try adjusting your search or filters."
         title="Batches Management"
         description="Manage and view all batches in the system"
         showTotal
         pageSizeOptions={[5, 10, 15, 25, 50]}
         onPageSizeChange={handlePageSizeChange}
-        minTableWidth="1000px"
+        minTableWidth="1200px"
         responsive
         headerActions={
           <Button leftSection={<IconPlus size={16} />} onClick={handleCreate}>

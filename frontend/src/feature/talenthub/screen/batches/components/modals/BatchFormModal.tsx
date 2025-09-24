@@ -14,8 +14,10 @@ import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
 import { useEffect, useMemo } from 'react';
 
 import { useActiveEducationalInstitutionsQuery } from '@/hooks/query/educational-institution/useActiveEducationalInstitutionsQuery';
+import { useActiveProgramCategoriesQuery } from '@/hooks/query/program-category/useActiveProgramCategoriesQuery';
 import type { BatchType } from '@/types/batch.type';
 import type { EducationalInstitutionType } from '@/types/educationalInstitution.type';
+import type { ProgramCategoryType } from '@/types/programCategory.type';
 
 interface BatchFormModalProps {
   opened: boolean;
@@ -37,6 +39,9 @@ export function BatchFormModal({
   const { data: educationalInstitutionsData, isLoading: isLoadingInstitutions } =
     useActiveEducationalInstitutionsQuery();
 
+  const { data: programCategoriesData, isLoading: isLoadingProgramCategories } =
+    useActiveProgramCategoriesQuery();
+
   const institutionOptions = useMemo(() => {
     if (
       !educationalInstitutionsData ||
@@ -51,6 +56,16 @@ export function BatchFormModal({
     }));
   }, [educationalInstitutionsData]);
 
+  const programCategoryOptions = useMemo(() => {
+    if (!programCategoriesData || 'error' in programCategoriesData || !programCategoriesData.data) {
+      return [];
+    }
+    return programCategoriesData.data.map((category: ProgramCategoryType) => ({
+      value: category.id,
+      label: `${category.code} - ${category.name}`,
+    }));
+  }, [programCategoriesData]);
+
   const form = useForm<Omit<BatchType, 'id' | 'status'> & { status: string }>({
     initialValues: {
       number: 0,
@@ -60,6 +75,7 @@ export function BatchFormModal({
       year: new Date().getFullYear(),
       status: '1',
       institutes: [],
+      program_category_id: null,
     },
     validate: {
       number: (value) => (value <= 0 ? 'Batch number must be greater than 0' : null),
@@ -86,6 +102,7 @@ export function BatchFormModal({
         year: batch.year,
         status: batch.status.toString(),
         institutes: batch.institutes || [],
+        program_category_id: batch.program_category_id,
       });
     } else {
       form.reset();
@@ -177,6 +194,16 @@ export function BatchFormModal({
               { value: '0', label: 'Inactive' },
             ]}
             {...form.getInputProps('status')}
+          />
+
+          <Select
+            label="Program Category"
+            placeholder="Select program category"
+            data={programCategoryOptions}
+            searchable
+            clearable
+            disabled={isLoadingProgramCategories}
+            {...form.getInputProps('program_category_id')}
           />
 
           <MultiSelect

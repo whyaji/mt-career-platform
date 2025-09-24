@@ -21,7 +21,8 @@ class BatchController extends Controller
     {
         try {
             $batches = Batch::active()
-                ->select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes')
+                ->select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes', 'program_category_id')
+                ->with('programCategory:id,code,name,description,status')
                 ->get();
 
             return response()->json([
@@ -44,16 +45,16 @@ class BatchController extends Controller
             $paginationParams = $this->getPaginationParams($request);
 
             // Define searchable fields
-            $searchableFields = ['number', 'number_code', 'location', 'location_code', 'year'];
+            $searchableFields = ['number', 'number_code', 'location', 'location_code', 'year', 'program_category_id'];
 
             // Build query
-            $query = Batch::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes', 'status');
+            $query = Batch::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes', 'status', 'program_category_id')
+                ->with('programCategory:id,code,name,description,status');
 
             // Apply pagination with search
             $result = $this->paginateQuery($query, $paginationParams, $searchableFields);
 
             return $this->paginatedResponse($result, 'Batches retrieved successfully');
-
         } catch (\Exception $e) {
             Log::error("Error getting all batches: {$e->getMessage()}");
             return response()->json([
@@ -66,7 +67,7 @@ class BatchController extends Controller
     public function getBatchById($id)
     {
         try {
-            $batch = Batch::find($id);
+            $batch = Batch::with('programCategory:id,code,name,description,status')->find($id);
 
             if (!$batch) {
                 return response()->json([
@@ -99,7 +100,8 @@ class BatchController extends Controller
                 'year' => 'required|integer|min:2000|max:2100',
                 'status' => 'required|integer|in:0,1',
                 'institutes' => 'nullable|array',
-                'institutes.*' => 'string|max:255'
+                'institutes.*' => 'string|max:255',
+                'program_category_id' => 'nullable|uuid|exists:program_category,id'
             ]);
 
             if ($validator->fails()) {
@@ -159,7 +161,8 @@ class BatchController extends Controller
                 'year' => 'sometimes|required|integer|min:2000|max:2100',
                 'status' => 'sometimes|required|integer|in:0,1',
                 'institutes' => 'nullable|array',
-                'institutes.*' => 'string|max:255'
+                'institutes.*' => 'string|max:255',
+                'program_category_id' => 'nullable|uuid|exists:program_category,id'
             ]);
 
             if ($validator->fails()) {
@@ -205,7 +208,7 @@ class BatchController extends Controller
     public function deleteBatch($id)
     {
         try {
-            $batch = Batch::find($id);
+            $batch = Batch::with('programCategory:id,code,name,description,status')->find($id);
 
             if (!$batch) {
                 return response()->json([

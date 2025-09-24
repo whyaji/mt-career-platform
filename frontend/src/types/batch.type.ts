@@ -7,4 +7,12 @@ export type BatchType = {
   year: number;
   institutes: string[] | null;
   status: number;
+  program_category_id: string | null;
+  program_category?: {
+    id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    status: number;
+  } | null;
 };

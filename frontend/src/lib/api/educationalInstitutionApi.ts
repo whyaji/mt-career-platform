@@ -6,7 +6,7 @@ import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api'
 export const getActiveEducationalInstitutions = async (): Promise<
   DefaultResponseType<EducationalInstitutionType[]>
 > => {
-  const response = await fetch(`${baseApiUrl}/educational-institution/active`);
+  const response = await authenticatedFetch(`${baseApiUrl}/educational-institution/active`);
   return response.json();
 };
 

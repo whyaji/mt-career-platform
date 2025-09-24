@@ -20,6 +20,7 @@ class Batch extends Model
         'year',
         'status',
         'institutes',
+        'program_category_id',
     ];
 
     protected $casts = [
@@ -35,6 +36,11 @@ class Batch extends Model
     public function applicantData()
     {
         return $this->hasMany(ApplicantData::class, 'batch_id');
+    }
+
+    public function programCategory()
+    {
+        return $this->belongsTo(ProgramCategory::class, 'program_category_id');
     }
 
     public function scopeActive($query)

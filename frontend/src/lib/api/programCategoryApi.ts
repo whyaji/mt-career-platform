@@ -6,7 +6,7 @@ import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api'
 export const getActiveProgramCategories = async (): Promise<
   DefaultResponseType<ProgramCategoryType[]>
 > => {
-  const response = await fetch(`${baseApiUrl}/program-category/active`);
+  const response = await authenticatedFetch(`${baseApiUrl}/program-category/active`);
   return response.json();
 };
 

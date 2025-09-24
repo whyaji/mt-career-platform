@@ -4,7 +4,7 @@ import type { ProgramType } from '@/types/program.type';
 import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
 
 export const getActivePrograms = async (): Promise<DefaultResponseType<ProgramType[]>> => {
-  const response = await fetch(`${baseApiUrl}/program/active`);
+  const response = await authenticatedFetch(`${baseApiUrl}/program/active`);
   return response.json();
 };
 
