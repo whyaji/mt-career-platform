@@ -32,6 +32,8 @@ export type AuthResponse = DefaultResponseType<{
   };
 }>;
 
+const talentHubAuthUrl = `${baseApiUrl}/talenthub/auth`;
+
 const getUserProfileFunction = async (): Promise<
   DefaultResponseType<{
     local_user: UserType;
@@ -44,7 +46,7 @@ const getUserProfileFunction = async (): Promise<
     throw new Error('No token found');
   }
 
-  const response = await authenticatedFetch(`${baseApiUrl}/auth/user-profile`, {
+  const response = await authenticatedFetch(`${talentHubAuthUrl}/user-profile`, {
     method: 'GET',
   });
 
@@ -58,7 +60,7 @@ const getUserProfileFunction = async (): Promise<
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    const response = await fetch(`${baseApiUrl}/auth/login`, {
+    const response = await fetch(`${talentHubAuthUrl}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +83,7 @@ export const authApi = {
       return;
     }
 
-    const response = await authenticatedFetch(`${baseApiUrl}/auth/logout`, {
+    const response = await authenticatedFetch(`${talentHubAuthUrl}/logout`, {
       method: 'POST',
       credentials: 'include',
     });
@@ -98,7 +100,7 @@ export const authApi = {
       throw new Error('No token found');
     }
 
-    const response = await fetch(`${baseApiUrl}/auth/refresh`, {
+    const response = await fetch(`${talentHubAuthUrl}/refresh`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${refreshToken}`,

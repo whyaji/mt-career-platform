@@ -6,7 +6,9 @@ export interface DashboardCountsType {
   total_institutions: number;
 }
 
+const talentHubDashboardUrl = `${baseApiUrl}/talenthub/dashboard`;
+
 export const getDashboardCounts = async (): Promise<DefaultResponseType<DashboardCountsType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/talenthub/dashboard/counts`);
+  const response = await authenticatedFetch(`${talentHubDashboardUrl}/counts`);
   return response.json();
 };

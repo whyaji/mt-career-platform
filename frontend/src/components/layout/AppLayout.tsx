@@ -24,6 +24,7 @@ import {
   IconFileText,
   IconHome,
   IconLogout,
+  IconQuestionMark,
   IconSchool,
   IconSettings,
   IconTable,
@@ -65,11 +66,11 @@ const navItems: NavItemProps[] = [
         label: 'Educational Institute',
         href: '/talenthub/educational-institution',
       },
-      // {
-      //   icon: IconClipboardList,
-      //   label: 'Form Field Score',
-      //   href: '/talenthub/form-field-score',
-      // },
+      {
+        icon: IconQuestionMark,
+        label: 'Questions',
+        href: '/talenthub/questions',
+      },
       {
         icon: IconDatabase,
         label: 'Batches',

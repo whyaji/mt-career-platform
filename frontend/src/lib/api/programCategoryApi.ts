@@ -3,10 +3,12 @@ import type { ProgramCategoryType } from '@/types/programCategory.type';
 
 import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
 
+const talentHubProgramCategoryUrl = `${baseApiUrl}/talenthub/program-category`;
+
 export const getActiveProgramCategories = async (): Promise<
   DefaultResponseType<ProgramCategoryType[]>
 > => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program-category/active`);
+  const response = await authenticatedFetch(`${talentHubProgramCategoryUrl}/active`);
   return response.json();
 };
 
@@ -35,7 +37,7 @@ export const getProgramCategories = async (
   }
 
   const response = await authenticatedFetch(
-    `${baseApiUrl}/program-category?${searchParams.toString()}`
+    `${talentHubProgramCategoryUrl}?${searchParams.toString()}`
   );
   return response.json();
 };
@@ -43,14 +45,14 @@ export const getProgramCategories = async (
 export const getProgramCategoryById = async (
   id: string
 ): Promise<DefaultResponseType<ProgramCategoryType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program-category/${id}`);
+  const response = await authenticatedFetch(`${talentHubProgramCategoryUrl}/${id}`);
   return response.json();
 };
 
 export const createProgramCategory = async (
   data: Omit<ProgramCategoryType, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>
 ): Promise<DefaultResponseType<ProgramCategoryType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program-category`, {
+  const response = await authenticatedFetch(`${talentHubProgramCategoryUrl}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -64,7 +66,7 @@ export const updateProgramCategory = async (
   id: string,
   data: Partial<Omit<ProgramCategoryType, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>>
 ): Promise<DefaultResponseType<ProgramCategoryType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program-category/${id}`, {
+  const response = await authenticatedFetch(`${talentHubProgramCategoryUrl}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -75,7 +77,7 @@ export const updateProgramCategory = async (
 };
 
 export const deleteProgramCategory = async (id: string): Promise<DefaultResponseType<void>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program-category/${id}`, {
+  const response = await authenticatedFetch(`${talentHubProgramCategoryUrl}/${id}`, {
     method: 'DELETE',
   });
   return response.json();

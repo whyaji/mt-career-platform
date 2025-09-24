@@ -3,8 +3,10 @@ import type { ProgramType } from '@/types/program.type';
 
 import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
 
+const talentHubProgramUrl = `${baseApiUrl}/talenthub/program`;
+
 export const getActivePrograms = async (): Promise<DefaultResponseType<ProgramType[]>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program/active`);
+  const response = await authenticatedFetch(`${talentHubProgramUrl}/active`);
   return response.json();
 };
 
@@ -32,19 +34,19 @@ export const getPrograms = async (
     searchParams.append('filter', params.filter);
   }
 
-  const response = await authenticatedFetch(`${baseApiUrl}/program?${searchParams.toString()}`);
+  const response = await authenticatedFetch(`${talentHubProgramUrl}?${searchParams.toString()}`);
   return response.json();
 };
 
 export const getProgramById = async (id: string): Promise<DefaultResponseType<ProgramType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program/${id}`);
+  const response = await authenticatedFetch(`${talentHubProgramUrl}/${id}`);
   return response.json();
 };
 
 export const createProgram = async (
   data: Omit<ProgramType, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'program_category'>
 ): Promise<DefaultResponseType<ProgramType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program`, {
+  const response = await authenticatedFetch(`${talentHubProgramUrl}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -58,7 +60,7 @@ export const updateProgram = async (
   id: string,
   data: Partial<Omit<ProgramType, 'id'>>
 ): Promise<DefaultResponseType<ProgramType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program/${id}`, {
+  const response = await authenticatedFetch(`${talentHubProgramUrl}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -69,7 +71,7 @@ export const updateProgram = async (
 };
 
 export const deleteProgram = async (id: string): Promise<DefaultResponseType<void>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/program/${id}`, {
+  const response = await authenticatedFetch(`${talentHubProgramUrl}/${id}`, {
     method: 'DELETE',
   });
   return response.json();

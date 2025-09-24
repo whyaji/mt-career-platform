@@ -43,6 +43,19 @@ class Batch extends Model
         return $this->belongsTo(ProgramCategory::class, 'program_category_id');
     }
 
+    public function questions()
+    {
+        return $this->belongsToMany(Question::class, 'batch_questions', 'batch_id', 'question_id')
+            ->withPivot(['display_order', 'is_required', 'is_active', 'batch_specific_options', 'batch_specific_validation', 'batch_specific_scoring'])
+            ->withTimestamps()
+            ->orderBy('batch_questions.display_order');
+    }
+
+    public function batchQuestions()
+    {
+        return $this->hasMany(BatchQuestion::class, 'batch_id')->orderBy('display_order');
+    }
+
     public function scopeActive($query)
     {
         return $query->where(array('status' => self::STATUS_ACTIVE, 'deleted_at' => null));
