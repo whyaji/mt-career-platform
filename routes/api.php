@@ -77,6 +77,34 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->delete('/{id}', 'EducationalInstitutionController@deleteInstitution');
     });
 
+    // Program Category routes with rate limiting for active endpoint
+    $router->group(['prefix' => 'program-category', 'middleware' => 'rate_limit:60,1'], function () use ($router) {
+        $router->get('/active', 'ProgramCategoryController@getActive');
+    });
+
+    // Program Category routes with JWT auth
+    $router->group(['prefix' => 'program-category', 'middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('/', 'ProgramCategoryController@getProgramCategories');
+        $router->get('/{id}', 'ProgramCategoryController@getProgramCategoryById');
+        $router->post('/', 'ProgramCategoryController@createProgramCategory');
+        $router->put('/{id}', 'ProgramCategoryController@updateProgramCategory');
+        $router->delete('/{id}', 'ProgramCategoryController@deleteProgramCategory');
+    });
+
+    // Program routes with rate limiting for active endpoint
+    $router->group(['prefix' => 'program', 'middleware' => 'rate_limit:60,1'], function () use ($router) {
+        $router->get('/active', 'ProgramController@getActive');
+    });
+
+    // Program routes with JWT auth
+    $router->group(['prefix' => 'program', 'middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('/', 'ProgramController@getPrograms');
+        $router->get('/{id}', 'ProgramController@getProgramById');
+        $router->post('/', 'ProgramController@createProgram');
+        $router->put('/{id}', 'ProgramController@updateProgram');
+        $router->delete('/{id}', 'ProgramController@deleteProgram');
+    });
+
     // Application routes with JWT auth
     $router->group(['prefix' => 'applications', 'middleware' => 'jwt.auth'], function () use ($router) {
         $router->get('/', 'ApplicantDataController@getApplications');

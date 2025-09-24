@@ -17,6 +17,8 @@ import { Route as TalenthubIndexRouteImport } from './routes/talenthub/index'
 import { Route as TalenthubAuthenticatedRouteImport } from './routes/talenthub/_authenticated'
 import { Route as TalenthubLoginIndexRouteImport } from './routes/talenthub/login/index'
 import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batch/index'
+import { Route as TalenthubAuthenticatedProgramIndexRouteImport } from './routes/talenthub/_authenticated/program/index'
+import { Route as TalenthubAuthenticatedProgramCategoryIndexRouteImport } from './routes/talenthub/_authenticated/program-category/index'
 import { Route as TalenthubAuthenticatedEducationalInstitutionIndexRouteImport } from './routes/talenthub/_authenticated/educational-institution/index'
 import { Route as TalenthubAuthenticatedDashboardIndexRouteImport } from './routes/talenthub/_authenticated/dashboard/index'
 import { Route as TalenthubAuthenticatedBatchesIndexRouteImport } from './routes/talenthub/_authenticated/batches/index'
@@ -58,6 +60,18 @@ const LocationBatchIndexRoute = LocationBatchIndexRouteImport.update({
   path: '/$location/$batch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TalenthubAuthenticatedProgramIndexRoute =
+  TalenthubAuthenticatedProgramIndexRouteImport.update({
+    id: '/program/',
+    path: '/program/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
+const TalenthubAuthenticatedProgramCategoryIndexRoute =
+  TalenthubAuthenticatedProgramCategoryIndexRouteImport.update({
+    id: '/program-category/',
+    path: '/program-category/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
 const TalenthubAuthenticatedEducationalInstitutionIndexRoute =
   TalenthubAuthenticatedEducationalInstitutionIndexRouteImport.update({
     id: '/educational-institution/',
@@ -94,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/program-category': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
+  '/talenthub/program': typeof TalenthubAuthenticatedProgramIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -105,6 +121,8 @@ export interface FileRoutesByTo {
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/program-category': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
+  '/talenthub/program': typeof TalenthubAuthenticatedProgramIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,6 +137,8 @@ export interface FileRoutesById {
   '/talenthub/_authenticated/batches/': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/_authenticated/dashboard/': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/_authenticated/educational-institution/': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/_authenticated/program-category/': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
+  '/talenthub/_authenticated/program/': typeof TalenthubAuthenticatedProgramIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,6 +153,8 @@ export interface FileRouteTypes {
     | '/talenthub/batches'
     | '/talenthub/dashboard'
     | '/talenthub/educational-institution'
+    | '/talenthub/program-category'
+    | '/talenthub/program'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +166,8 @@ export interface FileRouteTypes {
     | '/talenthub/batches'
     | '/talenthub/dashboard'
     | '/talenthub/educational-institution'
+    | '/talenthub/program-category'
+    | '/talenthub/program'
   id:
     | '__root__'
     | '/'
@@ -157,6 +181,8 @@ export interface FileRouteTypes {
     | '/talenthub/_authenticated/batches/'
     | '/talenthub/_authenticated/dashboard/'
     | '/talenthub/_authenticated/educational-institution/'
+    | '/talenthub/_authenticated/program-category/'
+    | '/talenthub/_authenticated/program/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -217,6 +243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationBatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/talenthub/_authenticated/program/': {
+      id: '/talenthub/_authenticated/program/'
+      path: '/program'
+      fullPath: '/talenthub/program'
+      preLoaderRoute: typeof TalenthubAuthenticatedProgramIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
+    '/talenthub/_authenticated/program-category/': {
+      id: '/talenthub/_authenticated/program-category/'
+      path: '/program-category'
+      fullPath: '/talenthub/program-category'
+      preLoaderRoute: typeof TalenthubAuthenticatedProgramCategoryIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
     '/talenthub/_authenticated/educational-institution/': {
       id: '/talenthub/_authenticated/educational-institution/'
       path: '/educational-institution'
@@ -253,6 +293,8 @@ interface TalenthubAuthenticatedRouteChildren {
   TalenthubAuthenticatedBatchesIndexRoute: typeof TalenthubAuthenticatedBatchesIndexRoute
   TalenthubAuthenticatedDashboardIndexRoute: typeof TalenthubAuthenticatedDashboardIndexRoute
   TalenthubAuthenticatedEducationalInstitutionIndexRoute: typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  TalenthubAuthenticatedProgramCategoryIndexRoute: typeof TalenthubAuthenticatedProgramCategoryIndexRoute
+  TalenthubAuthenticatedProgramIndexRoute: typeof TalenthubAuthenticatedProgramIndexRoute
 }
 
 const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
@@ -265,6 +307,10 @@ const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
       TalenthubAuthenticatedDashboardIndexRoute,
     TalenthubAuthenticatedEducationalInstitutionIndexRoute:
       TalenthubAuthenticatedEducationalInstitutionIndexRoute,
+    TalenthubAuthenticatedProgramCategoryIndexRoute:
+      TalenthubAuthenticatedProgramCategoryIndexRoute,
+    TalenthubAuthenticatedProgramIndexRoute:
+      TalenthubAuthenticatedProgramIndexRoute,
   }
 
 const TalenthubAuthenticatedRouteWithChildren =

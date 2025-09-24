@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             BatchSeeder::class,
             UserSeeder::class,
+            ProgramCategorySeeder::class,
+            ProgramSeeder::class,
         ]);
     }
 }

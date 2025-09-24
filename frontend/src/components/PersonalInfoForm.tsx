@@ -523,7 +523,7 @@ export function PersonalInfoForm({ form, isMobile = false, batch }: PersonalInfo
                     label: 'RIWAYAT PENYAKIT',
                     placeholder: 'Masukkan riwayat penyakit',
                     description:
-                      'Tuliskan riwayat penyakit dalam yang pernah diderita.\nContoh: TBC atau JANTUNG atau PATAH TULANG, dsb\nTulis SEHAT jika tidak ada riwayat penyakit dalam.',
+                      'Tuliskan riwayat penyakit dalam yang pernah diderita. Contoh: TBC atau JANTUNG atau PATAH TULANG, dsb. Tulis SEHAT jika tidak ada riwayat penyakit dalam.',
                     ...form.getInputProps('riwayat_penyakit'),
                   },
                 },

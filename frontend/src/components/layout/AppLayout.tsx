@@ -17,6 +17,8 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
+  IconBook,
+  IconCategoryFilled,
   IconChevronRight,
   IconDatabase,
   IconFileText,
@@ -72,6 +74,16 @@ const navItems: NavItemProps[] = [
         icon: IconDatabase,
         label: 'Batches',
         href: '/talenthub/batches',
+      },
+      {
+        icon: IconCategoryFilled,
+        label: 'Program Categories',
+        href: '/talenthub/program-category',
+      },
+      {
+        icon: IconBook,
+        label: 'Programs',
+        href: '/talenthub/program',
       },
     ],
   },
