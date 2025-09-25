@@ -46,6 +46,7 @@ class ApplicantDataController extends Controller
                     'program_terpilih',
                     'jurusan_pendidikan',
                     'jenjang_pendidikan',
+                    'jenis_kelamin',
                     'status_ijazah',
                     'batch_id',
                     'created_at',

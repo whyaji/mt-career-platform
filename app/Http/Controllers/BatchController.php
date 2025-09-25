@@ -67,7 +67,10 @@ class BatchController extends Controller
     public function getBatchById($id)
     {
         try {
-            $batch = Batch::with('programCategory:id,code,name,description,status')->find($id);
+            $batch = Batch::with([
+                'programCategory:id,code,name,description,status',
+                'programCategory.programs:id,code,name,program_category_id,description,min_education,majors,min_gpa,marital_status,placement,training_duration,ojt_duration,contract_duration,status'
+            ])->find($id);
 
             if (!$batch) {
                 return response()->json([

@@ -5,22 +5,12 @@ import {
   getIcons,
   getQuestionsByGroup,
   getQuestionTypes,
-  getValidationRules,
 } from '@/lib/api/questionApi';
 
 export const useQuestionTypesQuery = () => {
   return useQuery({
     queryKey: ['question', 'types'],
     queryFn: getQuestionTypes,
-    staleTime: 30 * 60 * 1000, // 30 minutes (metadata doesn't change often)
-    gcTime: 60 * 60 * 1000, // 1 hour
-  });
-};
-
-export const useValidationRulesQuery = () => {
-  return useQuery({
-    queryKey: ['question', 'validation-rules'],
-    queryFn: getValidationRules,
     staleTime: 30 * 60 * 1000, // 30 minutes (metadata doesn't change often)
     gcTime: 60 * 60 * 1000, // 1 hour
   });

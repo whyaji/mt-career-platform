@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconChevronDown, IconChevronUp, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 
 import {
@@ -25,6 +25,7 @@ import {
   useQuestionTypesQuery,
 } from '@/hooks/query/question/useQuestionMetadataQuery';
 import type {
+  ConditionalCondition,
   QuestionFormData,
   QuestionType,
   ScoringCondition,
@@ -42,16 +43,19 @@ interface QuestionFormModalProps {
 
 export function QuestionFormModal({
   opened,
-  onClose,
+  onClose: onCloseProp,
   question,
   onSubmit,
   loading = false,
   title = 'Question Form',
 }: QuestionFormModalProps) {
-  const [options, setOptions] = useState<string[]>([]);
-  const [newOption, setNewOption] = useState('');
+  const [options, setOptions] = useState<{ label: string; value: string }[]>([]);
+  const [newOptionLabel, setNewOptionLabel] = useState('');
+  const [newOptionValue, setNewOptionValue] = useState('');
   const [validationRules, setValidationRules] = useState<ValidationRule[]>([]);
   const [scoringConditions, setScoringConditions] = useState<ScoringCondition[]>([]);
+  const [conditionalConditions, setConditionalConditions] = useState<ConditionalCondition[]>([]);
+  const [newConditionValue, setNewConditionValue] = useState('');
   const [showValidationRules, setShowValidationRules] = useState(false);
   const [showScoringRules, setShowScoringRules] = useState(false);
   const [showConditionalLogic, setShowConditionalLogic] = useState(false);
@@ -91,7 +95,11 @@ export function QuestionFormModal({
       disabled: false,
       icon: '',
       group: '',
-      conditional_logic: undefined,
+      conditional_logic: {
+        enabled: false,
+        operator: 'AND' as const,
+        conditions: [],
+      },
       default_value: '',
       has_custom_other_input: false,
       is_active: true,
@@ -103,46 +111,79 @@ export function QuestionFormModal({
     },
   });
 
+  const setFormValues = (question: QuestionType) => {
+    // Handle object options with label and value
+    const optionsArray = (question.options || []).map((option) => {
+      if (typeof option === 'object' && option !== null && 'label' in option && 'value' in option) {
+        return option as { label: string; value: string };
+      }
+      // Fallback for legacy string options - convert to object format
+      const stringValue = typeof option === 'string' ? option : String(option);
+      return { label: stringValue, value: stringValue };
+    });
+
+    form.setValues({
+      code: question.code || '',
+      label: question.label || '',
+      placeholder: question.placeholder || '',
+      description: question.description || '',
+      type: question.type || 'text',
+      options: optionsArray,
+      validation_rules: question.validation_rules || [],
+      scoring_rules: question.scoring_rules || {
+        enabled: false,
+        points: 0,
+        conditions: [],
+        max_score: 0,
+      },
+      display_order: question.display_order || 0,
+      required: question.required || false,
+      readonly: question.readonly || false,
+      disabled: question.disabled || false,
+      icon: question.icon || '',
+      group: question.group || '',
+      conditional_logic: question.conditional_logic || {
+        enabled: false,
+        operator: 'AND' as const,
+        conditions: [],
+      },
+      default_value: question.default_value || '',
+      has_custom_other_input: question.has_custom_other_input || false,
+      is_active: question.is_active !== undefined ? question.is_active : true,
+    });
+    setOptions(optionsArray);
+    setValidationRules(question.validation_rules || []);
+    setScoringConditions(question.scoring_rules?.conditions || []);
+    setConditionalConditions(question.conditional_logic?.conditions || []);
+  };
+
+  const resetForm = () => {
+    form.reset();
+    setOptions([]);
+    setNewOptionLabel('');
+    setNewOptionValue('');
+    setValidationRules([]);
+    setScoringConditions([]);
+    setConditionalConditions([]);
+    setNewConditionValue('');
+    setShowValidationRules(false);
+    setShowScoringRules(false);
+    setShowConditionalLogic(false);
+  };
+
   useEffect(() => {
     if (question) {
-      form.setValues({
-        code: question.code,
-        label: question.label,
-        placeholder: question.placeholder || '',
-        description: question.description || '',
-        type: question.type,
-        options: question.options || [],
-        validation_rules: question.validation_rules || [],
-        scoring_rules: question.scoring_rules || {
-          enabled: false,
-          points: 0,
-          conditions: [],
-          max_score: 0,
-        },
-        display_order: question.display_order,
-        required: question.required,
-        readonly: question.readonly,
-        disabled: question.disabled,
-        icon: question.icon || '',
-        group: question.group || '',
-        conditional_logic: question.conditional_logic,
-        default_value: question.default_value || '',
-        has_custom_other_input: question.has_custom_other_input,
-        is_active: question.is_active,
-      });
-      setOptions(question.options || []);
-      setValidationRules(question.validation_rules || []);
-      setScoringConditions(question.scoring_rules?.conditions || []);
+      setFormValues(question);
     } else {
-      form.reset();
-      setOptions([]);
-      setValidationRules([]);
-      setScoringConditions([]);
-      setShowValidationRules(false);
-      setShowScoringRules(false);
-      setShowConditionalLogic(false);
+      resetForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question, opened]);
+
+  const onClose = () => {
+    resetForm();
+    onCloseProp();
+  };
 
   const handleSubmit = async (values: QuestionFormData) => {
     try {
@@ -156,6 +197,12 @@ export function QuestionFormModal({
               conditions: scoringConditions,
             }
           : undefined,
+        conditional_logic: form.values.conditional_logic?.enabled
+          ? {
+              ...form.values.conditional_logic,
+              conditions: conditionalConditions,
+            }
+          : undefined,
       };
       await onSubmit(submitData);
       notifications.show({
@@ -163,7 +210,6 @@ export function QuestionFormModal({
         message: question ? 'Question updated successfully' : 'Question created successfully',
         color: 'green',
       });
-      form.reset();
       onClose();
     } catch (error) {
       notifications.show({
@@ -175,11 +221,19 @@ export function QuestionFormModal({
   };
 
   const addOption = () => {
-    if (newOption.trim() && !options.includes(newOption.trim())) {
-      const updatedOptions = [...options, newOption.trim()];
-      setOptions(updatedOptions);
-      form.setFieldValue('options', updatedOptions);
-      setNewOption('');
+    if (newOptionLabel.trim()) {
+      // Auto-generate value from label if not provided
+      const value = newOptionValue.trim() || newOptionLabel.trim();
+      const newOption = { label: newOptionLabel.trim(), value };
+      const isDuplicate = options.some((opt) => opt.value === newOption.value);
+
+      if (!isDuplicate) {
+        const updatedOptions = [...options, newOption];
+        setOptions(updatedOptions);
+        form.setFieldValue('options', updatedOptions);
+        setNewOptionLabel('');
+        setNewOptionValue('');
+      }
     }
   };
 
@@ -235,6 +289,49 @@ export function QuestionFormModal({
 
   const removeScoringCondition = (index: number) => {
     setScoringConditions(scoringConditions.filter((_, i) => i !== index));
+  };
+
+  // Conditional Logic helpers
+  const addConditionalCondition = () => {
+    setConditionalConditions([...conditionalConditions, { field: '', operator: 'in', values: [] }]);
+  };
+
+  const updateConditionalCondition = (
+    index: number,
+    field: keyof ConditionalCondition,
+    value: unknown
+  ) => {
+    const updated = [...conditionalConditions];
+    updated[index] = { ...updated[index], [field]: value };
+    setConditionalConditions(updated);
+  };
+
+  const removeConditionalCondition = (index: number) => {
+    setConditionalConditions(conditionalConditions.filter((_, i) => i !== index));
+  };
+
+  const addValueToCondition = (conditionIndex: number, value: string) => {
+    if (value.trim()) {
+      const updated = [...conditionalConditions];
+      const currentValues = updated[conditionIndex].values || [];
+      if (!currentValues.includes(value.trim())) {
+        updated[conditionIndex] = {
+          ...updated[conditionIndex],
+          values: [...currentValues, value.trim()],
+        };
+        setConditionalConditions(updated);
+      }
+    }
+  };
+
+  const removeValueFromCondition = (conditionIndex: number, valueIndex: number) => {
+    const updated = [...conditionalConditions];
+    const currentValues = updated[conditionIndex].values || [];
+    updated[conditionIndex] = {
+      ...updated[conditionIndex],
+      values: currentValues.filter((_, i) => i !== valueIndex),
+    };
+    setConditionalConditions(updated);
   };
 
   return (
@@ -308,44 +405,82 @@ export function QuestionFormModal({
           </Group>
 
           {requiresOptions && (
-            <div>
-              <Text size="sm" fw={500} mb="xs">
-                Options
-              </Text>
-              <Stack gap="xs">
+            <Card withBorder>
+              <Group justify="space-between" mb="sm">
+                <Text fw={500}>Options</Text>
+              </Group>
+              <Stack gap="sm">
+                <Text size="xs" c="dimmed" mb="xs">
+                  Enter option label and value. If value is empty, it will be auto-generated from
+                  the label.
+                </Text>
+
+                {/* Existing Options */}
                 {options.map((option, index) => (
-                  <Group key={index} gap="xs">
-                    <Text size="sm" style={{ flex: 1 }}>
-                      {option}
-                    </Text>
+                  <Card key={index} withBorder p="sm">
+                    <Group gap="sm">
+                      <TextInput
+                        placeholder="Option Label"
+                        value={option.label}
+                        onChange={(event) => {
+                          const updatedOptions = [...options];
+                          updatedOptions[index] = {
+                            ...updatedOptions[index],
+                            label: event.currentTarget.value,
+                          };
+                          setOptions(updatedOptions);
+                          form.setFieldValue('options', updatedOptions);
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <TextInput
+                        placeholder="Option Value"
+                        value={option.value}
+                        onChange={(event) => {
+                          const updatedOptions = [...options];
+                          updatedOptions[index] = {
+                            ...updatedOptions[index],
+                            value: event.currentTarget.value,
+                          };
+                          setOptions(updatedOptions);
+                          form.setFieldValue('options', updatedOptions);
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <ActionIcon color="red" variant="subtle" onClick={() => removeOption(index)}>
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    </Group>
+                  </Card>
+                ))}
+
+                {/* Add New Option */}
+                <Card withBorder p="sm" bg="gray.0">
+                  <Group gap="sm">
+                    <TextInput
+                      placeholder="Option Label"
+                      value={newOptionLabel}
+                      onChange={(event) => setNewOptionLabel(event.currentTarget.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <TextInput
+                      placeholder="Option Value"
+                      value={newOptionValue}
+                      onChange={(event) => setNewOptionValue(event.currentTarget.value)}
+                      style={{ flex: 1 }}
+                    />
                     <Button
-                      size="xs"
-                      variant="subtle"
-                      color="red"
-                      onClick={() => removeOption(index)}>
-                      Remove
+                      leftSection={<IconPlus size={14} />}
+                      variant="light"
+                      size="sm"
+                      onClick={addOption}
+                      disabled={!newOptionLabel.trim()}>
+                      Add Option
                     </Button>
                   </Group>
-                ))}
-                <Group gap="xs">
-                  <TextInput
-                    placeholder="Add new option"
-                    value={newOption}
-                    onChange={(event) => setNewOption(event.currentTarget.value)}
-                    onKeyPress={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        addOption();
-                      }
-                    }}
-                    style={{ flex: 1 }}
-                  />
-                  <Button size="sm" onClick={addOption}>
-                    Add
-                  </Button>
-                </Group>
+                </Card>
               </Stack>
-            </div>
+            </Card>
           )}
 
           <Group>
@@ -559,36 +694,125 @@ export function QuestionFormModal({
             </Group>
             <Collapse in={showConditionalLogic}>
               <Stack gap="sm">
-                <Group grow>
-                  <TextInput
-                    label="Field to Watch"
-                    placeholder="e.g., age"
-                    {...form.getInputProps('conditional_logic.field')}
-                  />
-                  <Select
-                    label="Operator"
-                    placeholder="Select operator"
-                    {...form.getInputProps('conditional_logic.operator')}
-                    data={[
-                      { value: 'equals', label: 'Equals' },
-                      { value: 'not_equals', label: 'Not Equals' },
-                      { value: 'contains', label: 'Contains' },
-                      { value: 'greater_than', label: 'Greater Than' },
-                      { value: 'less_than', label: 'Less Than' },
-                    ]}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Expected Value"
-                    placeholder="e.g., 18"
-                    {...form.getInputProps('conditional_logic.value')}
-                  />
-                  <Switch
-                    label="Show when condition is met"
-                    {...form.getInputProps('conditional_logic.show_when', { type: 'checkbox' })}
-                  />
-                </Group>
+                <Switch
+                  label="Enable Conditional Logic"
+                  {...form.getInputProps('conditional_logic.enabled', { type: 'checkbox' })}
+                />
+                {form.values.conditional_logic?.enabled && (
+                  <>
+                    <Group grow>
+                      <Select
+                        label="Logic Operator"
+                        placeholder="Select how to combine conditions"
+                        value={form.values.conditional_logic?.operator || 'AND'}
+                        onChange={(value) =>
+                          form.setFieldValue(
+                            'conditional_logic.operator',
+                            (value as 'AND' | 'OR') || 'AND'
+                          )
+                        }
+                        data={[
+                          { value: 'AND', label: 'AND (All conditions must be true)' },
+                          { value: 'OR', label: 'OR (Any condition can be true)' },
+                        ]}
+                      />
+                    </Group>
+                    <Divider label="Conditions" />
+                    {conditionalConditions.map((condition, index) => (
+                      <Card key={index} withBorder p="sm">
+                        <Stack gap="sm">
+                          <Group gap="sm">
+                            <TextInput
+                              placeholder="Field to watch (e.g., country)"
+                              value={condition.field}
+                              onChange={(e) =>
+                                updateConditionalCondition(index, 'field', e.currentTarget.value)
+                              }
+                              style={{ flex: 1 }}
+                            />
+                            <Select
+                              placeholder="Operator"
+                              value={condition.operator}
+                              onChange={(value) =>
+                                updateConditionalCondition(index, 'operator', value)
+                              }
+                              data={[
+                                { value: 'in', label: 'Is one of' },
+                                { value: 'not_in', label: 'Is not one of' },
+                                { value: 'equals', label: 'Equals' },
+                                { value: 'not_equals', label: 'Does not equal' },
+                                { value: 'contains', label: 'Contains' },
+                                { value: 'not_contains', label: 'Does not contain' },
+                                { value: 'empty', label: 'Is empty' },
+                                { value: 'not_empty', label: 'Is not empty' },
+                                { value: 'greater_than', label: 'Greater than' },
+                                { value: 'less_than', label: 'Less than' },
+                              ]}
+                              style={{ flex: 1 }}
+                            />
+                            <ActionIcon
+                              color="red"
+                              variant="subtle"
+                              onClick={() => removeConditionalCondition(index)}>
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Group>
+                          <Text size="sm" fw={500}>
+                            Expected Values:
+                          </Text>
+                          <Group gap="xs" wrap="wrap">
+                            {condition.values?.map((value, valueIndex) => (
+                              <Card key={valueIndex} withBorder p="xs" bg="blue.0">
+                                <Group gap="xs">
+                                  <Text size="sm">{value}</Text>
+                                  <ActionIcon
+                                    size="xs"
+                                    color="red"
+                                    variant="subtle"
+                                    onClick={() => removeValueFromCondition(index, valueIndex)}>
+                                    <IconX size={10} />
+                                  </ActionIcon>
+                                </Group>
+                              </Card>
+                            ))}
+                          </Group>
+                          <Group gap="sm">
+                            <TextInput
+                              placeholder="Add expected value"
+                              value={newConditionValue}
+                              onChange={(e) => setNewConditionValue(e.currentTarget.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addValueToCondition(index, newConditionValue);
+                                  setNewConditionValue('');
+                                }
+                              }}
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => {
+                                addValueToCondition(index, newConditionValue);
+                                setNewConditionValue('');
+                              }}
+                              disabled={!newConditionValue.trim()}>
+                              Add Value
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Card>
+                    ))}
+                    <Button
+                      leftSection={<IconPlus size={14} />}
+                      variant="light"
+                      size="sm"
+                      onClick={addConditionalCondition}>
+                      Add Condition
+                    </Button>
+                  </>
+                )}
               </Stack>
             </Collapse>
           </Card>

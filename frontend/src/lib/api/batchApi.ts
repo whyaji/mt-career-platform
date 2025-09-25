@@ -126,94 +126,11 @@ export const getBatchQuestionById = async (
   return response.json();
 };
 
-export const updateBatchQuestion = async (
-  batchId: string,
-  questionId: string,
-  data: {
-    display_order?: number;
-    is_required?: boolean;
-    is_active?: boolean;
-    batch_specific_options?: string[];
-    batch_specific_validation?: unknown[];
-    batch_specific_scoring?: unknown;
-  }
-): Promise<DefaultResponseType<BatchQuestionType>> => {
-  const response = await authenticatedFetch(
-    `${talentHubBatchUrl}/${batchId}/questions/${questionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }
-  );
-  return response.json();
-};
-
-export const removeQuestionFromBatch = async (
-  batchId: string,
-  questionId: string
-): Promise<DefaultResponseType<void>> => {
-  const response = await authenticatedFetch(
-    `${talentHubBatchUrl}/${batchId}/questions/${questionId}`,
-    {
-      method: 'DELETE',
-    }
-  );
-  return response.json();
-};
-
-export const reorderBatchQuestions = async (
-  batchId: string,
-  questionOrders: Array<{ question_id: string; display_order: number }>
-): Promise<DefaultResponseType<void>> => {
-  const response = await authenticatedFetch(
-    `${talentHubBatchUrl}/${batchId}/questions-list/reorder`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ question_orders: questionOrders }),
-    }
-  );
-  return response.json();
-};
-
 export const getAvailableQuestionsForBatch = async (
   batchId: string
 ): Promise<DefaultResponseType<QuestionType[]>> => {
   const response = await authenticatedFetch(
     `${talentHubBatchUrl}/${batchId}/questions-list/available`
-  );
-  return response.json();
-};
-
-export const bulkAssignQuestions = async (
-  batchId: string,
-  data: {
-    question_ids: string[];
-    default_is_required?: boolean;
-    default_is_active?: boolean;
-  }
-): Promise<
-  DefaultResponseType<{
-    assigned_count: number;
-    skipped_count: number;
-    assigned_questions: string[];
-    skipped_questions: string[];
-  }>
-> => {
-  const response = await authenticatedFetch(
-    `${talentHubBatchUrl}/${batchId}/questions-list/bulk-assign`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }
   );
   return response.json();
 };

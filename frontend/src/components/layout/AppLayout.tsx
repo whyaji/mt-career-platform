@@ -67,6 +67,16 @@ const navItems: NavItemProps[] = [
         href: '/talenthub/educational-institution',
       },
       {
+        icon: IconBook,
+        label: 'Programs',
+        href: '/talenthub/program',
+      },
+      {
+        icon: IconCategoryFilled,
+        label: 'Program Categories',
+        href: '/talenthub/program-category',
+      },
+      {
         icon: IconQuestionMark,
         label: 'Questions',
         href: '/talenthub/questions',
@@ -75,16 +85,6 @@ const navItems: NavItemProps[] = [
         icon: IconDatabase,
         label: 'Batches',
         href: '/talenthub/batches',
-      },
-      {
-        icon: IconCategoryFilled,
-        label: 'Program Categories',
-        href: '/talenthub/program-category',
-      },
-      {
-        icon: IconBook,
-        label: 'Programs',
-        href: '/talenthub/program',
       },
     ],
   },

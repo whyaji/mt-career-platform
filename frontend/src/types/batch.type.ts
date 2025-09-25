@@ -1,3 +1,5 @@
+import type { ProgramType } from './program.type';
+
 export type BatchType = {
   id: string;
   number: number;
@@ -14,5 +16,6 @@ export type BatchType = {
     name: string;
     description: string | null;
     status: number;
+    programs?: ProgramType[] | null;
   } | null;
 };

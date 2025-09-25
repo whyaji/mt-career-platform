@@ -164,7 +164,8 @@ class QuestionController extends Controller
                 'description' => 'nullable|string',
                 'type' => 'required|string|in:text,textarea,number,email,tel,url,password,select,multiselect,radio,checkbox,date,time,datetime,file,hidden',
                 'options' => 'nullable|array',
-                'options.*' => 'required|string|max:255',
+                'options.*.label' => 'required|string|max:255',
+                'options.*.value' => 'required|string|max:255',
                 'validation_rules' => 'nullable|array',
                 'scoring_rules' => 'nullable|array',
                 'display_order' => 'nullable|integer|min:0',
@@ -189,12 +190,26 @@ class QuestionController extends Controller
 
             // Validate options for select/radio/checkbox types
             $type = $request->input('type');
-            if (in_array($type, ['select', 'multiselect', 'radio', 'checkbox']) && empty($request->input('options'))) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'VALIDATION_ERROR',
-                    'message' => 'Options are required for select, multiselect, radio, and checkbox types'
-                ], 400);
+            if (in_array($type, ['select', 'multiselect', 'radio', 'checkbox'])) {
+                $options = $request->input('options', []);
+                if (empty($options)) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'VALIDATION_ERROR',
+                        'message' => 'Options are required for select, multiselect, radio, and checkbox types'
+                    ], 400);
+                }
+
+                // Validate that each option has both label and value
+                foreach ($options as $index => $option) {
+                    if (!is_array($option) || !isset($option['label']) || !isset($option['value'])) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'VALIDATION_ERROR',
+                            'message' => "Option at index {$index} must have both 'label' and 'value' properties"
+                        ], 400);
+                    }
+                }
             }
 
             $question = Question::create($request->all());
@@ -232,7 +247,8 @@ class QuestionController extends Controller
                 'description' => 'nullable|string',
                 'type' => 'sometimes|required|string|in:text,textarea,number,email,tel,url,password,select,multiselect,radio,checkbox,date,time,datetime,file,hidden',
                 'options' => 'nullable|array',
-                'options.*' => 'required|string|max:255',
+                'options.*.label' => 'required|string|max:255',
+                'options.*.value' => 'required|string|max:255',
                 'validation_rules' => 'nullable|array',
                 'scoring_rules' => 'nullable|array',
                 'display_order' => 'nullable|integer|min:0',
@@ -265,6 +281,17 @@ class QuestionController extends Controller
                         'error' => 'VALIDATION_ERROR',
                         'message' => 'Options are required for select, multiselect, radio, and checkbox types'
                     ], 400);
+                }
+
+                // Validate that each option has both label and value
+                foreach ($options as $index => $option) {
+                    if (!is_array($option) || !isset($option['label']) || !isset($option['value'])) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'VALIDATION_ERROR',
+                            'message' => "Option at index {$index} must have both 'label' and 'value' properties"
+                        ], 400);
+                    }
                 }
             }
 

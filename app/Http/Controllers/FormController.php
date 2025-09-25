@@ -85,7 +85,7 @@ class FormController extends Controller
                 return response()->json([
                     'success' => false,
                     'error' => 'TURNSTILE_FAILED',
-                    'message' => 'Security verification failed'
+                    'message' => 'Verifikasi keamanan gagal'
                 ], 400);
             }
 
@@ -122,7 +122,7 @@ class FormController extends Controller
                     return response()->json([
                         'success' => false,
                         'error' => 'INVALID_INPUT',
-                        'message' => 'Invalid input detected'
+                        'message' => 'Input tidak valid'
                     ], 400);
                 }
             }
@@ -133,11 +133,11 @@ class FormController extends Controller
                 ->first();
 
             if ($existingSubmission) {
-                Log::warning("Duplicate submission attempt from IP: {$clientIP}");
+                Log::warning("Duplicate submission attempt from IP: {$clientIP}, NAME: {$data['nama_lengkap']}, NIK: {$data['nik']}, Batch ID: {$data['batch_id']}");
                 return response()->json([
                     'success' => false,
                     'error' => 'DUPLICATE_SUBMISSION',
-                    'message' => 'Duplicate submission detected'
+                    'message' => 'Data anda sudah terdaftar untuk batch ini'
                 ], 409);
             }
 

@@ -167,7 +167,7 @@ export function QuestionDetailModal({
               <Group gap="xs">
                 {question.options.map((option, index) => (
                   <Badge key={index} variant="light" color="blue">
-                    {option}
+                    {option.label}
                   </Badge>
                 ))}
               </Group>

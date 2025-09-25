@@ -3,7 +3,7 @@ import type {
   QuestionFormData,
   QuestionType,
   QuestionTypesResponse,
-  ValidationRulesResponse,
+  ValidationRule,
 } from '@/types/question.type';
 
 import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
@@ -110,22 +110,8 @@ export const getQuestionTypes = async (): Promise<DefaultResponseType<QuestionTy
   return response.json();
 };
 
-export const getValidationRules = async (): Promise<
-  DefaultResponseType<ValidationRulesResponse>
-> => {
-  const response = await authenticatedFetch(`${talentHubQuestionUrl}/validation-rules`);
-  return response.json();
-};
-
 export const getCommonValidationRules = async (): Promise<
-  DefaultResponseType<
-    Array<{
-      rule: string;
-      value: string;
-      message: string;
-      description: string;
-    }>
-  >
+  DefaultResponseType<ValidationRule[]>
 > => {
   const response = await authenticatedFetch(`${talentHubQuestionUrl}/common-validation-rules`);
   return response.json();

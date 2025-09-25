@@ -110,33 +110,17 @@ class Question extends Model
     }
 
     /**
-     * Get validation rules as Laravel validation string
+     * Get validation rules as JSON array
      */
     public function getValidationRulesAttribute($value)
     {
-        $rules = is_array($value) ? $value : json_decode($value, true);
-
-        if (!$rules) {
-            return [];
+        // Ensure validation_rules is always returned as an array
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
         }
 
-        $validationString = [];
-
-        if ($this->required) {
-            $validationString[] = 'required';
-        } else {
-            $validationString[] = 'nullable';
-        }
-
-        foreach ($rules as $rule => $value) {
-            if (is_bool($value) && $value) {
-                $validationString[] = $rule;
-            } elseif (!is_bool($value)) {
-                $validationString[] = $rule . ':' . $value;
-            }
-        }
-
-        return $validationString;
+        return is_array($value) ? $value : [];
     }
 
     /**
@@ -290,6 +274,18 @@ class Question extends Model
                 'message' => 'Value must be between 1 and 100',
                 'description' => 'Range validation'
             ],
+            [
+                'rule' => 'in',
+                'value' => '1,2,3',
+                'message' => 'Value must be in list',
+                'description' => 'List validation'
+            ],
+            [
+                'rule' => 'not_in',
+                'value' => '1,2,3',
+                'message' => 'Value must not be in list',
+                'description' => 'List validation'
+            ]
         ];
     }
 
@@ -417,5 +413,302 @@ class Question extends Model
             default:
                 return false;
         }
+    }
+
+    /**
+     * Get conditional logic configuration for this question
+     */
+    public function getConditionalLogicConfig()
+    {
+        $conditionalLogic = $this->conditional_logic;
+
+        if (!$conditionalLogic) {
+            return null;
+        }
+
+        return [
+            'enabled' => $conditionalLogic['enabled'] ?? false,
+            'operator' => $conditionalLogic['operator'] ?? 'AND', // AND or OR
+            'conditions' => $conditionalLogic['conditions'] ?? [],
+        ];
+    }
+
+    /**
+     * Check if this question should be visible based on form data
+     *
+     * @param array $formData The current form data (field_code => value)
+     * @return bool True if question should be visible, false otherwise
+     */
+    public function shouldBeVisible($formData = [])
+    {
+        $config = $this->getConditionalLogicConfig();
+
+        // If no conditional logic is configured, always show the question
+        if (!$config || !$config['enabled']) {
+            return true;
+        }
+
+        $conditions = $config['conditions'];
+        $operator = $config['operator'];
+
+        if (empty($conditions)) {
+            return true;
+        }
+
+        $results = [];
+
+        foreach ($conditions as $condition) {
+            $fieldCode = $condition['field'] ?? null;
+            $expectedValues = $condition['values'] ?? [];
+            $operator = $condition['operator'] ?? 'in';
+
+            if (!$fieldCode || empty($expectedValues)) {
+                continue;
+            }
+
+            $fieldValue = $formData[$fieldCode] ?? null;
+            $result = $this->evaluateConditionalLogic($fieldValue, $expectedValues, $operator);
+            $results[] = $result;
+        }
+
+        // Apply the logical operator (AND/OR) to all condition results
+        if ($operator === 'OR') {
+            return in_array(true, $results, true);
+        } else { // AND (default)
+            return !in_array(false, $results, true) && !empty($results);
+        }
+    }
+
+    /**
+     * Evaluate a single conditional logic condition
+     *
+     * @param mixed $fieldValue The current value of the watched field
+     * @param array $expectedValues The expected values that should trigger visibility
+     * @param string $operator The comparison operator
+     * @return bool True if condition is met
+     */
+    private function evaluateConditionalLogic($fieldValue, $expectedValues, $operator = 'in')
+    {
+        switch ($operator) {
+            case 'in':
+                // Field value must be one of the expected values
+                return in_array($fieldValue, $expectedValues, true);
+
+            case 'not_in':
+                // Field value must NOT be any of the expected values
+                return !in_array($fieldValue, $expectedValues, true);
+
+            case 'contains':
+                // Field value must contain any of the expected values (for string fields)
+                if (!is_string($fieldValue)) {
+                    return false;
+                }
+                foreach ($expectedValues as $expectedValue) {
+                    if (strpos($fieldValue, $expectedValue) !== false) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case 'not_contains':
+                // Field value must NOT contain any of the expected values
+                if (!is_string($fieldValue)) {
+                    return true;
+                }
+                foreach ($expectedValues as $expectedValue) {
+                    if (strpos($fieldValue, $expectedValue) !== false) {
+                        return false;
+                    }
+                }
+                return true;
+
+            case 'equals':
+                // Field value must equal any of the expected values
+                foreach ($expectedValues as $expectedValue) {
+                    if ($fieldValue == $expectedValue) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case 'not_equals':
+                // Field value must NOT equal any of the expected values
+                foreach ($expectedValues as $expectedValue) {
+                    if ($fieldValue == $expectedValue) {
+                        return false;
+                    }
+                }
+                return true;
+
+            case 'empty':
+                // Field value must be empty
+                return empty($fieldValue);
+
+            case 'not_empty':
+                // Field value must NOT be empty
+                return !empty($fieldValue);
+
+            case 'greater_than':
+                // Field value must be greater than any of the expected values
+                if (!is_numeric($fieldValue)) {
+                    return false;
+                }
+                foreach ($expectedValues as $expectedValue) {
+                    if (is_numeric($expectedValue) && $fieldValue > $expectedValue) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case 'less_than':
+                // Field value must be less than any of the expected values
+                if (!is_numeric($fieldValue)) {
+                    return false;
+                }
+                foreach ($expectedValues as $expectedValue) {
+                    if (is_numeric($expectedValue) && $fieldValue < $expectedValue) {
+                        return true;
+                    }
+                }
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Get all questions that depend on this question (questions that watch this question)
+     *
+     * @param string $batchId Optional batch ID to filter by
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDependentQuestions($batchId = null)
+    {
+        $query = self::whereJsonContains('conditional_logic->conditions', [
+            'field' => $this->code
+        ]);
+
+        if ($batchId) {
+            $query->whereHas('batches', function ($q) use ($batchId) {
+                $q->where('batch_id', $batchId);
+            });
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Get all field codes that this question watches
+     *
+     * @return array Array of field codes
+     */
+    public function getWatchedFields()
+    {
+        $config = $this->getConditionalLogicConfig();
+
+        if (!$config || empty($config['conditions'])) {
+            return [];
+        }
+
+        $watchedFields = [];
+        foreach ($config['conditions'] as $condition) {
+            if (isset($condition['field'])) {
+                $watchedFields[] = $condition['field'];
+            }
+        }
+
+        return array_unique($watchedFields);
+    }
+
+    /**
+     * Check if this question watches a specific field
+     *
+     * @param string $fieldCode The field code to check
+     * @return bool True if this question watches the field
+     */
+    public function watchesField($fieldCode)
+    {
+        return in_array($fieldCode, $this->getWatchedFields());
+    }
+
+    /**
+     * Get available conditional logic operators
+     */
+    public static function getConditionalLogicOperators()
+    {
+        return [
+            'in' => 'Is one of',
+            'not_in' => 'Is not one of',
+            'equals' => 'Equals',
+            'not_equals' => 'Does not equal',
+            'contains' => 'Contains',
+            'not_contains' => 'Does not contain',
+            'empty' => 'Is empty',
+            'not_empty' => 'Is not empty',
+            'greater_than' => 'Greater than',
+            'less_than' => 'Less than',
+        ];
+    }
+
+    /**
+     * Get conditional logic configuration template
+     */
+    public static function getConditionalLogicTemplate()
+    {
+        return [
+            'enabled' => false,
+            'operator' => 'AND', // AND or OR
+            'conditions' => [
+                [
+                    'field' => '', // Field code to watch
+                    'operator' => 'in', // Comparison operator
+                    'values' => [], // Array of values to match
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Validate conditional logic configuration
+     *
+     * @param array $conditionalLogic The conditional logic configuration to validate
+     * @return array Array of validation errors (empty if valid)
+     */
+    public static function validateConditionalLogic($conditionalLogic)
+    {
+        $errors = [];
+
+        if (!is_array($conditionalLogic)) {
+            return ['Invalid conditional logic format'];
+        }
+
+        if (!isset($conditionalLogic['enabled'])) {
+            $errors[] = 'Missing "enabled" field';
+        }
+
+        if (isset($conditionalLogic['operator']) && !in_array($conditionalLogic['operator'], ['AND', 'OR'])) {
+            $errors[] = 'Operator must be "AND" or "OR"';
+        }
+
+        if (isset($conditionalLogic['conditions']) && is_array($conditionalLogic['conditions'])) {
+            foreach ($conditionalLogic['conditions'] as $index => $condition) {
+                if (!isset($condition['field']) || empty($condition['field'])) {
+                    $errors[] = "Condition {$index}: Missing or empty field";
+                }
+
+                if (!isset($condition['operator']) || empty($condition['operator'])) {
+                    $errors[] = "Condition {$index}: Missing or empty operator";
+                } elseif (!array_key_exists($condition['operator'], self::getConditionalLogicOperators())) {
+                    $errors[] = "Condition {$index}: Invalid operator '{$condition['operator']}'";
+                }
+
+                if (!isset($condition['values']) || !is_array($condition['values'])) {
+                    $errors[] = "Condition {$index}: Missing or invalid values array";
+                }
+            }
+        }
+
+        return $errors;
     }
 }

@@ -106,7 +106,6 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->group(['prefix' => 'question'], function () use ($router) {
             $router->get('/active', 'QuestionController@getActive');
             $router->get('/types', 'QuestionController@getQuestionTypes');
-            $router->get('/validation-rules', 'QuestionController@getValidationRules');
             $router->get('/common-validation-rules', 'QuestionController@getCommonValidationRules');
             $router->get('/icons', 'QuestionController@getIcons');
             $router->get('/group/{group}', 'QuestionController@getQuestionsByGroup');
@@ -127,12 +126,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         $router->group(['prefix' => 'batch'], function () use ($router) {
             $router->get('/{batchId}/questions', 'BatchQuestionController@getBatchQuestions');
             $router->get('/{batchId}/questions/{questionId}', 'BatchQuestionController@getBatchQuestionById');
-            $router->post('/{batchId}/questions', 'BatchQuestionController@assignQuestionToBatch');
-            $router->put('/{batchId}/questions/{questionId}', 'BatchQuestionController@updateBatchQuestion');
-            $router->delete('/{batchId}/questions/{questionId}', 'BatchQuestionController@removeQuestionFromBatch');
-            $router->post('/{batchId}/questions-list/reorder', 'BatchQuestionController@reorderBatchQuestions');
             $router->get('/{batchId}/questions-list/available', 'BatchQuestionController@getAvailableQuestionsForBatch');
-            $router->post('/{batchId}/questions-list/bulk-assign', 'BatchQuestionController@bulkAssignQuestions');
             $router->post('/{batchId}/questions-list/bulk-operations', 'BatchQuestionController@bulkBatchQuestionOperations');
             $router->get('/{batchId}/form-configuration', 'BatchQuestionController@getBatchFormConfiguration');
         });

@@ -12,6 +12,7 @@ export interface Question {
   required?: boolean;
   is_active?: boolean;
   question_id?: string;
+  display_order?: number;
 }
 
 export interface LocalBatchQuestion
@@ -104,8 +105,9 @@ export const useBatchQuestionStore = create<BatchQuestionFormState>()(
       enterEditMode: (questions) => {
         const localQuestions: LocalBatchQuestion[] = questions.map((q, index) => ({
           ...q,
+          display_order: index + 1,
           localId: `local-${q.id || index}`,
-          operation: 'none' as const,
+          operation: index + 1 === q.display_order ? ('none' as const) : ('update' as const),
           originalData: q,
         }));
 

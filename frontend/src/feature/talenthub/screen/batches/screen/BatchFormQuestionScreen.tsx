@@ -10,15 +10,20 @@ import {
   Group,
   Loader,
   Modal,
+  NumberInput,
   Paper,
   ScrollArea,
+  Select,
   Stack,
   Switch,
   Text,
+  TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertTriangle,
+  IconArrowDown,
+  IconArrowUp,
   IconBuilding,
   IconCalendar,
   IconCheck,
@@ -27,11 +32,12 @@ import {
   IconPlus,
   IconQuestionMark,
   IconRotateClockwise,
+  IconSearch,
   IconSettings,
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useAvailableQuestionsQuery } from '@/hooks/query/batch-question/useAvailableQuestionsQuery';
 import { useBatchQuestionsQuery } from '@/hooks/query/batch-question/useBatchQuestionsQuery';
@@ -72,6 +78,10 @@ export function BatchFormQuestionScreen() {
     question: LocalBatchQuestion | BatchQuestionType | null;
   }>({ opened: false, question: null });
 
+  // Search and filter states for bulk modal
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
   // Pagination state - using high limit to get all questions
   const [paginationParams] = useState<PaginationParams>({
     page: 1,
@@ -92,10 +102,57 @@ export function BatchFormQuestionScreen() {
       ? batchQuestionsResponse.data || []
       : [];
 
-  const availableQuestionsData =
-    availableQuestions?.success && 'data' in availableQuestions
+  const availableQuestionsData = useMemo(() => {
+    return availableQuestions?.success && 'data' in availableQuestions
       ? availableQuestions.data || []
       : [];
+  }, [availableQuestions]);
+
+  // Get unique groups for filter
+  const availableGroups = useMemo(() => {
+    const groups = availableQuestionsData
+      .map((q) => q.group)
+      .filter((group, index, arr) => group && arr.indexOf(group) === index)
+      .sort();
+    return groups.map((group) => ({ value: group!, label: group! }));
+  }, [availableQuestionsData]);
+
+  // Filter and search available questions
+  const filteredAvailableQuestions = useMemo(() => {
+    // Get question IDs that are already in the current setup
+    const existingQuestionIds = new Set<string>();
+
+    // Add question IDs from batch questions (server data)
+    batchQuestions.forEach((batchQuestion) => {
+      existingQuestionIds.add(batchQuestion.question_id);
+    });
+
+    // Add question IDs from local questions (edit mode data)
+    // Only include non-deleted questions
+    localQuestions.forEach((localQuestion) => {
+      if (localQuestion.operation !== 'delete') {
+        existingQuestionIds.add(localQuestion.question_id);
+      }
+    });
+
+    return availableQuestionsData.filter((question) => {
+      // Exclude questions that are already in the setup
+      if (existingQuestionIds.has(question.id)) {
+        return false;
+      }
+
+      const matchesSearch =
+        searchQuery === '' ||
+        question.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        question.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (question.description &&
+          question.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesGroup = selectedGroup === null || question.group === selectedGroup;
+
+      return matchesSearch && matchesGroup;
+    });
+  }, [availableQuestionsData, searchQuery, selectedGroup, batchQuestions, localQuestions]);
 
   // Mutations
   const bulkOperationsMutation = useBulkBatchQuestionOperationsMutation(batch.id);
@@ -106,6 +163,10 @@ export function BatchFormQuestionScreen() {
   // Edit mode handlers
   const handleEnterEditMode = () => {
     enterEditMode(batchQuestions);
+    // Auto-reorder all questions to sequential 1, 2, 3, 4... when entering edit mode
+    setTimeout(() => {
+      reorderQuestionsSequentially();
+    }, 100); // Small delay to ensure state is updated
   };
 
   // Removed handleExitEditMode as it's not used
@@ -195,15 +256,19 @@ export function BatchFormQuestionScreen() {
     updateLocalQuestion(localId, updates);
   };
 
-  const handleAddQuestionToLocal = (questionId: string) => {
+  const handleAddQuestionToLocal = (questionId: string, index: number) => {
     const question = availableQuestionsData.find((q) => q.id === questionId);
     if (question) {
-      const maxOrder = Math.max(...currentQuestions.map((q) => q.display_order || 0), 0);
+      const activeQuestions = currentQuestions.filter(
+        (q) => !('localId' in q) || (q as LocalBatchQuestion).operation !== 'delete'
+      );
+      const maxOrder = activeQuestions.length;
+
       addLocalQuestion({
         batch_id: batch.id,
         question_id: questionId,
-        display_order: maxOrder + 1,
-        is_required: false,
+        display_order: maxOrder + index + 1,
+        is_required: question.required,
         is_active: true,
         batch_specific_options: undefined,
         batch_specific_validation: undefined,
@@ -223,19 +288,27 @@ export function BatchFormQuestionScreen() {
   const handleConfirmDeleteQuestion = () => {
     if (deleteQuestionConfirm.question) {
       const questionId = deleteQuestionConfirm.question.question_id;
+      const deletedOrder = deleteQuestionConfirm.question.display_order || 0;
+
       if (isEditMode) {
         // In edit mode, find the local question and remove it
         const localQuestion = localQuestions.find((q) => q.question_id === questionId);
         if (localQuestion) {
           handleLocalRemoveQuestion(localQuestion.localId);
+          // Reorder remaining questions after deletion
+          reorderAfterDelete(deletedOrder);
         }
       } else {
         // In view mode, enter edit mode first, then remove
         enterEditMode(batchQuestions);
-        const localQuestion = localQuestions.find((q) => q.question_id === questionId);
-        if (localQuestion) {
-          handleLocalRemoveQuestion(localQuestion.localId);
-        }
+        setTimeout(() => {
+          const localQuestion = localQuestions.find((q) => q.question_id === questionId);
+          if (localQuestion) {
+            handleLocalRemoveQuestion(localQuestion.localId);
+            // Reorder remaining questions after deletion
+            reorderAfterDelete(deletedOrder);
+          }
+        }, 100);
       }
     }
     setDeleteQuestionConfirm({ opened: false, question: null });
@@ -248,8 +321,8 @@ export function BatchFormQuestionScreen() {
 
     if (isEditMode) {
       // In edit mode, add questions locally
-      selectedQuestions.forEach((questionId) => {
-        handleAddQuestionToLocal(questionId);
+      selectedQuestions.forEach((questionId, index) => {
+        handleAddQuestionToLocal(questionId, index);
       });
       setSelectedQuestions([]);
       setBulkModalOpened(false);
@@ -263,8 +336,8 @@ export function BatchFormQuestionScreen() {
     } else {
       // In view mode, enter edit mode first, then add questions
       enterEditMode(batchQuestions);
-      selectedQuestions.forEach((questionId) => {
-        handleAddQuestionToLocal(questionId);
+      selectedQuestions.forEach((questionId, index) => {
+        handleAddQuestionToLocal(questionId, index);
       });
       setSelectedQuestions([]);
       setBulkModalOpened(false);
@@ -293,6 +366,136 @@ export function BatchFormQuestionScreen() {
         handleLocalUpdateQuestion(localQuestion.localId, updates);
       }
     }
+  };
+
+  // Reorder all questions to sequential 1, 2, 3, 4... without gaps
+  const reorderQuestionsSequentially = () => {
+    if (!isEditMode) {
+      return;
+    }
+
+    const activeQuestions = localQuestions.filter((question) => question.operation !== 'delete');
+
+    // Sort questions by current display_order
+    const sortedQuestions = [...activeQuestions].sort(
+      (a, b) => (a.display_order || 0) - (b.display_order || 0)
+    );
+
+    // Assign sequential display_order starting from 1
+    sortedQuestions.forEach((question, index) => {
+      const newOrder = index + 1;
+      if (question.display_order !== newOrder) {
+        handleLocalUpdateQuestion(question.localId, {
+          display_order: newOrder,
+        });
+      }
+    });
+  };
+
+  // Reorder questions when one is deleted (shift down higher orders)
+  const reorderAfterDelete = (deletedOrder: number) => {
+    if (!isEditMode) {
+      return;
+    }
+
+    localQuestions.forEach((question) => {
+      if (
+        question.operation !== 'delete' &&
+        question.display_order &&
+        question.display_order > deletedOrder
+      ) {
+        handleLocalUpdateQuestion(question.localId, {
+          display_order: question.display_order - 1,
+        });
+      }
+    });
+  };
+
+  // Reorder questions when display_order is changed
+  const reorderAfterDisplayOrderChange = (
+    questionId: string,
+    oldOrder: number,
+    newOrder: number
+  ) => {
+    if (!isEditMode || oldOrder === newOrder) {
+      return;
+    }
+
+    if (newOrder > oldOrder) {
+      // Moving down: shift questions between oldOrder+1 and newOrder up by 1
+      localQuestions.forEach((question) => {
+        if (
+          question.question_id !== questionId &&
+          question.operation !== 'delete' &&
+          question.display_order &&
+          question.display_order > oldOrder &&
+          question.display_order <= newOrder
+        ) {
+          handleLocalUpdateQuestion(question.localId, {
+            display_order: question.display_order - 1,
+          });
+        }
+      });
+    } else {
+      // Moving up: shift questions between newOrder and oldOrder-1 down by 1
+      localQuestions.forEach((question) => {
+        if (
+          question.question_id !== questionId &&
+          question.operation !== 'delete' &&
+          question.display_order &&
+          question.display_order >= newOrder &&
+          question.display_order < oldOrder
+        ) {
+          handleLocalUpdateQuestion(question.localId, {
+            display_order: question.display_order + 1,
+          });
+        }
+      });
+    }
+  };
+
+  const handleMoveUpQuestion = (questionId: string) => {
+    if (!isEditMode) {
+      return;
+    }
+
+    const question = localQuestions.find((q) => q.question_id === questionId);
+    if (!question || !question.display_order || question.display_order <= 1) {
+      return; // Can't move up if already at position 1
+    }
+
+    const newOrder = question.display_order - 1;
+
+    // Update the current question
+    handleLocalUpdateQuestion(question.localId, {
+      display_order: newOrder,
+    });
+
+    // Reorder other questions to maintain sequential order
+    reorderAfterDisplayOrderChange(questionId, question.display_order, newOrder);
+  };
+
+  const handleMoveDownQuestion = (questionId: string) => {
+    if (!isEditMode) {
+      return;
+    }
+
+    const activeQuestions = localQuestions.filter((q) => q.operation !== 'delete');
+    const question = localQuestions.find((q) => q.question_id === questionId);
+
+    if (!question || !question.display_order || question.display_order >= activeQuestions.length) {
+      return; // Can't move down if already at the last position
+    }
+
+    const newOrder = question.display_order + 1;
+
+    // Update the current question
+    handleLocalUpdateQuestion(question.localId, {
+      display_order: newOrder,
+    });
+
+    // Reorder other questions to maintain sequential order
+    reorderAfterDisplayOrderChange(questionId, question.display_order, newOrder);
   };
 
   return (
@@ -448,7 +651,8 @@ export function BatchFormQuestionScreen() {
                                 )}
                               </Group>
                               <Text size="sm" c="dimmed">
-                                {batchQuestion.question?.type} • {batchQuestion.question?.code}
+                                {batchQuestion.question?.type} • {batchQuestion.question?.code} •{' '}
+                                {batchQuestion.display_order}
                               </Text>
                               {batchQuestion.question?.description && (
                                 <Text size="xs" c="dimmed" mt={2}>
@@ -475,16 +679,38 @@ export function BatchFormQuestionScreen() {
                             {isEditMode && (
                               <Group gap="xs">
                                 <ActionIcon
+                                  disabled={batchQuestion.display_order === 1}
+                                  variant="subtle"
+                                  color="green"
+                                  onClick={() => handleMoveUpQuestion(batchQuestion.question_id)}>
+                                  <IconArrowUp size={16} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  disabled={
+                                    batchQuestion.display_order ===
+                                    currentQuestions.filter(
+                                      (q) =>
+                                        !('localId' in q) ||
+                                        (q as LocalBatchQuestion).operation !== 'delete'
+                                    ).length
+                                  }
+                                  variant="subtle"
+                                  color="red"
+                                  onClick={() => handleMoveDownQuestion(batchQuestion.question_id)}>
+                                  <IconArrowDown size={16} />
+                                </ActionIcon>
+                                <ActionIcon
                                   variant="subtle"
                                   color="blue"
-                                  onClick={() =>
+                                  onClick={() => {
                                     setEditingQuestion({
                                       ...batchQuestion.question!,
                                       question_id: batchQuestion.question_id,
                                       required: batchQuestion.is_required,
                                       is_active: batchQuestion.is_active,
-                                    })
-                                  }>
+                                      display_order: batchQuestion.display_order,
+                                    });
+                                  }}>
                                   <IconSettings size={16} />
                                 </ActionIcon>
                                 <ActionIcon
@@ -532,6 +758,7 @@ export function BatchFormQuestionScreen() {
                 Year {batch.year}
               </Text>
             </Group>
+
             <Badge variant="light" color="blue" size="sm">
               {currentQuestions.length} Questions
             </Badge>
@@ -554,56 +781,142 @@ export function BatchFormQuestionScreen() {
             </Button>
           </Group>
         </Group>
+        {batch.program_category && (
+          <Group gap="xs">
+            <IconBuilding size={14} color="var(--mantine-color-purple-6)" />
+            <Text size="sm" c="dimmed">
+              {batch.program_category.name}
+            </Text>
+          </Group>
+        )}
       </Paper>
 
-      {/* Bulk Assign Modal */}
+      {/* Bulk Assign Modal - Made bigger with search and filter */}
       <Modal
         opened={bulkModalOpened}
-        onClose={() => setBulkModalOpened(false)}
+        onClose={() => {
+          setBulkModalOpened(false);
+          setSearchQuery('');
+          setSelectedGroup(null);
+        }}
         title="Add Questions to Setup"
-        size="lg">
+        size="xl"
+        centered>
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             Select multiple questions to add to your local setup. You can make changes and save them
             when ready.
           </Text>
 
-          <ScrollArea h={300}>
+          {/* Search and Filter Controls */}
+          <Group gap="md" align="flex-end">
+            <TextInput
+              placeholder="Search questions by label, code, or description..."
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Select
+              placeholder="Filter by group"
+              data={availableGroups}
+              searchable
+              value={selectedGroup}
+              onChange={setSelectedGroup}
+              clearable
+              style={{ minWidth: 150 }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedGroup(null);
+              }}>
+              Clear Filters
+            </Button>
+          </Group>
+
+          {/* Results Summary */}
+          <Group justify="space-between" align="center">
+            <Text size="sm" c="dimmed">
+              Showing {filteredAvailableQuestions.length} of {availableQuestionsData.length}{' '}
+              questions
+              {selectedQuestions.length > 0 && ` • ${selectedQuestions.length} selected`}
+            </Text>
+            {selectedQuestions.length > 0 && (
+              <Button variant="light" size="xs" onClick={() => setSelectedQuestions([])}>
+                Clear Selection
+              </Button>
+            )}
+          </Group>
+
+          <ScrollArea h={500}>
             <Stack gap="xs">
-              {availableQuestionsData.map((question) => (
-                <Paper
-                  key={question.id}
-                  p="sm"
-                  radius="md"
-                  withBorder
-                  style={{
-                    cursor: 'pointer',
-                    backgroundColor: selectedQuestions.includes(question.id)
-                      ? 'var(--mantine-color-blue-0)'
-                      : 'var(--mantine-color-body)',
-                  }}
-                  onClick={() => {
-                    if (selectedQuestions.includes(question.id)) {
-                      setSelectedQuestions(selectedQuestions.filter((id) => id !== question.id));
-                    } else {
-                      setSelectedQuestions([...selectedQuestions, question.id]);
-                    }
-                  }}>
-                  <Group justify="space-between">
-                    <div style={{ flex: 1 }}>
-                      <Text fw={500} size="sm">
-                        {question.label}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {question.type} • {question.code}
-                      </Text>
-                    </div>
-                    {selectedQuestions.includes(question.id) && (
-                      <IconCheck size={16} color="var(--mantine-color-blue-6)" />
-                    )}
-                  </Group>
-                </Paper>
-              ))}
+              {filteredAvailableQuestions.length === 0 ? (
+                <Box ta="center" py="xl">
+                  <IconQuestionMark size={48} color="var(--mantine-color-gray-4)" />
+                  <Text c="dimmed" mt="md">
+                    No questions found
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    Try adjusting your search or filter criteria
+                  </Text>
+                </Box>
+              ) : (
+                filteredAvailableQuestions.map((question) => (
+                  <Paper
+                    key={question.id}
+                    p="sm"
+                    radius="md"
+                    withBorder
+                    style={{
+                      cursor: 'pointer',
+                      backgroundColor: selectedQuestions.includes(question.id)
+                        ? 'var(--mantine-color-blue-0)'
+                        : 'var(--mantine-color-body)',
+                      borderColor: selectedQuestions.includes(question.id)
+                        ? 'var(--mantine-color-blue-4)'
+                        : undefined,
+                    }}
+                    onClick={() => {
+                      if (selectedQuestions.includes(question.id)) {
+                        setSelectedQuestions(selectedQuestions.filter((id) => id !== question.id));
+                      } else {
+                        setSelectedQuestions([...selectedQuestions, question.id]);
+                      }
+                    }}>
+                    <Group justify="space-between">
+                      <div style={{ flex: 1 }}>
+                        <Group gap="xs" mb="xs">
+                          <Text fw={500} size="sm">
+                            {question.label}
+                          </Text>
+                          {question.group && (
+                            <Badge size="xs" variant="light" color="blue">
+                              {question.group}
+                            </Badge>
+                          )}
+                          <Badge size="xs" variant="outline" color="gray">
+                            {question.type}
+                          </Badge>
+                        </Group>
+                        <Text size="xs" c="dimmed">
+                          {question.code}
+                        </Text>
+                        {question.description && (
+                          <Text size="xs" c="dimmed" mt={2}>
+                            {question.description}
+                          </Text>
+                        )}
+                      </div>
+                      {selectedQuestions.includes(question.id) && (
+                        <IconCheck size={16} color="var(--mantine-color-blue-6)" />
+                      )}
+                    </Group>
+                  </Paper>
+                ))
+              )}
             </Stack>
           </ScrollArea>
 
@@ -612,7 +925,13 @@ export function BatchFormQuestionScreen() {
               {selectedQuestions.length} questions selected
             </Text>
             <Group>
-              <Button variant="outline" onClick={() => setBulkModalOpened(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setBulkModalOpened(false);
+                  setSearchQuery('');
+                  setSelectedGroup(null);
+                }}>
                 Cancel
               </Button>
               <Button onClick={handleBulkAssign} disabled={selectedQuestions.length === 0}>
@@ -782,6 +1101,48 @@ export function BatchFormQuestionScreen() {
                   handleUpdateQuestion(editingQuestion.question_id, {
                     is_active: event.currentTarget.checked,
                   });
+                }
+              }}
+            />
+
+            <NumberInput
+              label="Display Order"
+              description="Order in which this question appears in the form (lower numbers appear first). Other questions will be automatically reordered."
+              placeholder="Enter display order"
+              value={editingQuestion.display_order || 1}
+              min={1}
+              max={
+                currentQuestions.filter(
+                  (q) => !('localId' in q) || (q as LocalBatchQuestion).operation !== 'delete'
+                ).length
+              }
+              onChange={(value) => {
+                if (editingQuestion.question_id && value !== null && value !== '') {
+                  const newValue = Number(value);
+                  const oldValue = editingQuestion.display_order || 1;
+
+                  // Ensure new value is within valid range
+                  const maxOrder = currentQuestions.filter(
+                    (q) => !('localId' in q) || (q as LocalBatchQuestion).operation !== 'delete'
+                  ).length;
+
+                  if (newValue < 1 || newValue > maxOrder) {
+                    return; // Don't update if out of range
+                  }
+
+                  // Update the current question
+                  handleUpdateQuestion(editingQuestion.question_id, {
+                    display_order: newValue,
+                  });
+
+                  // Update the editingQuestion state to reflect the change immediately
+                  setEditingQuestion({
+                    ...editingQuestion,
+                    display_order: newValue,
+                  });
+
+                  // Reorder other questions to maintain sequential order
+                  reorderAfterDisplayOrderChange(editingQuestion.question_id, oldValue, newValue);
                 }
               }}
             />

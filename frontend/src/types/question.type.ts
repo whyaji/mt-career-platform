@@ -5,7 +5,7 @@ export interface QuestionType {
   placeholder?: string;
   description?: string;
   type: QuestionFieldType;
-  options?: string[];
+  options?: { label: string; value: string }[];
   validation_rules?: ValidationRule[];
   scoring_rules?: ScoringRule;
   display_order: number;
@@ -42,10 +42,10 @@ export type QuestionFieldType =
 
 export interface ValidationRule {
   rule: string;
-  value?: unknown;
+  value?: string;
   message?: string;
+  description?: string;
 }
-
 export interface ScoringRule {
   enabled: boolean;
   points: number;
@@ -69,10 +69,25 @@ export interface ScoringCondition {
 }
 
 export interface ConditionalLogic {
+  enabled: boolean;
+  operator: 'AND' | 'OR';
+  conditions: ConditionalCondition[];
+}
+
+export interface ConditionalCondition {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than';
-  value: unknown;
-  show_when: boolean;
+  operator:
+    | 'in'
+    | 'not_in'
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'empty'
+    | 'not_empty'
+    | 'greater_than'
+    | 'less_than';
+  values: string[];
 }
 
 export interface QuestionFormData {
@@ -81,7 +96,7 @@ export interface QuestionFormData {
   placeholder?: string;
   description?: string;
   type: QuestionFieldType;
-  options?: string[];
+  options?: { label: string; value: string }[];
   validation_rules?: ValidationRule[];
   scoring_rules?: ScoringRule;
   display_order?: number;
@@ -97,10 +112,6 @@ export interface QuestionFormData {
 }
 
 export interface QuestionTypesResponse {
-  [key: string]: string;
-}
-
-export interface ValidationRulesResponse {
   [key: string]: string;
 }
 

@@ -258,15 +258,28 @@ export function QuestionsListScreen() {
       title: 'Options',
       dataIndex: 'options',
       render: (options: unknown) => {
-        const optionsArray = (options as string[]) || [];
-        if (optionsArray.length === 0) {
+        if (!options || !Array.isArray(options)) {
           return '-';
         }
 
+        if (options.length === 0) {
+          return '-';
+        }
+
+        // Handle object options with label and value
+        const optionsText = options
+          .map((option) => {
+            if (typeof option === 'object' && option !== null && 'label' in option) {
+              return (option as { label: string }).label;
+            }
+            return String(option);
+          })
+          .join(', ');
+
         return (
-          <Tooltip label={optionsArray.join(', ')}>
+          <Tooltip label={optionsText}>
             <Badge variant="outline" size="sm">
-              {optionsArray.length} option{optionsArray.length !== 1 ? 's' : ''}
+              {options.length} option{options.length !== 1 ? 's' : ''}
             </Badge>
           </Tooltip>
         );
