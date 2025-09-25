@@ -14,7 +14,7 @@ class BatchController extends Controller
 
     public function __construct()
     {
-        $this->middleware('jwt.auth');
+        $this->middleware('jwt.auth', ['except' => ['getActive']]);
     }
 
     public function getActive(Request $request)

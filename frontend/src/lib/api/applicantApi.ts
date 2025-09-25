@@ -3,6 +3,8 @@ import type { PaginatedResponse, PaginationParams } from '@/types/pagination.typ
 
 import { authenticatedFetch, baseApiUrl, type DefaultResponseType } from './api';
 
+const talentHubApplicantUrl = `${baseApiUrl}/talenthub/applications`;
+
 export const getApplications = async (
   params: PaginationParams = {}
 ): Promise<PaginatedResponse<ApplicantDataType>> => {
@@ -27,16 +29,14 @@ export const getApplications = async (
     searchParams.append('filter', params.filter);
   }
 
-  const response = await authenticatedFetch(
-    `${baseApiUrl}/applications?${searchParams.toString()}`
-  );
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}?${searchParams.toString()}`);
   return response.json();
 };
 
 export const getApplicationById = async (
   id: string
 ): Promise<DefaultResponseType<ApplicantDataType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/applications/${id}`);
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}/${id}`);
   return response.json();
 };
 
@@ -44,7 +44,7 @@ export const updateApplication = async (
   id: string,
   data: Partial<ApplicantDataFormType>
 ): Promise<DefaultResponseType<ApplicantDataType>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/applications/${id}`, {
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export const updateApplication = async (
 };
 
 export const deleteApplication = async (id: string): Promise<DefaultResponseType<void>> => {
-  const response = await authenticatedFetch(`${baseApiUrl}/applications/${id}`, {
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}/${id}`, {
     method: 'DELETE',
   });
   return response.json();
