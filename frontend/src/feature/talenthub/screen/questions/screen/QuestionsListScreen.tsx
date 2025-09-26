@@ -163,7 +163,7 @@ export function QuestionsListScreen() {
       title: 'Code',
       dataIndex: 'code',
       sortable: true,
-      width: '150px',
+      width: '175px',
     },
     {
       key: 'label',

@@ -67,14 +67,14 @@ const navItems: NavItemProps[] = [
         href: '/talenthub/educational-institution',
       },
       {
-        icon: IconBook,
-        label: 'Programs',
-        href: '/talenthub/program',
-      },
-      {
         icon: IconCategoryFilled,
         label: 'Program Categories',
         href: '/talenthub/program-category',
+      },
+      {
+        icon: IconBook,
+        label: 'Programs',
+        href: '/talenthub/program',
       },
       {
         icon: IconQuestionMark,

@@ -1,4 +1,5 @@
 import type { ProgramType } from './program.type';
+import type { QuestionType } from './question.type';
 
 export type BatchType = {
   id: string;
@@ -18,4 +19,5 @@ export type BatchType = {
     status: number;
     programs?: ProgramType[] | null;
   } | null;
+  questions?: QuestionType[] | null;
 };

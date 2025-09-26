@@ -1,5 +1,6 @@
 export interface QuestionType {
   id: string;
+  question_id?: string; // Optional for batch questions
   code: string;
   label: string;
   placeholder?: string;

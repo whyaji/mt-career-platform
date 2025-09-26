@@ -36,3 +36,16 @@ export type ApplicantDataPostType = Omit<
   ApplicantDataType,
   'id' | 'created_at' | 'updated_at' | 'deleted_at'
 > & { agreement1: string; agreement2: string; agreement3: string; turnstileToken: string };
+
+export type ApplicantDataSubmitType = {
+  answers: {
+    question_id: string;
+    question_code: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    answer: any;
+  }[];
+  agreement1: string;
+  agreement2: string;
+  agreement3: string;
+  turnstileToken: string;
+};
