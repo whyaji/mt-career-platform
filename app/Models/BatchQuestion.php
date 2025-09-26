@@ -145,7 +145,7 @@ class BatchQuestion extends Model
      * Get merged configuration for this batch question
      * Combines question defaults with batch-specific overrides
      */
-    public function getMergedConfig()
+    public function getMergedConfig($isForApplicant = false)
     {
         $question = $this->question;
 
@@ -156,7 +156,10 @@ class BatchQuestion extends Model
         return [
             'id' => $this->id,
             'question_id' => $this->question_id,
-            'batch_id' => $this->batch_id,
+            ...($isForApplicant ? [] : [
+                'batch_id' => $this->batch_id,
+                'scoring_rules' => $this->getEffectiveScoring(),
+            ]),
             'code' => $question->code,
             'label' => $question->label,
             'placeholder' => $question->placeholder,
@@ -164,7 +167,6 @@ class BatchQuestion extends Model
             'type' => $question->type,
             'options' => $this->getEffectiveOptions(),
             'validation_rules' => $this->getEffectiveValidation(),
-            'scoring_rules' => $this->getEffectiveScoring(),
             'display_order' => $this->getEffectiveDisplayOrder(),
             'required' => $this->isEffectivelyRequired(),
             'readonly' => $question->readonly,

@@ -135,6 +135,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
     // Verification routes
     $router->group(['prefix' => 'verification'], function () use ($router) {
         $router->get('/path/{batchLocation}/{batchNumber}', 'VerificationController@path');
+        $router->get('/form-path/{programCategoryCode}/{batchLocationCode}/{batchNumberCode}', 'VerificationController@formPath');
     });
 
     // Batch routes with rate limiting
