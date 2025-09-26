@@ -38,6 +38,7 @@ export type ApplicantDataPostType = Omit<
 > & { agreement1: string; agreement2: string; agreement3: string; turnstileToken: string };
 
 export type ApplicantDataSubmitType = {
+  batch_id: string;
   answers: {
     question_id: string;
     question_code: string;

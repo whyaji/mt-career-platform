@@ -16,7 +16,7 @@ export const submitForm = async (data: ApplicantDataPostType): Promise<DefaultRe
 export const submitFormForApplicant = async (
   data: ApplicantDataSubmitType
 ): Promise<DefaultResponseType> => {
-  const response = await fetch(`${baseApiUrl}/form/applicant`, {
+  const response = await fetch(`${baseApiUrl}/form/submit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

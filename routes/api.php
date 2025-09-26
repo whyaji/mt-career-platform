@@ -146,5 +146,6 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
     // Form routes with stricter rate limiting
     $router->group(['prefix' => 'form', 'middleware' => 'rate_limit:5,1'], function () use ($router) {
         $router->post('/', 'FormController@submit');
+        $router->post('/submit', 'FormController@formSubmit');
     });
 });

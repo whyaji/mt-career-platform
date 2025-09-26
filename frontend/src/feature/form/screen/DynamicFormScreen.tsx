@@ -340,6 +340,7 @@ export default function DynamicFormScreen() {
 
       // Convert form data to submission format
       const combinedData: ApplicantDataSubmitType = {
+        batch_id: batch.id,
         // Extract agreement data
         agreement1: form.values.agreement1,
         agreement2: form.values.agreement2,
