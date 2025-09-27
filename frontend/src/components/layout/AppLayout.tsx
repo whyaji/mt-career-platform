@@ -18,6 +18,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
   IconBook,
+  IconBuildingCommunity,
   IconCategoryFilled,
   IconChevronRight,
   IconDatabase,
@@ -93,6 +94,11 @@ const navItems: NavItemProps[] = [
     label: 'Applications',
     href: '/talenthub/applications',
     // badge: 'New',
+  },
+  {
+    icon: IconBuildingCommunity,
+    label: 'Open Programs',
+    href: '/talenthub/open-programs',
   },
   // {
   //   icon: IconChartBar,

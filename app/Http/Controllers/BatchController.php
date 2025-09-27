@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Batch;
+use App\Models\BatchQuestion;
 use App\Traits\PaginationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -87,6 +88,52 @@ class BatchController extends Controller
             Log::error("Error getting batch by ID: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    public function getBatchByIdWithQuestions($id)
+    {
+        try {
+            $batch = Batch::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes')
+                ->with('programCategory:id,code,name,description,status')
+                ->find($id);
+
+            if (!$batch) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'BATCH_NOT_FOUND',
+                    'message' => 'Batch not found'
+                ], 404);
+            }
+
+            // Get batch questions with merged configuration
+            $batchQuestions = BatchQuestion::where('batch_id', $batch->id)
+                ->with('question')
+                ->active()
+                ->orderBy('display_order')
+                ->get();
+
+            // Get merged configurations for each batch question
+            $questions = $batchQuestions->map(function ($batchQuestion) {
+                return $batchQuestion->getMergedConfig(true);
+            })->filter();
+
+            // Add questions to batch data
+            $batchData = $batch->toArray();
+            $batchData['questions'] = $questions;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch retrieved successfully',
+                'data' => $batchData
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error getting batch by ID with questions: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting batch by ID with questions',
                 'error' => 'INTERNAL_SERVER_ERROR'
             ], 500);
         }

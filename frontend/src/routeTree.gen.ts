@@ -20,10 +20,12 @@ import { Route as LocationBatchIndexRouteImport } from './routes/$location/$batc
 import { Route as TalenthubAuthenticatedQuestionsIndexRouteImport } from './routes/talenthub/_authenticated/questions/index'
 import { Route as TalenthubAuthenticatedProgramIndexRouteImport } from './routes/talenthub/_authenticated/program/index'
 import { Route as TalenthubAuthenticatedProgramCategoryIndexRouteImport } from './routes/talenthub/_authenticated/program-category/index'
+import { Route as TalenthubAuthenticatedOpenProgramsIndexRouteImport } from './routes/talenthub/_authenticated/open-programs/index'
 import { Route as TalenthubAuthenticatedEducationalInstitutionIndexRouteImport } from './routes/talenthub/_authenticated/educational-institution/index'
 import { Route as TalenthubAuthenticatedDashboardIndexRouteImport } from './routes/talenthub/_authenticated/dashboard/index'
 import { Route as TalenthubAuthenticatedBatchesIndexRouteImport } from './routes/talenthub/_authenticated/batches/index'
 import { Route as TalenthubAuthenticatedApplicationsIndexRouteImport } from './routes/talenthub/_authenticated/applications/index'
+import { Route as TalenthubAuthenticatedOpenProgramsBatchIdIndexRouteImport } from './routes/talenthub/_authenticated/open-programs/$batchId/index'
 import { Route as FormProgramCodeBatchLocationCodeBatchNumberCodeIndexRouteImport } from './routes/form/$programCode/$batchLocationCode/$batchNumberCode/index'
 import { Route as TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRouteImport } from './routes/talenthub/_authenticated/batches/$batchId/form-question/index'
 
@@ -81,6 +83,12 @@ const TalenthubAuthenticatedProgramCategoryIndexRoute =
     path: '/program-category/',
     getParentRoute: () => TalenthubAuthenticatedRoute,
   } as any)
+const TalenthubAuthenticatedOpenProgramsIndexRoute =
+  TalenthubAuthenticatedOpenProgramsIndexRouteImport.update({
+    id: '/open-programs/',
+    path: '/open-programs/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
 const TalenthubAuthenticatedEducationalInstitutionIndexRoute =
   TalenthubAuthenticatedEducationalInstitutionIndexRouteImport.update({
     id: '/educational-institution/',
@@ -103,6 +111,12 @@ const TalenthubAuthenticatedApplicationsIndexRoute =
   TalenthubAuthenticatedApplicationsIndexRouteImport.update({
     id: '/applications/',
     path: '/applications/',
+    getParentRoute: () => TalenthubAuthenticatedRoute,
+  } as any)
+const TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute =
+  TalenthubAuthenticatedOpenProgramsBatchIdIndexRouteImport.update({
+    id: '/open-programs/$batchId/',
+    path: '/open-programs/$batchId/',
     getParentRoute: () => TalenthubAuthenticatedRoute,
   } as any)
 const FormProgramCodeBatchLocationCodeBatchNumberCodeIndexRoute =
@@ -129,10 +143,12 @@ export interface FileRoutesByFullPath {
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/open-programs': typeof TalenthubAuthenticatedOpenProgramsIndexRoute
   '/talenthub/program-category': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
   '/talenthub/program': typeof TalenthubAuthenticatedProgramIndexRoute
   '/talenthub/questions': typeof TalenthubAuthenticatedQuestionsIndexRoute
   '/form/$programCode/$batchLocationCode/$batchNumberCode': typeof FormProgramCodeBatchLocationCodeBatchNumberCodeIndexRoute
+  '/talenthub/open-programs/$batchId': typeof TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute
   '/talenthub/batches/$batchId/form-question': typeof TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute
 }
 export interface FileRoutesByTo {
@@ -145,10 +161,12 @@ export interface FileRoutesByTo {
   '/talenthub/batches': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/dashboard': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/educational-institution': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/open-programs': typeof TalenthubAuthenticatedOpenProgramsIndexRoute
   '/talenthub/program-category': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
   '/talenthub/program': typeof TalenthubAuthenticatedProgramIndexRoute
   '/talenthub/questions': typeof TalenthubAuthenticatedQuestionsIndexRoute
   '/form/$programCode/$batchLocationCode/$batchNumberCode': typeof FormProgramCodeBatchLocationCodeBatchNumberCodeIndexRoute
+  '/talenthub/open-programs/$batchId': typeof TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute
   '/talenthub/batches/$batchId/form-question': typeof TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute
 }
 export interface FileRoutesById {
@@ -164,10 +182,12 @@ export interface FileRoutesById {
   '/talenthub/_authenticated/batches/': typeof TalenthubAuthenticatedBatchesIndexRoute
   '/talenthub/_authenticated/dashboard/': typeof TalenthubAuthenticatedDashboardIndexRoute
   '/talenthub/_authenticated/educational-institution/': typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  '/talenthub/_authenticated/open-programs/': typeof TalenthubAuthenticatedOpenProgramsIndexRoute
   '/talenthub/_authenticated/program-category/': typeof TalenthubAuthenticatedProgramCategoryIndexRoute
   '/talenthub/_authenticated/program/': typeof TalenthubAuthenticatedProgramIndexRoute
   '/talenthub/_authenticated/questions/': typeof TalenthubAuthenticatedQuestionsIndexRoute
   '/form/$programCode/$batchLocationCode/$batchNumberCode/': typeof FormProgramCodeBatchLocationCodeBatchNumberCodeIndexRoute
+  '/talenthub/_authenticated/open-programs/$batchId/': typeof TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute
   '/talenthub/_authenticated/batches/$batchId/form-question/': typeof TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute
 }
 export interface FileRouteTypes {
@@ -183,10 +203,12 @@ export interface FileRouteTypes {
     | '/talenthub/batches'
     | '/talenthub/dashboard'
     | '/talenthub/educational-institution'
+    | '/talenthub/open-programs'
     | '/talenthub/program-category'
     | '/talenthub/program'
     | '/talenthub/questions'
     | '/form/$programCode/$batchLocationCode/$batchNumberCode'
+    | '/talenthub/open-programs/$batchId'
     | '/talenthub/batches/$batchId/form-question'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -199,10 +221,12 @@ export interface FileRouteTypes {
     | '/talenthub/batches'
     | '/talenthub/dashboard'
     | '/talenthub/educational-institution'
+    | '/talenthub/open-programs'
     | '/talenthub/program-category'
     | '/talenthub/program'
     | '/talenthub/questions'
     | '/form/$programCode/$batchLocationCode/$batchNumberCode'
+    | '/talenthub/open-programs/$batchId'
     | '/talenthub/batches/$batchId/form-question'
   id:
     | '__root__'
@@ -217,10 +241,12 @@ export interface FileRouteTypes {
     | '/talenthub/_authenticated/batches/'
     | '/talenthub/_authenticated/dashboard/'
     | '/talenthub/_authenticated/educational-institution/'
+    | '/talenthub/_authenticated/open-programs/'
     | '/talenthub/_authenticated/program-category/'
     | '/talenthub/_authenticated/program/'
     | '/talenthub/_authenticated/questions/'
     | '/form/$programCode/$batchLocationCode/$batchNumberCode/'
+    | '/talenthub/_authenticated/open-programs/$batchId/'
     | '/talenthub/_authenticated/batches/$batchId/form-question/'
   fileRoutesById: FileRoutesById
 }
@@ -304,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalenthubAuthenticatedProgramCategoryIndexRouteImport
       parentRoute: typeof TalenthubAuthenticatedRoute
     }
+    '/talenthub/_authenticated/open-programs/': {
+      id: '/talenthub/_authenticated/open-programs/'
+      path: '/open-programs'
+      fullPath: '/talenthub/open-programs'
+      preLoaderRoute: typeof TalenthubAuthenticatedOpenProgramsIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
     '/talenthub/_authenticated/educational-institution/': {
       id: '/talenthub/_authenticated/educational-institution/'
       path: '/educational-institution'
@@ -332,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalenthubAuthenticatedApplicationsIndexRouteImport
       parentRoute: typeof TalenthubAuthenticatedRoute
     }
+    '/talenthub/_authenticated/open-programs/$batchId/': {
+      id: '/talenthub/_authenticated/open-programs/$batchId/'
+      path: '/open-programs/$batchId'
+      fullPath: '/talenthub/open-programs/$batchId'
+      preLoaderRoute: typeof TalenthubAuthenticatedOpenProgramsBatchIdIndexRouteImport
+      parentRoute: typeof TalenthubAuthenticatedRoute
+    }
     '/form/$programCode/$batchLocationCode/$batchNumberCode/': {
       id: '/form/$programCode/$batchLocationCode/$batchNumberCode/'
       path: '/form/$programCode/$batchLocationCode/$batchNumberCode'
@@ -354,9 +394,11 @@ interface TalenthubAuthenticatedRouteChildren {
   TalenthubAuthenticatedBatchesIndexRoute: typeof TalenthubAuthenticatedBatchesIndexRoute
   TalenthubAuthenticatedDashboardIndexRoute: typeof TalenthubAuthenticatedDashboardIndexRoute
   TalenthubAuthenticatedEducationalInstitutionIndexRoute: typeof TalenthubAuthenticatedEducationalInstitutionIndexRoute
+  TalenthubAuthenticatedOpenProgramsIndexRoute: typeof TalenthubAuthenticatedOpenProgramsIndexRoute
   TalenthubAuthenticatedProgramCategoryIndexRoute: typeof TalenthubAuthenticatedProgramCategoryIndexRoute
   TalenthubAuthenticatedProgramIndexRoute: typeof TalenthubAuthenticatedProgramIndexRoute
   TalenthubAuthenticatedQuestionsIndexRoute: typeof TalenthubAuthenticatedQuestionsIndexRoute
+  TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute: typeof TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute
   TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute: typeof TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute
 }
 
@@ -370,12 +412,16 @@ const TalenthubAuthenticatedRouteChildren: TalenthubAuthenticatedRouteChildren =
       TalenthubAuthenticatedDashboardIndexRoute,
     TalenthubAuthenticatedEducationalInstitutionIndexRoute:
       TalenthubAuthenticatedEducationalInstitutionIndexRoute,
+    TalenthubAuthenticatedOpenProgramsIndexRoute:
+      TalenthubAuthenticatedOpenProgramsIndexRoute,
     TalenthubAuthenticatedProgramCategoryIndexRoute:
       TalenthubAuthenticatedProgramCategoryIndexRoute,
     TalenthubAuthenticatedProgramIndexRoute:
       TalenthubAuthenticatedProgramIndexRoute,
     TalenthubAuthenticatedQuestionsIndexRoute:
       TalenthubAuthenticatedQuestionsIndexRoute,
+    TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute:
+      TalenthubAuthenticatedOpenProgramsBatchIdIndexRoute,
     TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute:
       TalenthubAuthenticatedBatchesBatchIdFormQuestionIndexRoute,
   }

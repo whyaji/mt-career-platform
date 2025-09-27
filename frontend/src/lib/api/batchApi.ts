@@ -50,6 +50,13 @@ export const getBatchById = async (id: string): Promise<DefaultResponseType<Batc
   return response.json();
 };
 
+export const getBatchByIdWithQuestions = async (
+  id: string
+): Promise<DefaultResponseType<BatchType>> => {
+  const response = await authenticatedFetch(`${talentHubBatchUrl}/${id}/with-questions`);
+  return response.json();
+};
+
 export const createBatch = async (
   data: Omit<BatchType, 'id'>
 ): Promise<DefaultResponseType<BatchType>> => {

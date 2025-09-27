@@ -15,7 +15,7 @@ class ProgramController extends Controller
 
     public function __construct()
     {
-        $this->middleware('jwt.auth', ['except' => ['getActive']]);
+        $this->middleware('jwt.auth');
     }
 
     public function getActive(Request $request)

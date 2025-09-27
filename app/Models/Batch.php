@@ -67,4 +67,13 @@ class Batch extends Model
             ->where(array('location_code' => strtoupper($location), 'number_code' => strtoupper($number)))
             ->first();
     }
+
+    // scope to get open programs, filter batch with status active and has program category and it status active
+    public function scopeOpenPrograms($query)
+    {
+        return $query->where(array('status' => self::STATUS_ACTIVE, 'deleted_at' => null))
+            ->whereHas('programCategory', function ($query) {
+                $query->where('status', ProgramCategory::STATUS_ACTIVE);
+            })->with('programCategory:id,code,name,description,status');
+    }
 }

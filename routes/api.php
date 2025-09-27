@@ -50,6 +50,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->post('/', 'BatchController@createBatch');
             $router->put('/{id}', 'BatchController@updateBatch');
             $router->delete('/{id}', 'BatchController@deleteBatch');
+            $router->get('/{id}/with-questions', 'BatchController@getBatchByIdWithQuestions');
         });
 
         // Educational Institution routes with rate limiting for active endpoint
@@ -66,13 +67,9 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->delete('/{id}', 'EducationalInstitutionController@deleteInstitution');
         });
 
-        // Program Category routes with rate limiting for active endpoint
-        $router->group(['prefix' => 'program-category'], function () use ($router) {
-            $router->get('/active', 'ProgramCategoryController@getActive');
-        });
-
         // Program Category routes with JWT auth
         $router->group(['prefix' => 'program-category'], function () use ($router) {
+            $router->get('/active', 'ProgramCategoryController@getActive');
             $router->get('/', 'ProgramCategoryController@getProgramCategories');
             $router->get('/{id}', 'ProgramCategoryController@getProgramCategoryById');
             $router->post('/', 'ProgramCategoryController@createProgramCategory');
@@ -80,13 +77,9 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->delete('/{id}', 'ProgramCategoryController@deleteProgramCategory');
         });
 
-        // Program routes with rate limiting for active endpoint
-        $router->group(['prefix' => 'program'], function () use ($router) {
-            $router->get('/active', 'ProgramController@getActive');
-        });
-
         // Program routes with JWT auth
         $router->group(['prefix' => 'program'], function () use ($router) {
+            $router->get('/active', 'ProgramController@getActive');
             $router->get('/', 'ProgramController@getPrograms');
             $router->get('/{id}', 'ProgramController@getProgramById');
             $router->post('/', 'ProgramController@createProgram');
@@ -129,6 +122,24 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/{batchId}/questions-list/available', 'BatchQuestionController@getAvailableQuestionsForBatch');
             $router->post('/{batchId}/questions-list/bulk-operations', 'BatchQuestionController@bulkBatchQuestionOperations');
             $router->get('/{batchId}/form-configuration', 'BatchQuestionController@getBatchFormConfiguration');
+        });
+
+        // Open Program routes with JWT auth
+        $router->group(['prefix' => 'open-program'], function () use ($router) {
+            $router->get('/', 'OpenProgramController@getOpenPrograms');
+        });
+
+        // Screening Applicant routes with JWT auth
+        $router->group(['prefix' => 'screening-applicant'], function () use ($router) {
+            $router->get('/', 'ScreeningApplicantController@getScreeningApplicants');
+            $router->get('/stats', 'ScreeningApplicantController@getScreeningApplicantStats');
+            $router->get('/status/{status}', 'ScreeningApplicantController@getScreeningApplicantsByStatus');
+            $router->get('/batch/{batchId}', 'ScreeningApplicantController@getScreeningApplicantsByBatch');
+            $router->get('/{id}', 'ScreeningApplicantController@getScreeningApplicantById');
+            $router->post('/', 'ScreeningApplicantController@createScreeningApplicant');
+            $router->put('/{id}', 'ScreeningApplicantController@updateScreeningApplicant');
+            $router->put('/{id}/status', 'ScreeningApplicantController@updateScreeningApplicantStatus');
+            $router->delete('/{id}', 'ScreeningApplicantController@deleteScreeningApplicant');
         });
     });
 

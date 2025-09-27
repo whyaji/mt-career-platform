@@ -97,6 +97,7 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   responsive?: boolean;
   headerActions?: React.ReactNode;
   rowActions?: RowAction<T>[];
+  backButton?: React.ReactNode;
 }
 
 export function DefaultTable<T = Record<string, unknown>>({
@@ -129,6 +130,7 @@ export function DefaultTable<T = Record<string, unknown>>({
   responsive = true,
   headerActions,
   rowActions = [],
+  backButton,
 }: DefaultTableProps<T>) {
   const addPadding = useMediaQuery(`(max-width: ${em(480)})`);
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
@@ -267,25 +269,28 @@ export function DefaultTable<T = Record<string, unknown>>({
           borderBottom: '1px solid var(--mantine-color-gray-3)',
           padding: '1rem',
         }}>
-        {(title || description || headerActions) && (
-          <Box mb="md">
-            <Group justify="space-between" align="flex-start">
-              <Box>
-                {title && (
-                  <Text size="xl" fw={600} mb={description ? 4 : 0}>
-                    {title}
-                  </Text>
-                )}
-                {description && (
-                  <Text size="sm" c="dimmed">
-                    {description}
-                  </Text>
-                )}
-              </Box>
-              {headerActions && <Box>{headerActions}</Box>}
-            </Group>
-          </Box>
-        )}
+        <Group justify="flex-start" align="center">
+          {backButton && <Box>{backButton}</Box>}
+          {(title || description || headerActions) && (
+            <Box mb="md">
+              <Group justify="space-between" align="flex-start">
+                <Box>
+                  {title && (
+                    <Text size="xl" fw={600} mb={description ? 4 : 0}>
+                      {title}
+                    </Text>
+                  )}
+                  {description && (
+                    <Text size="sm" c="dimmed">
+                      {description}
+                    </Text>
+                  )}
+                </Box>
+                {headerActions && <Box>{headerActions}</Box>}
+              </Group>
+            </Box>
+          )}
+        </Group>
 
         {/* Search and Filter Bar */}
         <Paper p="md" withBorder radius="md" bg="gray.0">
