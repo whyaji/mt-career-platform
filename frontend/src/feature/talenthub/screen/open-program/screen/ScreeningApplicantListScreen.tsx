@@ -1,12 +1,13 @@
-import { ActionIcon } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { ActionIcon, Group, Tooltip } from '@mantine/core';
+import { IconArrowLeft, IconEye } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { DefaultTable, type TableColumn } from '@/components/DefaultTable';
+import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
 import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import { PendingScreenComponent } from '@/components/PendingScreenComponent';
+import { WindowScreeningApplicantDetailModal } from '@/feature/talenthub/screen/open-program/components/modals/WindowScreeningApplicantDetailModal';
 import { useGetBatchByIdWithQuestionQuery } from '@/hooks/query/batch/useGetBatchByIdWithQuestionQuery';
 import { useScreeningApplicantsByBatchQuery } from '@/hooks/query/screening-applicant/useScreeningApplicantsByBatchQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
@@ -23,14 +24,48 @@ export function ScreeningApplicantListScreen() {
   const search = Route.useSearch();
   const [_refreshKey, setRefreshKey] = useState(0);
 
+  // Modal states - support multiple modals
+  const [openModals, setOpenModals] = useState<Map<string, ScreeningApplicantType>>(new Map());
+
   const { data: batchDetailData, isLoading: batchDetailLoading } =
     useGetBatchByIdWithQuestionQuery(batchId);
 
   const batch =
     batchDetailData?.success && 'data' in batchDetailData ? batchDetailData.data : undefined;
 
-  const { tempSearch, setTempSearch, queryParams, handlePageChange, handleSortChange } =
-    usePaginationConfig({ search, navigate });
+  const {
+    tempSearch,
+    setTempSearch,
+    appliedFilters,
+    queryParams,
+    handlePageChange,
+    handleSortChange,
+    handleFilterAdd,
+    handleFilterRemove,
+    handleFilterClear,
+    handlePageSizeChange,
+  } = usePaginationConfig({ search, navigate });
+
+  // Separate regular filters from JSON filters
+  const regularFilters = appliedFilters.filter((filter) => !filter.column.startsWith('answers.'));
+  const jsonFilters = appliedFilters.filter((filter) => filter.column.startsWith('answers.'));
+
+  // Build query params
+  const regularQueryParams = {
+    ...queryParams,
+    filter:
+      regularFilters.length > 0
+        ? regularFilters
+            .map((filter) => `${filter.column}:${filter.value}:${filter.condition}`)
+            .join(';')
+        : undefined,
+    json_filters:
+      jsonFilters.length > 0
+        ? jsonFilters
+            .map((filter) => `${filter.column}:${filter.value}:${filter.condition}`)
+            .join(';')
+        : undefined,
+  };
 
   const {
     data: screeningApplicantsResponse,
@@ -39,7 +74,7 @@ export function ScreeningApplicantListScreen() {
     refetch,
   } = useScreeningApplicantsByBatchQuery(
     batch?.id || '',
-    queryParams,
+    regularQueryParams,
     !(batch instanceof Error) && batch?.id !== undefined
   );
 
@@ -59,6 +94,20 @@ export function ScreeningApplicantListScreen() {
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     refetch();
+  };
+
+  const handleViewDetails = (applicant: ScreeningApplicantType) => {
+    const modalId = `modal-${applicant.id}`;
+    // console.log('Opening modal for applicant:', applicant.id, modalId);
+    setOpenModals((prev) => new Map(prev.set(modalId, applicant)));
+  };
+
+  const handleCloseModal = (modalId: string) => {
+    setOpenModals((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(modalId);
+      return newMap;
+    });
   };
 
   const getStatusColor = (status: number) => {
@@ -92,6 +141,37 @@ export function ScreeningApplicantListScreen() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Helper function to get answer for a specific question
+  const getAnswerForQuestion = (applicant: ScreeningApplicantType, questionCode: string) => {
+    const answerObj = applicant.answers.find((answer) => answer.question_code === questionCode);
+    return answerObj?.answer || '-';
+  };
+
+  // Helper function to format answer display
+  const formatAnswer = (answer: unknown) => {
+    if (answer === null || answer === undefined) {
+      return '-';
+    }
+
+    if (typeof answer === 'string') {
+      // Truncate long text answers
+      if (answer.length > 50) {
+        return `${answer.substring(0, 50)}...`;
+      }
+      return answer;
+    }
+
+    if (typeof answer === 'number') {
+      return answer.toString();
+    }
+
+    if (typeof answer === 'boolean') {
+      return answer ? 'Yes' : 'No';
+    }
+
+    return String(answer);
   };
 
   const columns: TableColumn<ScreeningApplicantType>[] = [
@@ -142,30 +222,22 @@ export function ScreeningApplicantListScreen() {
       sortable: true,
       render: (value, record) => formatScore(value as number | null, record.max_score),
     },
-    {
-      key: 'total_marking',
-      title: 'Marking',
-      dataIndex: 'total_marking',
-      width: '100px',
-      sortable: true,
-      render: (value) => (value as number | null) || '-',
-    },
-    {
-      key: 'total_ai_scoring',
-      title: 'AI Score',
-      dataIndex: 'total_ai_scoring',
-      width: '100px',
-      sortable: true,
-      render: (value) => (value as number | null) || '-',
-    },
-    {
-      key: 'ip_address',
-      title: 'IP Address',
-      dataIndex: 'ip_address',
-      width: '120px',
-      sortable: true,
-      render: (value) => (value as string | null) || '-',
-    },
+    // {
+    //   key: 'total_marking',
+    //   title: 'Marking',
+    //   dataIndex: 'total_marking',
+    //   width: '100px',
+    //   sortable: true,
+    //   render: (value) => (value as number | null) || '-',
+    // },
+    // {
+    //   key: 'total_ai_scoring',
+    //   title: 'AI Score',
+    //   dataIndex: 'total_ai_scoring',
+    //   width: '100px',
+    //   sortable: true,
+    //   render: (value) => (value as number | null) || '-',
+    // },
     {
       key: 'created_at',
       title: 'Submitted',
@@ -174,11 +246,217 @@ export function ScreeningApplicantListScreen() {
       sortable: true,
       render: (value) => formatDate(value as string),
     },
+    // Dynamic question columns
+    ...(batch?.questions?.map((question) => ({
+      key: `question_${question.code}`,
+      title: question.label,
+      dataIndex: `answers.${question.code}`,
+      width: '150px',
+      sortable: true, // Re-enabled with safer JSON validation approach
+      render: (_value: unknown, record: ScreeningApplicantType) => {
+        const answer = getAnswerForQuestion(record, question.code);
+        return <span style={{ fontSize: '0.85em' }}>{formatAnswer(answer)}</span>;
+      },
+    })) || []),
+    {
+      key: 'actions',
+      title: 'Actions',
+      dataIndex: 'id',
+      width: '100px',
+      sortable: false,
+      align: 'center',
+      render: (_id: unknown, record: ScreeningApplicantType) => (
+        <Group gap="xs" justify="center">
+          <Tooltip label="View Details">
+            <ActionIcon variant="subtle" size="sm" onClick={() => handleViewDetails(record)}>
+              <IconEye size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      ),
+    },
+  ];
+
+  const rowActions = [
+    {
+      label: 'View Details',
+      icon: <IconEye size={16} />,
+      onClick: handleViewDetails,
+      color: 'blue',
+    },
+  ];
+
+  // Filter options for the table
+  const filterOptions: FilterOption[] = [
+    {
+      column: 'status',
+      label: 'Status',
+      type: 'select',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+      options: [
+        { value: '0', label: 'Pending' },
+        { value: '1', label: 'Scored' },
+        { value: '2', label: 'Approved' },
+        { value: '3', label: 'Rejected' },
+      ],
+    },
+    {
+      column: 'total_score',
+      label: 'Total Score',
+      type: 'number',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'gt', label: 'Greater than' },
+        { value: 'gte', label: 'Greater than or equal' },
+        { value: 'lt', label: 'Less than' },
+        { value: 'lte', label: 'Less than or equal' },
+        { value: 'between', label: 'Between' },
+        { value: 'not_between', label: 'Not between' },
+        { value: 'null', label: 'Is empty' },
+        { value: 'not_null', label: 'Is not empty' },
+      ],
+    },
+    {
+      column: 'total_marking',
+      label: 'Total Marking',
+      type: 'number',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'gt', label: 'Greater than' },
+        { value: 'gte', label: 'Greater than or equal' },
+        { value: 'lt', label: 'Less than' },
+        { value: 'lte', label: 'Less than or equal' },
+        { value: 'between', label: 'Between' },
+        { value: 'not_between', label: 'Not between' },
+        { value: 'null', label: 'Is empty' },
+        { value: 'not_null', label: 'Is not empty' },
+      ],
+    },
+    {
+      column: 'total_ai_scoring',
+      label: 'AI Scoring',
+      type: 'number',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'gt', label: 'Greater than' },
+        { value: 'gte', label: 'Greater than or equal' },
+        { value: 'lt', label: 'Less than' },
+        { value: 'lte', label: 'Less than or equal' },
+        { value: 'between', label: 'Between' },
+        { value: 'not_between', label: 'Not between' },
+        { value: 'null', label: 'Is empty' },
+        { value: 'not_null', label: 'Is not empty' },
+      ],
+    },
+    {
+      column: 'ip_address',
+      label: 'IP Address',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+        { value: 'null', label: 'Is empty' },
+        { value: 'not_null', label: 'Is not empty' },
+      ],
+    },
+    {
+      column: 'created_at',
+      label: 'Submitted Date',
+      type: 'date',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'gt', label: 'After' },
+        { value: 'gte', label: 'On or after' },
+        { value: 'lt', label: 'Before' },
+        { value: 'lte', label: 'On or before' },
+        { value: 'between', label: 'Between' },
+        { value: 'not_between', label: 'Not between' },
+      ],
+    },
+    // Dynamic answer filters based on batch questions
+    ...(batch?.questions?.map((question) => {
+      const getFilterType = (
+        questionType: string
+      ): 'text' | 'select' | 'number' | 'date' | 'multiselect' => {
+        switch (questionType) {
+          case 'number':
+            return 'number';
+          case 'date':
+            return 'date';
+          case 'radio':
+          case 'select':
+            return 'select';
+          case 'checkbox':
+            return 'multiselect';
+          default:
+            return 'text';
+        }
+      };
+
+      return {
+        column: `answers.${question.code}`,
+        label: question.label,
+        type: getFilterType(question.type),
+        conditions:
+          question.type === 'number'
+            ? [
+                { value: 'eq', label: 'Equals' },
+                { value: 'neq', label: 'Not equals' },
+                { value: 'gt', label: 'Greater than' },
+                { value: 'gte', label: 'Greater than or equal' },
+                { value: 'lt', label: 'Less than' },
+                { value: 'lte', label: 'Less than or equal' },
+                { value: 'between', label: 'Between' },
+                { value: 'not_between', label: 'Not between' },
+                { value: 'null', label: 'Is empty' },
+                { value: 'not_null', label: 'Is not empty' },
+              ]
+            : question.type === 'date'
+              ? [
+                  { value: 'eq', label: 'Equals' },
+                  { value: 'neq', label: 'Not equals' },
+                  { value: 'gt', label: 'After' },
+                  { value: 'gte', label: 'On or after' },
+                  { value: 'lt', label: 'Before' },
+                  { value: 'lte', label: 'On or before' },
+                  { value: 'between', label: 'Between' },
+                  { value: 'not_between', label: 'Not between' },
+                ]
+              : [
+                  { value: 'eq', label: 'Equals' },
+                  { value: 'neq', label: 'Not equals' },
+                  { value: 'like', label: 'Contains' },
+                  { value: 'not_like', label: 'Does not contain' },
+                  { value: 'in', label: 'In list' },
+                  { value: 'not_in', label: 'Not in list' },
+                  { value: 'null', label: 'Is empty' },
+                  { value: 'not_null', label: 'Is not empty' },
+                ],
+        options: question.options?.map((option) => ({
+          value: option.value,
+          label: option.label,
+        })),
+      };
+    }) || []),
   ];
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <DefaultTable
+        rowActions={rowActions}
         backButton={
           <Link to="/talenthub/open-programs">
             <ActionIcon variant="subtle" size="lg">
@@ -200,10 +478,40 @@ export function ScreeningApplicantListScreen() {
         sortBy={queryParams.sort_by || 'id'}
         sortOrder={queryParams.order || 'asc'}
         onRefresh={handleRefresh}
-        searchPlaceholder="Search by IP address or status..."
+        searchPlaceholder="Search by IP address, status, or any answer..."
         emptyMessage="No screening applicants found for this batch"
-        minTableWidth="800px"
+        minTableWidth="1200px"
+        filterOptions={filterOptions}
+        appliedFilters={appliedFilters}
+        onFilterAdd={handleFilterAdd}
+        onFilterRemove={handleFilterRemove}
+        onFilterClear={handleFilterClear}
+        showTotal
+        pageSizeOptions={[5, 10, 15, 25, 50]}
+        onPageSizeChange={handlePageSizeChange}
+        responsive
       />
+
+      {/* Multiple Desktop Windows */}
+      {Array.from(openModals.entries()).map(([modalId, applicant], index) => (
+        <WindowScreeningApplicantDetailModal
+          key={modalId}
+          opened
+          onClose={() => handleCloseModal(modalId)}
+          applicant={applicant}
+          batchQuestions={batch?.questions?.map((q) => ({
+            code: q.code,
+            label: q.label,
+            type: q.type,
+          }))}
+          windowId={modalId}
+          defaultPosition={{
+            x: 100 + index * 50, // Offset each window slightly
+            y: 100 + index * 50,
+          }}
+          zIndex={9999 + index} // Ensure proper stacking order
+        />
+      ))}
     </div>
   );
 }

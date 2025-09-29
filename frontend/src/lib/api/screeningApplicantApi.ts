@@ -87,24 +87,11 @@ export const getScreeningApplicantsByBatch = async (
 ): Promise<PaginatedResponse<ScreeningApplicantType>> => {
   const searchParams = new URLSearchParams();
 
-  if (params.page) {
-    searchParams.append('page', params.page.toString());
-  }
-  if (params.limit) {
-    searchParams.append('limit', params.limit.toString());
-  }
-  if (params.search) {
-    searchParams.append('search', params.search);
-  }
-  if (params.sort_by) {
-    searchParams.append('sort_by', params.sort_by);
-  }
-  if (params.order) {
-    searchParams.append('order', params.order);
-  }
-  if (params.filter) {
-    searchParams.append('filter', params.filter);
-  }
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.append(key, value.toString());
+    }
+  });
 
   const response = await authenticatedFetch(
     `${talentHubScreeningApplicantUrl}/batch/${batchId}?${searchParams.toString()}`
@@ -118,24 +105,11 @@ export const getScreeningApplicantsByStatus = async (
 ): Promise<PaginatedResponse<ScreeningApplicantType>> => {
   const searchParams = new URLSearchParams();
 
-  if (params.page) {
-    searchParams.append('page', params.page.toString());
-  }
-  if (params.limit) {
-    searchParams.append('limit', params.limit.toString());
-  }
-  if (params.search) {
-    searchParams.append('search', params.search);
-  }
-  if (params.sort_by) {
-    searchParams.append('sort_by', params.sort_by);
-  }
-  if (params.order) {
-    searchParams.append('order', params.order);
-  }
-  if (params.filter) {
-    searchParams.append('filter', params.filter);
-  }
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.append(key, value.toString());
+    }
+  });
 
   const response = await authenticatedFetch(
     `${talentHubScreeningApplicantUrl}/status/${status}?${searchParams.toString()}`

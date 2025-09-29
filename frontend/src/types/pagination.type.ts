@@ -7,6 +7,7 @@ export interface PaginationParams {
   sort_by?: string;
   order?: 'asc' | 'desc';
   filter?: string;
+  json_filters?: string;
 }
 
 export interface PaginationMeta {
@@ -48,6 +49,7 @@ export const defaultPaginationSearchSchema = z.object({
   sort_by: z.string().optional().default('id'),
   order: z.enum(['asc', 'desc']).optional().default('asc'),
   filter: z.string().optional(),
+  json_filters: z.string().optional(),
 });
 
 export type DefaultPaginationSearch = z.infer<typeof defaultPaginationSearchSchema>;

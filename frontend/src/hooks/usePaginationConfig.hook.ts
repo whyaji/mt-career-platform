@@ -15,6 +15,7 @@ export const usePaginationConfig = ({
   navigate: any;
 }) => {
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilter[]>([]);
+  const [appliedJsonFilters, setAppliedJsonFilters] = useState<AppliedFilter[]>([]);
   const searchRef = useRef(search);
 
   // Update search ref whenever search changes
@@ -30,6 +31,7 @@ export const usePaginationConfig = ({
     sort_by: search.sort_by,
     order: search.order,
     filter: search.filter,
+    json_filters: search.json_filters,
   };
 
   // Navigation helper
@@ -59,6 +61,19 @@ export const usePaginationConfig = ({
       setAppliedFilters([]);
     }
   }, [search.filter]);
+
+  // Parse json_filters string from URL params on mount
+  useEffect(() => {
+    if (search.json_filters) {
+      const filters = search.json_filters.split(';').map((filterStr) => {
+        const [column, value, condition] = filterStr.split(':');
+        return { column, value, condition };
+      });
+      setAppliedJsonFilters(filters);
+    } else {
+      setAppliedJsonFilters([]);
+    }
+  }, [search.json_filters]);
 
   // Build filter string from applied filters
   const buildFilterString = (filters: AppliedFilter[]): string => {
@@ -129,6 +144,35 @@ export const usePaginationConfig = ({
     });
   };
 
+  // Handle json filter add
+  const handleJsonFilterAdd = (filter: AppliedFilter) => {
+    const newFilters = [...appliedJsonFilters, filter];
+    setAppliedJsonFilters(newFilters);
+    updateSearchParams({
+      json_filters: buildFilterString(newFilters),
+      page: 1, // Reset to first page when filtering
+    });
+  };
+
+  // Handle json filter remove
+  const handleJsonFilterRemove = (index: number) => {
+    const newFilters = appliedJsonFilters.filter((_, i) => i !== index);
+    setAppliedJsonFilters(newFilters);
+    updateSearchParams({
+      json_filters: newFilters.length > 0 ? buildFilterString(newFilters) : undefined,
+      page: 1, // Reset to first page when filtering
+    });
+  };
+
+  // Handle json filter clear
+  const handleJsonFilterClear = () => {
+    setAppliedJsonFilters([]);
+    updateSearchParams({
+      json_filters: undefined,
+      page: 1, // Reset to first page when clearing filters
+    });
+  };
+
   // Handle page size change
   const handlePageSizeChange = (newLimit: number) => {
     const currentPage = searchRef.current.page;
@@ -149,12 +193,16 @@ export const usePaginationConfig = ({
     tempSearch,
     setTempSearch,
     appliedFilters,
+    appliedJsonFilters,
     queryParams,
     handlePageChange,
     handleSortChange,
     handleFilterAdd,
     handleFilterRemove,
     handleFilterClear,
+    handleJsonFilterAdd,
+    handleJsonFilterRemove,
+    handleJsonFilterClear,
     handlePageSizeChange,
   };
 };
