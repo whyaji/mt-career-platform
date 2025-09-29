@@ -179,6 +179,7 @@ export function OpenProgramListScreen() {
 
   const rowActions = [
     {
+      icon: <IconEye size={16} />,
       label: 'View Applicants',
       onClick: handleViewApplicants,
       color: 'blue',
