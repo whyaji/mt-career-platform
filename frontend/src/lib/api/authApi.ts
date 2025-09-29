@@ -124,3 +124,10 @@ export const userQueryOptions = queryOptions({
   queryFn: getUserProfileFunction,
   staleTime: Infinity,
 });
+
+export const clearAuthData = () => {
+  localStorage.removeItem('user-storage');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+};

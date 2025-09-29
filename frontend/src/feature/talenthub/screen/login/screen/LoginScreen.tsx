@@ -9,6 +9,7 @@ import { useRef, useState } from 'react';
 import { z } from 'zod';
 
 import TurnstileWidget, { type TurnstileWidgetRef } from '@/components/TurnstileWidget';
+import { ENV_TYPE } from '@/constants/env';
 import { authApi } from '@/lib/api/authApi';
 import { useUserStore } from '@/lib/store/userStore';
 import { Route } from '@/routes/talenthub/login';
@@ -44,7 +45,7 @@ export const LoginScreen = () => {
   });
 
   const handleSubmit = async (values: LoginFormData) => {
-    if (!turnstileToken) {
+    if (!turnstileToken && ENV_TYPE !== 'development') {
       notifications.show({
         title: 'Error',
         message: 'Please verify you are human',
@@ -57,7 +58,7 @@ export const LoginScreen = () => {
       const result = await login({
         email: values.email,
         password: values.password,
-        turnstileToken,
+        turnstileToken: turnstileToken ?? 'pass',
       });
       if (result.success && 'data' in result && result.data) {
         localStorage.setItem('access_token', result.data.tokens.access_token.token);
@@ -207,13 +208,15 @@ export const LoginScreen = () => {
                     }}
                   />
 
-                  <TurnstileWidget
-                    ref={turnstileRef}
-                    onSuccess={setTurnstileToken}
-                    onError={() => {
-                      setTurnstileToken(null);
-                    }}
-                  />
+                  {ENV_TYPE !== 'development' && (
+                    <TurnstileWidget
+                      ref={turnstileRef}
+                      onSuccess={setTurnstileToken}
+                      onError={() => {
+                        setTurnstileToken(null);
+                      }}
+                    />
+                  )}
 
                   <Button
                     type="submit"

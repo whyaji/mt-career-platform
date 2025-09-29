@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
-import { userQueryOptions } from '@/lib/api/authApi';
+import { clearAuthData, userQueryOptions } from '@/lib/api/authApi';
 import { useUserStore } from '@/lib/store/userStore';
 
 export const Route = createFileRoute('/talenthub/_authenticated')({
@@ -13,6 +13,7 @@ export const Route = createFileRoute('/talenthub/_authenticated')({
     // Check if we have a token first
     const token = localStorage.getItem('access_token');
     if (!token) {
+      clearAuthData();
       return { userData: null, location: location.href };
     }
 
@@ -45,9 +46,7 @@ function AuthenticatedLayout() {
         setUser(userDataFromContext.local_user);
       } else if (!user) {
         clearUser();
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        clearAuthData();
         navigate({
           to: '/talenthub/login',
           search: {

@@ -1,6 +1,6 @@
 import { BASE_URL_API } from '@/constants/env';
 
-import { authApi } from './authApi';
+import { authApi, clearAuthData } from './authApi';
 
 export const baseApiUrl = `${BASE_URL_API}/api/v1`;
 
@@ -38,10 +38,7 @@ const refreshTokens = async (): Promise<boolean> => {
       }
       return false;
     } catch (error) {
-      // Clear invalid tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
+      clearAuthData();
       window.location.href = '/talenthub/login';
       return false;
     } finally {

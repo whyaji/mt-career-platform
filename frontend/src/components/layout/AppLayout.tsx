@@ -34,6 +34,7 @@ import {
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
+import { clearAuthData } from '@/lib/api/authApi';
 import { useUserStore } from '@/lib/store/userStore';
 
 interface AppLayoutProps {
@@ -305,10 +306,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       });
     } finally {
       // Clear local storage and user store
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
       clearUser();
+      clearAuthData();
       navigate({
         to: '/talenthub',
       });
