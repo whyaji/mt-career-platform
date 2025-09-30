@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   createScreeningApplicant,
-  updateScreeningApplicant,
   deleteScreeningApplicant,
+  updateScreeningApplicant,
   updateScreeningApplicantStatus,
 } from '@/lib/api/screeningApplicantApi';
 import type {

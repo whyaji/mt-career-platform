@@ -14,6 +14,7 @@ interface DesktopWindowProps {
   height?: number | string;
   zIndex?: number;
   resizable?: boolean;
+  onFocus?: () => void;
 }
 
 export function DraggableWindow({
@@ -29,6 +30,7 @@ export function DraggableWindow({
   height = 700,
   zIndex: _zIndex = 1000,
   resizable = true,
+  onFocus,
 }: DesktopWindowProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -40,18 +42,23 @@ export function DraggableWindow({
   // console.log('DesktopWindow rendering:', { opened, title, defaultPosition, zIndex });
 
   // Custom drag handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target instanceof HTMLElement && e.target.closest('.window-header')) {
-      setIsDragging(true);
-      const rect = nodeRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target instanceof HTMLElement && e.target.closest('.window-header')) {
+        // Bring window to front when clicked
+        onFocus?.();
+        setIsDragging(true);
+        const rect = nodeRef.current?.getBoundingClientRect();
+        if (rect) {
+          setDragOffset({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        }
       }
-    }
-  }, []);
+    },
+    [onFocus]
+  );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -144,7 +151,6 @@ export function DraggableWindow({
         role="dialog"
         aria-modal="true"
         aria-labelledby="window-title"
-        tabIndex={-1}
         style={{
           position: 'fixed',
           top: position.y,
@@ -155,7 +161,7 @@ export function DraggableWindow({
           borderRadius: '8px',
           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.1)',
           border: '1px solid #d1d5db',
-          zIndex: 9999,
+          zIndex: _zIndex,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -167,12 +173,14 @@ export function DraggableWindow({
         <div
           className="window-header"
           onMouseDown={handleMouseDown}
+          onClick={() => onFocus?.()}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               handleMouseDown(e as any);
+              onFocus?.();
             }
           }}
           style={{
@@ -248,6 +256,7 @@ export function DraggableWindow({
 
         {/* Window Content */}
         <div
+          className="window-content"
           style={{
             flex: 1,
             overflow: 'hidden',

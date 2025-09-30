@@ -1,7 +1,9 @@
-import { Badge, Box, Divider, Group, ScrollArea, Stack, Table, Text } from '@mantine/core';
-import { IconCalendar, IconTrendingUp, IconUser } from '@tabler/icons-react';
+import { Badge, Box, Button, Divider, Group, ScrollArea, Stack, Table, Text } from '@mantine/core';
+import { IconCalendar, IconEdit, IconTrendingUp, IconUser } from '@tabler/icons-react';
+import { useState } from 'react';
 
 import { DraggableWindow } from '@/components/DraggableWindow';
+import { UpdateStatusModal } from '@/feature/talenthub/screen/open-program/components/modals/UpdateStatusModal';
 import {
   SCREENING_APPLICANT_STATUS_LABELS,
   type ScreeningApplicantType,
@@ -20,6 +22,8 @@ interface WindowScreeningApplicantDetailModalProps {
   windowId?: string;
   defaultPosition?: { x: number; y: number };
   zIndex?: number;
+  onStatusUpdate?: (updatedApplicant?: ScreeningApplicantType) => void;
+  onFocus?: () => void;
 }
 
 export function WindowScreeningApplicantDetailModal({
@@ -30,8 +34,25 @@ export function WindowScreeningApplicantDetailModal({
   loading: _loading = false,
   windowId,
   defaultPosition = { x: 100, y: 100 },
-  zIndex = 1000,
+  zIndex = 99,
+  onStatusUpdate,
+  onFocus,
 }: WindowScreeningApplicantDetailModalProps) {
+  const [statusUpdateModal, setStatusUpdateModal] = useState(false);
+
+  const handleOpenStatusUpdate = () => {
+    setStatusUpdateModal(true);
+  };
+
+  const handleCloseStatusUpdate = () => {
+    setStatusUpdateModal(false);
+  };
+
+  const handleStatusUpdateSuccess = (updatedApplicant?: ScreeningApplicantType) => {
+    onStatusUpdate?.(updatedApplicant);
+    setStatusUpdateModal(false);
+  };
+
   if (!applicant) {
     return null;
   }
@@ -113,7 +134,8 @@ export function WindowScreeningApplicantDetailModal({
       zIndex={zIndex}
       width={1000}
       height={700}
-      resizable>
+      resizable
+      onFocus={onFocus}>
       <ScrollArea style={{ height: '100%' }}>
         <Box style={{ padding: '16px' }}>
           <Stack gap="md">
@@ -142,13 +164,22 @@ export function WindowScreeningApplicantDetailModal({
                     <Text size="sm" c="dimmed">
                       Status
                     </Text>
-                    <Badge variant="light" size="sm" color={getStatusColor(applicant.status)}>
-                      {
-                        SCREENING_APPLICANT_STATUS_LABELS[
-                          applicant.status as keyof typeof SCREENING_APPLICANT_STATUS_LABELS
-                        ]
-                      }
-                    </Badge>
+                    <Group gap="xs" align="center">
+                      <Badge variant="light" size="sm" color={getStatusColor(applicant.status)}>
+                        {
+                          SCREENING_APPLICANT_STATUS_LABELS[
+                            applicant.status as keyof typeof SCREENING_APPLICANT_STATUS_LABELS
+                          ]
+                        }
+                      </Badge>
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        leftSection={<IconEdit size={12} />}
+                        onClick={handleOpenStatusUpdate}>
+                        Update
+                      </Button>
+                    </Group>
                   </div>
                 </Group>
 
@@ -295,6 +326,14 @@ export function WindowScreeningApplicantDetailModal({
           </Stack>
         </Box>
       </ScrollArea>
+
+      {/* Status Update Modal */}
+      <UpdateStatusModal
+        opened={statusUpdateModal}
+        onClose={handleCloseStatusUpdate}
+        applicant={applicant}
+        onSuccess={handleStatusUpdateSuccess}
+      />
     </DraggableWindow>
   );
 }

@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Tooltip } from '@mantine/core';
-import { IconArrowLeft, IconEye } from '@tabler/icons-react';
+import { IconArrowLeft, IconEdit, IconEye } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -7,6 +7,7 @@ import { DefaultTable, type FilterOption, type TableColumn } from '@/components/
 import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import { PendingScreenComponent } from '@/components/PendingScreenComponent';
+import { UpdateStatusModal } from '@/feature/talenthub/screen/open-program/components/modals/UpdateStatusModal';
 import { WindowScreeningApplicantDetailModal } from '@/feature/talenthub/screen/open-program/components/modals/WindowScreeningApplicantDetailModal';
 import { useGetBatchByIdWithQuestionQuery } from '@/hooks/query/batch/useGetBatchByIdWithQuestionQuery';
 import { useScreeningApplicantsByBatchQuery } from '@/hooks/query/screening-applicant/useScreeningApplicantsByBatchQuery';
@@ -26,6 +27,16 @@ export function ScreeningApplicantListScreen() {
 
   // Modal states - support multiple modals
   const [openModals, setOpenModals] = useState<Map<string, ScreeningApplicantType>>(new Map());
+  const [focusedWindowId, setFocusedWindowId] = useState<string | null>(null);
+
+  // Status update modal state
+  const [statusUpdateModal, setStatusUpdateModal] = useState<{
+    opened: boolean;
+    applicant: ScreeningApplicantType | null;
+  }>({
+    opened: false,
+    applicant: null,
+  });
 
   const { data: batchDetailData, isLoading: batchDetailLoading } =
     useGetBatchByIdWithQuestionQuery(batchId);
@@ -108,6 +119,43 @@ export function ScreeningApplicantListScreen() {
       newMap.delete(modalId);
       return newMap;
     });
+  };
+
+  const handleOpenStatusUpdate = (applicant: ScreeningApplicantType) => {
+    setStatusUpdateModal({
+      opened: true,
+      applicant,
+    });
+  };
+
+  const handleCloseStatusUpdate = () => {
+    setStatusUpdateModal({
+      opened: false,
+      applicant: null,
+    });
+  };
+
+  const handleStatusUpdateSuccess = (updatedApplicant?: ScreeningApplicantType) => {
+    refetch();
+
+    // Update the applicant data in open modals if provided
+    if (updatedApplicant) {
+      setOpenModals((prev) => {
+        const newMap = new Map(prev);
+        // Find and update the modal with the matching applicant ID
+        for (const [modalId, applicant] of newMap.entries()) {
+          if (applicant.id === updatedApplicant.id) {
+            newMap.set(modalId, updatedApplicant);
+            break;
+          }
+        }
+        return newMap;
+      });
+    }
+  };
+
+  const handleWindowFocus = (modalId: string) => {
+    setFocusedWindowId(modalId);
   };
 
   const getStatusColor = (status: number) => {
@@ -262,7 +310,7 @@ export function ScreeningApplicantListScreen() {
       key: 'actions',
       title: 'Actions',
       dataIndex: 'id',
-      width: '100px',
+      width: '120px',
       sortable: false,
       align: 'center',
       render: (_id: unknown, record: ScreeningApplicantType) => (
@@ -270,6 +318,11 @@ export function ScreeningApplicantListScreen() {
           <Tooltip label="View Details">
             <ActionIcon variant="subtle" size="sm" onClick={() => handleViewDetails(record)}>
               <IconEye size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Update Status">
+            <ActionIcon variant="subtle" size="sm" onClick={() => handleOpenStatusUpdate(record)}>
+              <IconEdit size={16} />
             </ActionIcon>
           </Tooltip>
         </Group>
@@ -283,6 +336,12 @@ export function ScreeningApplicantListScreen() {
       icon: <IconEye size={16} />,
       onClick: handleViewDetails,
       color: 'blue',
+    },
+    {
+      label: 'Update Status',
+      icon: <IconEdit size={16} />,
+      onClick: handleOpenStatusUpdate,
+      color: 'orange',
     },
   ];
 
@@ -493,25 +552,42 @@ export function ScreeningApplicantListScreen() {
       />
 
       {/* Multiple Desktop Windows */}
-      {Array.from(openModals.entries()).map(([modalId, applicant], index) => (
-        <WindowScreeningApplicantDetailModal
-          key={modalId}
-          opened
-          onClose={() => handleCloseModal(modalId)}
-          applicant={applicant}
-          batchQuestions={batch?.questions?.map((q) => ({
-            code: q.code,
-            label: q.label,
-            type: q.type,
-          }))}
-          windowId={modalId}
-          defaultPosition={{
-            x: 100 + index * 50, // Offset each window slightly
-            y: 100 + index * 50,
-          }}
-          zIndex={9999 + index} // Ensure proper stacking order
-        />
-      ))}
+      {Array.from(openModals.entries()).map(([modalId, applicant], index) => {
+        // Calculate z-index: focused window gets highest, others get base + index
+        const isFocused = focusedWindowId === modalId;
+        const baseZIndex = 1000;
+        const zIndex = isFocused ? baseZIndex + 1000 + index : baseZIndex + index;
+
+        return (
+          <WindowScreeningApplicantDetailModal
+            key={modalId}
+            opened
+            onClose={() => handleCloseModal(modalId)}
+            applicant={applicant}
+            batchQuestions={batch?.questions?.map((q) => ({
+              code: q.code,
+              label: q.label,
+              type: q.type,
+            }))}
+            windowId={modalId}
+            defaultPosition={{
+              x: 100 + index * 50, // Offset each window slightly
+              y: 100 + index * 50,
+            }}
+            zIndex={zIndex}
+            onStatusUpdate={handleStatusUpdateSuccess}
+            onFocus={() => handleWindowFocus(modalId)}
+          />
+        );
+      })}
+
+      {/* Status Update Modal */}
+      <UpdateStatusModal
+        opened={statusUpdateModal.opened}
+        onClose={handleCloseStatusUpdate}
+        applicant={statusUpdateModal.applicant}
+        onSuccess={handleStatusUpdateSuccess}
+      />
     </div>
   );
 }
