@@ -8,6 +8,7 @@ Homestead.yaml
 # Public assets frontend build
 public/assets
 public/assets-old
+public/generated
 
 # Node.js / Frontend
 frontend/node_modules/

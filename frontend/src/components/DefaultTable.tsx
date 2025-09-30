@@ -98,6 +98,7 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   headerActions?: React.ReactNode;
   rowActions?: RowAction<T>[];
   backButton?: React.ReactNode;
+  withoutFilterHeader?: boolean;
 }
 
 export function DefaultTable<T = Record<string, unknown>>({
@@ -131,6 +132,7 @@ export function DefaultTable<T = Record<string, unknown>>({
   headerActions,
   rowActions = [],
   backButton,
+  withoutFilterHeader = false,
 }: DefaultTableProps<T>) {
   const addPadding = useMediaQuery(`(max-width: ${em(480)})`);
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
@@ -260,125 +262,127 @@ export function DefaultTable<T = Record<string, unknown>>({
       }}
       className={className}>
       {/* Fixed Header Section */}
-      <Box
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          backgroundColor: 'white',
-          borderBottom: '1px solid var(--mantine-color-gray-3)',
-          padding: '1rem',
-        }}>
-        <Group justify="flex-start" align="center">
-          {backButton && <Box>{backButton}</Box>}
-          {(title || description || headerActions) && (
-            <Box mb="md">
-              <Group justify="space-between" align="flex-start">
-                <Box>
-                  {title && (
-                    <Text size="xl" fw={600} mb={description ? 4 : 0}>
-                      {title}
-                    </Text>
-                  )}
-                  {description && (
-                    <Text size="sm" c="dimmed">
-                      {description}
-                    </Text>
-                  )}
-                </Box>
-                {headerActions && <Box>{headerActions}</Box>}
-              </Group>
-            </Box>
-          )}
-        </Group>
-
-        {/* Search and Filter Bar */}
-        <Paper p="md" withBorder radius="md" bg="gray.0">
-          <Group justify="space-between" wrap="wrap">
-            <Group wrap="wrap">
-              {onSearchChange && (
-                <TextInput
-                  placeholder={searchPlaceholder}
-                  value={searchValue}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  leftSection={<IconSearch size={16} />}
-                  style={{ minWidth: 300 }}
-                  size="sm"
-                  radius="md"
-                />
-              )}
-              {filterOptions.length > 0 && onFilterAdd && (
-                <Button
-                  leftSection={<IconFilter size={16} />}
-                  variant="light"
-                  size="sm"
-                  radius="md"
-                  onClick={() => setFilterModalOpened(true)}>
-                  Add Filter
-                </Button>
-              )}
-              {onRefresh && (
-                <Tooltip label="Refresh data">
-                  <ActionIcon
-                    variant="light"
-                    size="sm"
-                    radius="md"
-                    onClick={onRefresh}
-                    loading={loading}>
-                    <IconRefresh size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </Group>
-
-            {appliedFilters.length > 0 && (
-              <Group gap="xs">
-                <Text size="sm" c="dimmed">
-                  {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
-                </Text>
-                {onFilterClear && (
-                  <Button
-                    variant="subtle"
-                    size="xs"
-                    radius="md"
-                    onClick={onFilterClear}
-                    color="red">
-                    Clear All
-                  </Button>
-                )}
-              </Group>
+      {!withoutFilterHeader && (
+        <Box
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            backgroundColor: 'white',
+            borderBottom: '1px solid var(--mantine-color-gray-3)',
+            padding: '1rem',
+          }}>
+          <Group justify="flex-start" align="center">
+            {backButton && <Box>{backButton}</Box>}
+            {(title || description || headerActions) && (
+              <Box mb="md" style={{ flex: 1 }}>
+                <Group justify="space-between" align="center" style={{ flex: 1 }}>
+                  <Box style={{ flex: 1 }}>
+                    {title && (
+                      <Text size="xl" fw={600} mb={description ? 4 : 0}>
+                        {title}
+                      </Text>
+                    )}
+                    {description && (
+                      <Text size="sm" c="dimmed">
+                        {description}
+                      </Text>
+                    )}
+                  </Box>
+                  {headerActions && <Box>{headerActions}</Box>}
+                </Group>
+              </Box>
             )}
           </Group>
 
-          {/* Applied Filters */}
-          <Transition mounted={appliedFilters.length > 0} transition="slide-down" duration={200}>
-            {(styles) => (
-              <Group mt="md" gap="xs" style={styles}>
-                {appliedFilters.map((filter, index) => (
-                  <Badge
-                    key={index}
+          {/* Search and Filter Bar */}
+          <Paper p="md" withBorder radius="md" bg="gray.0">
+            <Group justify="space-between" wrap="wrap">
+              <Group wrap="wrap">
+                {onSearchChange && (
+                  <TextInput
+                    placeholder={searchPlaceholder}
+                    value={searchValue}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    leftSection={<IconSearch size={16} />}
+                    style={{ minWidth: 300 }}
+                    size="sm"
+                    radius="md"
+                  />
+                )}
+                {filterOptions.length > 0 && onFilterAdd && (
+                  <Button
+                    leftSection={<IconFilter size={16} />}
                     variant="light"
-                    color="blue"
-                    rightSection={
-                      onFilterRemove ? (
-                        <ActionIcon
-                          size="xs"
-                          variant="transparent"
-                          color="blue"
-                          onClick={() => onFilterRemove(index)}>
-                          <IconX size={10} />
-                        </ActionIcon>
-                      ) : null
-                    }
-                    radius="md">
-                    {filter.column}: {filter.value} ({filter.condition})
-                  </Badge>
-                ))}
+                    size="sm"
+                    radius="md"
+                    onClick={() => setFilterModalOpened(true)}>
+                    Add Filter
+                  </Button>
+                )}
+                {onRefresh && (
+                  <Tooltip label="Refresh data">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      radius="md"
+                      onClick={onRefresh}
+                      loading={loading}>
+                      <IconRefresh size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
-            )}
-          </Transition>
-        </Paper>
-      </Box>
+
+              {appliedFilters.length > 0 && (
+                <Group gap="xs">
+                  <Text size="sm" c="dimmed">
+                    {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
+                  </Text>
+                  {onFilterClear && (
+                    <Button
+                      variant="subtle"
+                      size="xs"
+                      radius="md"
+                      onClick={onFilterClear}
+                      color="red">
+                      Clear All
+                    </Button>
+                  )}
+                </Group>
+              )}
+            </Group>
+
+            {/* Applied Filters */}
+            <Transition mounted={appliedFilters.length > 0} transition="slide-down" duration={200}>
+              {(styles) => (
+                <Group mt="md" gap="xs" style={styles}>
+                  {appliedFilters.map((filter, index) => (
+                    <Badge
+                      key={index}
+                      variant="light"
+                      color="blue"
+                      rightSection={
+                        onFilterRemove ? (
+                          <ActionIcon
+                            size="xs"
+                            variant="transparent"
+                            color="blue"
+                            onClick={() => onFilterRemove(index)}>
+                            <IconX size={10} />
+                          </ActionIcon>
+                        ) : null
+                      }
+                      radius="md">
+                      {filter.column}: {filter.value} ({filter.condition})
+                    </Badge>
+                  ))}
+                </Group>
+              )}
+            </Transition>
+          </Paper>
+        </Box>
+      )}
 
       {/* Scrollable Table Container */}
       <Box

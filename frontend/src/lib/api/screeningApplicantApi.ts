@@ -152,3 +152,12 @@ export const markingScreeningApplicant = async (
   });
   return response.json();
 };
+
+export const generateScreeningApplicantsExcelByBatch = async (
+  batchId: string
+): Promise<DefaultResponseType<{ generated_file_id: string; batch_id: string; status: string }>> => {
+  const response = await authenticatedFetch(`${talentHubScreeningApplicantUrl}/batch/${batchId}/generate-excel`, {
+    method: 'POST',
+  });
+  return response.json();
+};

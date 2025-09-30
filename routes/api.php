@@ -129,6 +129,15 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/', 'OpenProgramController@getOpenPrograms');
         });
 
+        // Global Generated Files routes with JWT auth
+        $router->group(['prefix' => 'generated-files'], function () use ($router) {
+            $router->post('/list', 'GlobalGeneratedFileController@getGeneratedFiles');
+            $router->post('/status', 'GlobalGeneratedFileController@getGeneratedFilesStatus');
+            $router->post('/download', 'GlobalGeneratedFileController@downloadGeneratedFiles');
+            $router->post('/stats', 'GlobalGeneratedFileController@getGeneratedFilesStats');
+            $router->delete('/', 'GlobalGeneratedFileController@deleteGeneratedFiles');
+        });
+
         // Screening Applicant routes with JWT auth
         $router->group(['prefix' => 'screening-applicant'], function () use ($router) {
             $router->get('/', 'ScreeningApplicantController@getScreeningApplicants');
@@ -141,6 +150,12 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->put('/{id}/status', 'ScreeningApplicantController@updateScreeningApplicantStatus');
             $router->delete('/{id}', 'ScreeningApplicantController@deleteScreeningApplicant');
             $router->put('/{id}/marking', 'ScreeningApplicantController@markingScreeningApplicant');
+
+            // Excel generation routes
+            $router->post('/batch/{batchId}/generate-excel', 'ScreeningApplicantController@generateExcelByBatch');
+            $router->get('/batch/{batchId}/generated-files', 'ScreeningApplicantController@getGeneratedFilesByBatch');
+            $router->get('/generated-file/{generatedFileId}/status', 'ScreeningApplicantController@getGeneratedFileStatus');
+            $router->get('/generated-file/{generatedFileId}/download', 'ScreeningApplicantController@downloadGeneratedFile');
         });
     });
 

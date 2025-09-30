@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ScreeningApplicant;
 use App\Models\Batch;
+use App\Models\GeneratedFile;
+use App\Jobs\GenerateScreeningApplicantsExcelJob;
 use App\Traits\PaginationTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -327,6 +329,8 @@ class ScreeningApplicantController extends Controller
         }
     }
 
+
+
     /**
      * Get screening applicants by status
      */
@@ -562,6 +566,174 @@ class ScreeningApplicantController extends Controller
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR',
                 'message' => 'Error marking screening applicant'
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate Excel file for screening applicants by batch
+     */
+    public function generateExcelByBatch(Request $request, $batchId)
+    {
+        try {
+            // Verify batch exists
+            $batch = Batch::find($batchId);
+            if (!$batch) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'BATCH_NOT_FOUND',
+                    'message' => 'Batch not found'
+                ], 404);
+            }
+
+            // Create generated file record
+            $generatedFile = GeneratedFile::create([
+                'type' => 'screening-applicants-by-batch',
+                'model_type' => 'batch',
+                'model_id' => $batchId,
+                'ext' => 'xlsx',
+                'path' => '', // Will be updated by the job
+                'request_at' => Carbon::now(),
+            ]);
+
+            // Dispatch the job
+            dispatch(new GenerateScreeningApplicantsExcelJob($batchId, $generatedFile->id));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Excel generation started',
+                'data' => [
+                    'generated_file_id' => $generatedFile->id,
+                    'batch_id' => $batchId,
+                    'status' => 'processing'
+                ]
+            ], 202);
+        } catch (\Exception $e) {
+            Log::error("Error starting Excel generation: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error starting Excel generation'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get generated file status and download URL
+     */
+    public function getGeneratedFileStatus($generatedFileId)
+    {
+        try {
+            $generatedFile = GeneratedFile::find($generatedFileId);
+
+            if (!$generatedFile) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'FILE_NOT_FOUND',
+                    'message' => 'Generated file not found'
+                ], 404);
+            }
+
+            $data = [
+                'id' => $generatedFile->id,
+                'type' => $generatedFile->type,
+                'model_type' => $generatedFile->model_type,
+                'model_id' => $generatedFile->model_id,
+                'ext' => $generatedFile->ext,
+                'request_at' => $generatedFile->request_at,
+                'created_at' => $generatedFile->created_at,
+                'is_ready' => $generatedFile->fileExists(),
+                'download_url' => $generatedFile->fileExists() ? $generatedFile->download_url : null,
+                'file_size' => $generatedFile->fileExists() ? filesize($generatedFile->getFullPathAttribute()) : null,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'message' => 'Generated file status retrieved successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error getting generated file status: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error getting generated file status'
+            ], 500);
+        }
+    }
+
+    /**
+     * Download generated file
+     */
+    public function downloadGeneratedFile($generatedFileId)
+    {
+        try {
+            $generatedFile = GeneratedFile::find($generatedFileId);
+
+            if (!$generatedFile) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'FILE_NOT_FOUND',
+                    'message' => 'Generated file not found'
+                ], 404);
+            }
+
+            if (!$generatedFile->fileExists()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'FILE_NOT_READY',
+                    'message' => 'File is not ready for download'
+                ], 404);
+            }
+
+            $filePath = $generatedFile->getFullPathAttribute();
+            $filename = basename($filePath);
+
+            return response()->download($filePath, $filename);
+        } catch (\Exception $e) {
+            Log::error("Error downloading generated file: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error downloading generated file'
+            ], 500);
+        }
+    }
+
+    /**
+     * List generated files for a batch
+     */
+    public function getGeneratedFilesByBatch($batchId)
+    {
+        try {
+            $generatedFiles = GeneratedFile::where('model_type', 'batch')
+                ->where('model_id', $batchId)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($file) {
+                    return [
+                        'id' => $file->id,
+                        'type' => $file->type,
+                        'ext' => $file->ext,
+                        'request_at' => $file->request_at,
+                        'created_at' => $file->created_at,
+                        'is_ready' => $file->fileExists(),
+                        'download_url' => $file->fileExists() ? $file->download_url : null,
+                        'file_size' => $file->fileExists() ? filesize($file->getFullPathAttribute()) : null,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $generatedFiles,
+                'message' => 'Generated files retrieved successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error getting generated files by batch: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error getting generated files'
             ], 500);
         }
     }

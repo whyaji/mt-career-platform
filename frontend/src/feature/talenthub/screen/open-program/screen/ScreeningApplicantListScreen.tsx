@@ -1,5 +1,5 @@
-import { ActionIcon, Badge, Group, Tooltip } from '@mantine/core';
-import { IconArrowLeft, IconEdit, IconEye } from '@tabler/icons-react';
+import { ActionIcon, Badge, Button, Group, Tooltip } from '@mantine/core';
+import { IconArrowLeft, IconEdit, IconEye, IconFileText } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -7,9 +7,11 @@ import { DefaultTable, type FilterOption, type TableColumn } from '@/components/
 import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import { PendingScreenComponent } from '@/components/PendingScreenComponent';
+import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
 import { UpdateStatusModal } from '@/feature/talenthub/screen/open-program/components/modals/UpdateStatusModal';
 import { WindowScreeningApplicantDetailModal } from '@/feature/talenthub/screen/open-program/components/modals/WindowScreeningApplicantDetailModal';
 import { useGetBatchByIdWithQuestionQuery } from '@/hooks/query/batch/useGetBatchByIdWithQuestionQuery';
+import { useGenerateScreeningApplicantsExcelMutation } from '@/hooks/query/screening-applicant/useGenerateScreeningApplicantsExcelMutation';
 import { useScreeningApplicantsByBatchQuery } from '@/hooks/query/screening-applicant/useScreeningApplicantsByBatchQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
 import { getScoreColorFromValues } from '@/lib/scoreColorUtils';
@@ -37,6 +39,11 @@ export function ScreeningApplicantListScreen() {
   }>({
     opened: false,
     applicant: null,
+  });
+
+  // Global generated files modal state
+  const [globalFilesModal, setGlobalFilesModal] = useState({
+    opened: false,
   });
 
   const { data: batchDetailData, isLoading: batchDetailLoading } =
@@ -90,6 +97,9 @@ export function ScreeningApplicantListScreen() {
     !(batch instanceof Error) && batch?.id !== undefined
   );
 
+  // Excel generation mutation
+  const generateExcelMutation = useGenerateScreeningApplicantsExcelMutation();
+
   // Handle error case from loader
   if (batch instanceof Error) {
     return <ErrorScreenComponent />;
@@ -107,6 +117,33 @@ export function ScreeningApplicantListScreen() {
     setRefreshKey((prev) => prev + 1);
     refetch();
   };
+
+  // Header actions for generated files
+  const headerActions = (
+    <Group gap="sm">
+      {/* Generate Excel Button */}
+      <Button
+        variant="light"
+        color="green"
+        leftSection={<IconFileText size={16} />}
+        onClick={() => batch?.id && generateExcelMutation.mutate(batch.id)}
+        loading={generateExcelMutation.isPending}
+        disabled={!batch?.id || generateExcelMutation.isPending}
+        size="sm">
+        Generate Excel
+      </Button>
+
+      {/* Generated Files Manager Button */}
+      <Button
+        variant="light"
+        color="blue"
+        leftSection={<IconFileText size={16} />}
+        onClick={() => setGlobalFilesModal({ opened: true })}
+        size="sm">
+        Files Manager
+      </Button>
+    </Group>
+  );
 
   const handleViewDetails = (applicant: ScreeningApplicantType) => {
     const modalId = `modal-${applicant.id}`;
@@ -535,6 +572,9 @@ export function ScreeningApplicantListScreen() {
         }
         title={`Screening Applicants - ${batch.number} (${batch.location})`}
         description={`Batch: ${batch.number_code} | Year: ${batch.year} | Location: ${batch.location}`}
+        headerActions={
+          (screeningApplicantsResponse?.pagination?.total || 0) > 0 ? headerActions : undefined
+        }
         columns={columns}
         data={screeningApplicantsResponse?.data || []}
         loading={isLoading}
@@ -598,6 +638,19 @@ export function ScreeningApplicantListScreen() {
         onClose={handleCloseStatusUpdate}
         applicant={statusUpdateModal.applicant}
         onSuccess={handleStatusUpdateSuccess}
+      />
+
+      {/* Global Generated Files Modal */}
+      <GlobalGeneratedFilesModal
+        opened={globalFilesModal.opened}
+        onClose={() => setGlobalFilesModal({ opened: false })}
+        batchId={batch?.id}
+        title={`Generated Files - ${batch.number} (${batch.location})`}
+        defaultFilters={{
+          type: 'screening-applicants-by-batch',
+          model_id: batch?.id,
+        }}
+        defaultSearch={batch?.id || ''}
       />
     </div>
   );

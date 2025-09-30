@@ -29,6 +29,28 @@ $app->withEloquent();
 
 /*
 |--------------------------------------------------------------------------
+| Helper Functions
+|--------------------------------------------------------------------------
+|
+| Define custom helper functions that are used throughout the application.
+|
+*/
+
+if (!function_exists('public_path')) {
+    /**
+     * Get the path to the public folder.
+     *
+     * @param string $path
+     * @return string
+     */
+    function public_path($path = '')
+    {
+        return app()->basePath('public' . ($path ? DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR) : $path));
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Register Container Bindings
 |--------------------------------------------------------------------------
 |
@@ -127,5 +149,19 @@ $app->router->group([
     require __DIR__ . '/../routes/api.php';
     require __DIR__ . '/../routes/web.php';
 });
+
+// Add missing helper functions
+if (!function_exists('app_path')) {
+    /**
+     * Get the path to the application folder.
+     *
+     * @param string $path
+     * @return string
+     */
+    function app_path($path = '')
+    {
+        return app()->basePath('app' . ($path ? DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR) : $path));
+    }
+}
 
 return $app;
