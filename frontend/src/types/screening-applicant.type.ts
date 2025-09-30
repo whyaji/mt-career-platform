@@ -4,22 +4,32 @@ export type ScreeningApplicantType = {
   id: string;
   batch_id: string;
   answers: Array<{
+    question_id: string;
     question_code: string;
     answer: unknown;
   }>;
   scoring: Array<{
+    question_id: string;
     question_code: string;
     score: number;
+    max_score: number;
+    scoring_rules: {
+      points: number;
+      enabled: boolean;
+      max_score: number;
+      conditions: {
+        operator: string;
+        value: unknown;
+        points: number;
+      }[];
+    } | null;
   }> | null;
   total_score: number | null;
   max_score: number | null;
-  marking: Array<{
-    question_code: string;
-    marking: number;
-  }> | null;
+  marking: MarkingScreeningApplicantType[] | null;
   total_marking: number | null;
   ai_scoring: Array<{
-    question_code: string;
+    question_id: string;
     ai_score: number;
   }> | null;
   total_ai_scoring: number | null;
@@ -45,22 +55,19 @@ export type ScreeningApplicantStatsType = {
 export type CreateScreeningApplicantType = {
   batch_id: string;
   answers: Array<{
-    question_code: string;
+    question_id: string;
     answer: unknown;
   }>;
   scoring?: Array<{
-    question_code: string;
+    question_id: string;
     score: number;
   }>;
   total_score?: number;
   max_score?: number;
-  marking?: Array<{
-    question_code: string;
-    marking: number;
-  }>;
+  marking?: MarkingScreeningApplicantType[];
   total_marking?: number;
   ai_scoring?: Array<{
-    question_code: string;
+    question_id: string;
     ai_score: number;
   }>;
   total_ai_scoring?: number;
@@ -84,3 +91,21 @@ export const SCREENING_APPLICANT_STATUS_LABELS = {
   [SCREENING_APPLICANT_STATUS.APPROVED]: 'Approved',
   [SCREENING_APPLICANT_STATUS.REJECTED]: 'Rejected',
 } as const;
+
+export type MarkingScreeningApplicantPayloadType = {
+  marking: {
+    question_id: string;
+    marking_score: number;
+  }[];
+};
+
+export type MarkingScreeningApplicantType = {
+  marking_by: string;
+  marking_by_name?: string;
+  marking_at: string;
+  marking: {
+    question_id: string;
+    marking_score: number;
+    from_score: number;
+  }[];
+};

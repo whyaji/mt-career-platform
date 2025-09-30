@@ -140,6 +140,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->put('/{id}', 'ScreeningApplicantController@updateScreeningApplicant');
             $router->put('/{id}/status', 'ScreeningApplicantController@updateScreeningApplicantStatus');
             $router->delete('/{id}', 'ScreeningApplicantController@deleteScreeningApplicant');
+            $router->put('/{id}/marking', 'ScreeningApplicantController@markingScreeningApplicant');
         });
     });
 

@@ -67,6 +67,19 @@ class ScreeningApplicant extends Model
     }
 
     /**
+     * Get answers by question id
+     */
+    public function getAnswerById(string $questionId): mixed
+    {
+        foreach ($this->answers as $answer) {
+            if ($answer['question_id'] === $questionId) {
+                return $answer['answer'];
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get all answers as key-value pairs (question_code => answer)
      */
     public function getAnswersAsKeyValue(): array

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ScreeningApplicant;
 use App\Models\Batch;
 use App\Traits\PaginationTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -82,6 +83,19 @@ class ScreeningApplicantController extends Controller
                 ], 404);
             }
 
+            // Add marking_by_name to marking history
+            if ($screeningApplicant->marking && is_array($screeningApplicant->marking)) {
+                $markingHistory = collect($screeningApplicant->marking)->map(function ($marking) {
+                    if (isset($marking['marking_by'])) {
+                        $user = \App\Models\User::find($marking['marking_by']);
+                        $marking['marking_by_name'] = $user ? $user->name : 'Unknown User';
+                    }
+                    return $marking;
+                })->toArray();
+
+                $screeningApplicant->marking = $markingHistory;
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Screening applicant retrieved successfully',
@@ -106,10 +120,10 @@ class ScreeningApplicantController extends Controller
             $validator = Validator::make($request->all(), [
                 'batch_id' => 'required|uuid|exists:batch,id',
                 'answers' => 'required|array',
-                'answers.*.question_code' => 'required|string',
+                'answers.*.question_id' => 'required|string',
                 'answers.*.answer' => 'required',
                 'scoring' => 'nullable|array',
-                'scoring.*.question_code' => 'required|string',
+                'scoring.*.question_id' => 'required|string',
                 'scoring.*.score' => 'required|integer|min:0',
                 'total_score' => 'nullable|integer|min:0',
                 'max_score' => 'nullable|integer|min:0',
@@ -177,10 +191,10 @@ class ScreeningApplicantController extends Controller
             $validator = Validator::make($request->all(), [
                 'batch_id' => 'sometimes|required|uuid|exists:batch,id',
                 'answers' => 'sometimes|required|array',
-                'answers.*.question_code' => 'required|string',
+                'answers.*.question_id' => 'required|string',
                 'answers.*.answer' => 'required',
                 'scoring' => 'nullable|array',
-                'scoring.*.question_code' => 'required|string',
+                'scoring.*.question_id' => 'required|string',
                 'scoring.*.score' => 'required|integer|min:0',
                 'total_score' => 'nullable|integer|min:0',
                 'max_score' => 'nullable|integer|min:0',
@@ -439,6 +453,115 @@ class ScreeningApplicantController extends Controller
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR',
                 'message' => 'Error getting screening applicant statistics'
+            ], 500);
+        }
+    }
+
+    public function markingScreeningApplicant(Request $request, $id)
+    {
+        try {
+            $screeningApplicant = ScreeningApplicant::find($id);
+
+            if (!$screeningApplicant) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'NOT_FOUND',
+                    'message' => 'Screening applicant not found'
+                ], 404);
+            }
+
+            // Validate the incoming request
+            $validator = Validator::make($request->all(), [
+                'marking' => 'required|array',
+                'marking.*.question_id' => 'required|string',
+                'marking.*.marking_score' => 'required|numeric|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            // Get user id from JWT payload
+            $userId = auth()->id(); // or $request->user()->id
+
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'UNAUTHORIZED',
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Get existing marking history or initialize as empty array
+            $markingHistory = $screeningApplicant->marking ?? [];
+            $currentScoring = $screeningApplicant->scoring ?? [];
+
+            // Create new marking entry
+            $newMarking = [
+                'marking_by' => $userId,
+                'marking_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'marking' => collect($validated['marking'])->map(function ($item) use ($currentScoring) {
+                    return [
+                        'question_id' => $item['question_id'],
+                        'marking_score' => $item['marking_score'],
+                        'from_score' => collect($currentScoring)->first(function ($scoring) use ($item) {
+                            return $scoring['question_id'] === $item['question_id'];
+                        })['score']
+                    ];
+                })->toArray()
+            ];
+
+            // Push new marking to the array
+            $markingHistory[] = $newMarking;
+
+            // Update the screening applicant
+            $screeningApplicant->marking = $markingHistory;
+
+            // get set of list list marking with unique question code last marking
+            $listMarkedScore = [];
+            foreach ($markingHistory as $marking) {
+                foreach ($marking['marking'] as $question) {
+                    // override if question code already exists
+                    $listMarkedScore[$question['question_id']] = $question['marking_score'];
+                }
+            }
+
+            // update scoring
+            $totalMarking = 0;
+            foreach ($currentScoring as &$scoring) {
+                if (isset($listMarkedScore[$scoring['question_id']])) {
+                    $totalMarking += $listMarkedScore[$scoring['question_id']] - $scoring['score'];
+                    $scoring['score'] = $listMarkedScore[$scoring['question_id']] ?? $scoring['score'];
+                }
+            }
+            $screeningApplicant->total_marking = ($screeningApplicant->total_marking ?? 0) + $totalMarking;
+
+            $screeningApplicant->scoring = $currentScoring;
+
+            // get total score from scoring
+            $totalScore = array_sum(array_column($currentScoring, 'score'));
+            $screeningApplicant->total_score = $totalScore;
+
+
+            $screeningApplicant->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Screening applicant marked successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error marking screening applicant: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error marking screening applicant'
             ], 500);
         }
     }

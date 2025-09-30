@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Group, Tooltip } from '@mantine/core';
 import { IconArrowLeft, IconEdit, IconEye } from '@tabler/icons-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import { WindowScreeningApplicantDetailModal } from '@/feature/talenthub/screen/
 import { useGetBatchByIdWithQuestionQuery } from '@/hooks/query/batch/useGetBatchByIdWithQuestionQuery';
 import { useScreeningApplicantsByBatchQuery } from '@/hooks/query/screening-applicant/useScreeningApplicantsByBatchQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
+import { getScoreColorFromValues } from '@/lib/scoreColorUtils';
 import { Route } from '@/routes/talenthub/_authenticated/open-programs/$batchId';
 import {
   SCREENING_APPLICANT_STATUS,
@@ -175,10 +176,19 @@ export function ScreeningApplicantListScreen() {
 
   const formatScore = (score: number | null, maxScore: number | null) => {
     if (score === null || maxScore === null || maxScore === 0) {
-      return '-';
+      return (
+        <Badge variant="light" color="gray">
+          -
+        </Badge>
+      );
     }
     const percentage = ((score / maxScore) * 100).toFixed(1);
-    return `${score}/${maxScore} (${percentage}%)`;
+    const color = getScoreColorFromValues(score, maxScore);
+    return (
+      <Badge variant="light" color={color} size="sm">
+        {score}/{maxScore} ({percentage}%)
+      </Badge>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -300,7 +310,7 @@ export function ScreeningApplicantListScreen() {
       title: question.label,
       dataIndex: `answers.${question.code}`,
       width: '150px',
-      sortable: true, // Re-enabled with safer JSON validation approach
+      sortable: false, // Re-enabled with safer JSON validation approach
       render: (_value: unknown, record: ScreeningApplicantType) => {
         const answer = getAnswerForQuestion(record, question.code);
         return <span style={{ fontSize: '0.85em' }}>{formatAnswer(answer)}</span>;
@@ -563,11 +573,12 @@ export function ScreeningApplicantListScreen() {
             key={modalId}
             opened
             onClose={() => handleCloseModal(modalId)}
-            applicant={applicant}
+            applicantId={applicant.id}
             batchQuestions={batch?.questions?.map((q) => ({
+              id: q.id,
+              question_id: q.question_id || q.id,
               code: q.code,
               label: q.label,
-              type: q.type,
             }))}
             windowId={modalId}
             defaultPosition={{

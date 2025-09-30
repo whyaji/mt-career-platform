@@ -1,6 +1,7 @@
 import type { PaginatedResponse, PaginationParams } from '@/types/pagination.type';
 import type {
   CreateScreeningApplicantType,
+  MarkingScreeningApplicantPayloadType,
   ScreeningApplicantStatsType,
   ScreeningApplicantType,
   UpdateScreeningApplicantType,
@@ -135,5 +136,19 @@ export const getScreeningApplicantStats = async (): Promise<
   DefaultResponseType<ScreeningApplicantStatsType>
 > => {
   const response = await authenticatedFetch(`${talentHubScreeningApplicantUrl}/stats`);
+  return response.json();
+};
+
+export const markingScreeningApplicant = async (
+  id: string,
+  data: MarkingScreeningApplicantPayloadType
+): Promise<DefaultResponseType> => {
+  const response = await authenticatedFetch(`${talentHubScreeningApplicantUrl}/${id}/marking`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
   return response.json();
 };

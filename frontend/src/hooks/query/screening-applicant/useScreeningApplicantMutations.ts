@@ -3,11 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   createScreeningApplicant,
   deleteScreeningApplicant,
+  markingScreeningApplicant,
   updateScreeningApplicant,
   updateScreeningApplicantStatus,
 } from '@/lib/api/screeningApplicantApi';
 import type {
   CreateScreeningApplicantType,
+  MarkingScreeningApplicantPayloadType,
   UpdateScreeningApplicantType,
 } from '@/types/screening-applicant.type';
 
@@ -55,6 +57,20 @@ export const useUpdateScreeningApplicantStatusMutation = () => {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: number }) =>
       updateScreeningApplicantStatus(id, status),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['screening-applicants'] });
+      queryClient.invalidateQueries({ queryKey: ['screening-applicant', id] });
+      queryClient.invalidateQueries({ queryKey: ['screening-applicant-stats'] });
+    },
+  });
+};
+
+export const useMarkingScreeningApplicantMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: MarkingScreeningApplicantPayloadType }) =>
+      markingScreeningApplicant(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['screening-applicants'] });
       queryClient.invalidateQueries({ queryKey: ['screening-applicant', id] });
