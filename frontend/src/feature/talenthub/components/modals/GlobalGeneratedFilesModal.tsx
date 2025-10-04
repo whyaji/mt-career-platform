@@ -455,8 +455,7 @@ export function GlobalGeneratedFilesModal({
                 placeholder="File Type"
                 data={[
                   { value: 'screening-applicants-by-batch', label: 'Screening Applicants' },
-                  { value: 'applications-report', label: 'Applications Report' },
-                  { value: 'batch-summary', label: 'Batch Summary' },
+                  { value: 'applications', label: 'Applications' },
                 ]}
                 value={filters?.type || ''}
                 onChange={(value) => setFilters((prev) => ({ ...prev, type: value || undefined }))}

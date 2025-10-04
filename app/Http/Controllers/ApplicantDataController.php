@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApplicantData;
+use App\Models\GeneratedFile;
+use App\Jobs\GenerateApplicationsExcelJob;
 use App\Traits\PaginationTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -180,6 +183,43 @@ class ApplicantDataController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate Excel file for applications
+     */
+    public function generateExcel(Request $request)
+    {
+        try {
+            // Create generated file record
+            $generatedFile = GeneratedFile::create([
+                'type' => 'applications',
+                'model_type' => 'applications',
+                'model_id' => null, // No specific model ID for general applications export
+                'ext' => 'xlsx',
+                'path' => '', // Will be updated by the job
+                'request_at' => Carbon::now(),
+            ]);
+
+            // Dispatch the job
+            dispatch(new GenerateApplicationsExcelJob($generatedFile->id));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Excel generation started',
+                'data' => [
+                    'generated_file_id' => $generatedFile->id,
+                    'status' => 'processing'
+                ]
+            ], 202);
+        } catch (\Exception $e) {
+            Log::error("Error starting applications Excel generation: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error starting Excel generation'
             ], 500);
         }
     }

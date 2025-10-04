@@ -93,6 +93,9 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/{id}', 'ApplicantDataController@getApplicationById');
             $router->put('/{id}', 'ApplicantDataController@updateApplication');
             $router->delete('/{id}', 'ApplicantDataController@deleteApplication');
+
+            // Excel generation route
+            $router->post('/generate-excel', 'ApplicantDataController@generateExcel');
         });
 
         // Question routes with rate limiting for active endpoint

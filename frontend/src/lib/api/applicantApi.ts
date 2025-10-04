@@ -60,3 +60,12 @@ export const deleteApplication = async (id: string): Promise<DefaultResponseType
   });
   return response.json();
 };
+
+export const generateApplicationsExcel = async (): Promise<
+  DefaultResponseType<{ generated_file_id: string; status: string }>
+> => {
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}/generate-excel`, {
+    method: 'POST',
+  });
+  return response.json();
+};

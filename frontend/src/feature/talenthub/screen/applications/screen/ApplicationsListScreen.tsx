@@ -1,13 +1,15 @@
-import { ActionIcon, Badge, Group, Tooltip } from '@mantine/core';
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Badge, Button, Group, Tooltip } from '@mantine/core';
+import { IconEdit, IconEye, IconFileText, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
+import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
 import { ApplicationDeleteModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDeleteModal';
 import { ApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDetailModal';
 import { ApplicationFormModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationFormModal';
 import { useApplicationsQuery } from '@/hooks/query/applicant/useApplicationsQuery';
 import { useDeleteApplicationQuery } from '@/hooks/query/applicant/useDeleteApplicationQuery';
+import { useGenerateApplicationsExcelMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelMutation';
 import { useGetApplicationByIdQuery } from '@/hooks/query/applicant/useGetApplicationByIdQuery';
 import { useUpdateApplicationQuery } from '@/hooks/query/applicant/useUpdateApplicationQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
@@ -37,12 +39,18 @@ export function ApplicationsListScreen() {
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<ApplicantDataType | null>(null);
 
+  // Global generated files modal state
+  const [globalFilesModal, setGlobalFilesModal] = useState({
+    opened: false,
+  });
+
   // Use TanStack Query for data fetching
   const { data: queryData, isLoading, error, isError, refetch } = useApplicationsQuery(queryParams);
 
   // Mutations
   const updateApplicationMutation = useUpdateApplicationQuery();
   const deleteApplicationMutation = useDeleteApplicationQuery();
+  const generateExcelMutation = useGenerateApplicationsExcelMutation();
 
   // Get application details query (only when needed)
   const { data: applicationDetailData, isLoading: applicationDetailLoading } =
@@ -80,6 +88,33 @@ export function ApplicationsListScreen() {
       await deleteApplicationMutation.mutateAsync(selectedApplication.id);
     }
   };
+
+  // Header actions for generated files
+  const headerActions = (
+    <Group gap="sm">
+      {/* Generate Excel Button */}
+      <Button
+        variant="light"
+        color="green"
+        leftSection={<IconFileText size={16} />}
+        onClick={() => generateExcelMutation.mutate()}
+        loading={generateExcelMutation.isPending}
+        disabled={generateExcelMutation.isPending}
+        size="sm">
+        Generate Excel
+      </Button>
+
+      {/* Generated Files Manager Button */}
+      <Button
+        variant="light"
+        color="blue"
+        leftSection={<IconFileText size={16} />}
+        onClick={() => setGlobalFilesModal({ opened: true })}
+        size="sm">
+        Files Manager
+      </Button>
+    </Group>
+  );
 
   // Filter options for the table
   const filterOptions: FilterOption[] = [
@@ -284,6 +319,7 @@ export function ApplicationsListScreen() {
         emptyMessage="No applications found. Try adjusting your search or filters."
         title="Applications Management"
         description="Manage and view all applications in the system"
+        headerActions={(pagination?.total || 0) > 0 ? headerActions : undefined}
         showTotal
         pageSizeOptions={[5, 10, 15, 25, 50]}
         onPageSizeChange={handlePageSizeChange}
@@ -336,6 +372,17 @@ export function ApplicationsListScreen() {
         application={selectedApplication}
         onConfirm={handleDeleteConfirm}
         loading={deleteApplicationMutation.isPending}
+      />
+
+      {/* Global Generated Files Modal */}
+      <GlobalGeneratedFilesModal
+        opened={globalFilesModal.opened}
+        onClose={() => setGlobalFilesModal({ opened: false })}
+        title="Generated Files - Applications"
+        defaultFilters={{
+          type: 'applications',
+        }}
+        defaultSearch=""
       />
     </div>
   );
