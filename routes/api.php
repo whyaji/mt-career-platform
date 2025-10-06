@@ -160,6 +160,78 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/generated-file/{generatedFileId}/status', 'ScreeningApplicantController@getGeneratedFileStatus');
             $router->get('/generated-file/{generatedFileId}/download', 'ScreeningApplicantController@downloadGeneratedFile');
         });
+
+        // PDDIKTI routes with JWT auth
+        $router->group(['prefix' => 'pddikti'], function () use ($router) {
+            // Search routes
+            $router->post('/search/all', 'PDDIKTIController@searchAll');
+            $router->post('/search/mahasiswa', 'PDDIKTIController@searchMahasiswa');
+            $router->post('/search/dosen', 'PDDIKTIController@searchDosen');
+            $router->post('/search/pt', 'PDDIKTIController@searchPt');
+            $router->post('/search/prodi', 'PDDIKTIController@searchProdi');
+
+            // Student detail routes
+            $router->get('/mahasiswa/{mahasiswaId}', 'PDDIKTIController@getDetailMhs');
+
+            // Lecturer detail routes
+            $router->get('/dosen/{dosenId}/profile', 'PDDIKTIController@getDosenProfile');
+            $router->get('/dosen/{dosenId}/penelitian', 'PDDIKTIController@getDosenPenelitian');
+            $router->get('/dosen/{dosenId}/pengabdian', 'PDDIKTIController@getDosenPengabdian');
+            $router->get('/dosen/{dosenId}/karya', 'PDDIKTIController@getDosenKarya');
+            $router->get('/dosen/{dosenId}/paten', 'PDDIKTIController@getDosenPaten');
+            $router->get('/dosen/{dosenId}/study-history', 'PDDIKTIController@getDosenStudyHistory');
+            $router->get('/dosen/{dosenId}/teaching-history', 'PDDIKTIController@getDosenTeachingHistory');
+
+            // University detail routes
+            $router->get('/pt/{ptId}', 'PDDIKTIController@getDetailPt');
+            $router->get('/pt/{ptId}/prodi', 'PDDIKTIController@getProdiPt');
+            $router->get('/pt/{ptId}/logo', 'PDDIKTIController@getLogoPt');
+            $router->get('/pt/{ptId}/rasio', 'PDDIKTIController@getRasioPt');
+            $router->get('/pt/{ptId}/mahasiswa', 'PDDIKTIController@getMahasiswaPt');
+
+            // Study program detail routes
+            $router->get('/prodi/{prodiId}', 'PDDIKTIController@getDetailProdi');
+            $router->get('/prodi/{prodiId}/desc', 'PDDIKTIController@getDescProdi');
+            $router->get('/prodi/{prodiId}/counts', 'PDDIKTIController@getNumStudentsLecturersProdi');
+            $router->get('/prodi/{prodiId}/cost-range', 'PDDIKTIController@getCostRangeProdi');
+            $router->get('/prodi/{prodiId}/capacity', 'PDDIKTIController@getDayaTampungProdi');
+            $router->get('/prodi/{prodiId}/ratio', 'PDDIKTIController@getRasioDosenMahasiswaProdi');
+            $router->get('/prodi/{prodiId}/graduation-rate', 'PDDIKTIController@getGraduationRateProdi');
+
+            // Count routes
+            $router->get('/counts/dosen-active', 'PDDIKTIController@getDosenCountActive');
+            $router->get('/counts/mahasiswa-active', 'PDDIKTIController@getMahasiswaCountActive');
+            $router->get('/counts/prodi', 'PDDIKTIController@getProdiCount');
+            $router->get('/counts/pt', 'PDDIKTIController@getPtCount');
+
+            // Visualization routes
+            $router->get('/visualisasi/dosen-keaktifan', 'PDDIKTIController@getDataDosenKeaktifan');
+            $router->get('/visualisasi/dosen-bidang', 'PDDIKTIController@getDataDosenBidang');
+            $router->get('/visualisasi/dosen-jenis-kelamin', 'PDDIKTIController@getDataDosenJenisKelamin');
+            $router->get('/visualisasi/dosen-jenjang', 'PDDIKTIController@getDataDosenJenjang');
+            $router->get('/visualisasi/dosen-ikatan', 'PDDIKTIController@getDataDosenIkatan');
+            $router->get('/visualisasi/mahasiswa-bidang', 'PDDIKTIController@getDataMahasiswaBidang');
+            $router->get('/visualisasi/mahasiswa-jenis-kelamin', 'PDDIKTIController@getDataMahasiswaJenisKelamin');
+            $router->get('/visualisasi/mahasiswa-jenjang', 'PDDIKTIController@getDataMahasiswaJenjang');
+            $router->get('/visualisasi/mahasiswa-kelompok-lembaga', 'PDDIKTIController@getDataMahasiswaKelompokLembaga');
+            $router->get('/visualisasi/mahasiswa-status', 'PDDIKTIController@getDataMahasiswaStatus');
+            $router->get('/visualisasi/pt-bentuk', 'PDDIKTIController@getDataPtBentuk');
+            $router->get('/visualisasi/pt-akreditasi', 'PDDIKTIController@getDataPtAkreditasi');
+            $router->get('/visualisasi/pt-kelompok-pembina', 'PDDIKTIController@getDataPtKelompokPembina');
+            $router->get('/visualisasi/pt-provinsi', 'PDDIKTIController@getDataPtProvinsi');
+            $router->get('/visualisasi/prodi-jenjang', 'PDDIKTIController@getDataProdiJenjang');
+            $router->get('/visualisasi/prodi-akreditasi', 'PDDIKTIController@getDataProdiAkreditasi');
+            $router->get('/visualisasi/prodi-bidang-ilmu', 'PDDIKTIController@getDataProdiBidangIlmu');
+            $router->get('/visualisasi/prodi-kelompok-pembina', 'PDDIKTIController@getDataProdiKelompokPembina');
+
+            // Additional routes
+            $router->get('/contributor', 'PDDIKTIController@getContributor');
+            $router->get('/news', 'PDDIKTIController@getNews');
+            $router->get('/bidang-ilmu', 'PDDIKTIController@getBidangIlmuProdi');
+
+            // Graduation status check
+            $router->post('/check-status-kelulusan', 'PDDIKTIController@checkStatusKelulusan');
+        });
     });
 
     // Verification routes
