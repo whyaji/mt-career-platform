@@ -1,8 +1,15 @@
-import { ActionIcon, Badge, Button, Group, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, Text, Tooltip } from '@mantine/core';
 import { IconEdit, IconEye, IconFileText, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 
+import { type ColumnOption, ColumnVisibilityControl } from '@/components/ColumnVisibilityControl';
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
+import {
+  APPLICANT_DATA_REVIEW_STATUS,
+  APPLICANT_DATA_REVIEW_STATUS_LABELS,
+  APPLICANT_DATA_SCREENING_STATUS,
+  APPLICANT_DATA_SCREENING_STATUS_LABELS,
+} from '@/constants/applicantDataStatus.enum';
 import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
 import { ApplicationDeleteModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDeleteModal';
 import { ApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDetailModal';
@@ -14,7 +21,16 @@ import { useGetApplicationByIdQuery } from '@/hooks/query/applicant/useGetApplic
 import { useUpdateApplicationQuery } from '@/hooks/query/applicant/useUpdateApplicationQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
 import { Route } from '@/routes/talenthub/_authenticated/applications/index';
-import type { ApplicantDataType } from '@/types/applicant.type';
+import type { ApplicantDataType as BaseApplicantDataType } from '@/types/applicant.type';
+import { formatDefaultDate } from '@/utils/dateTimeFormatter';
+
+// Extended type to include status fields from API
+type ApplicantDataType = BaseApplicantDataType & {
+  screening_status?: number;
+  screening_remark?: string | null;
+  review_status?: number;
+  review_remark?: string | null;
+};
 
 export function ApplicationsListScreen() {
   const navigate = Route.useNavigate();
@@ -43,6 +59,99 @@ export function ApplicationsListScreen() {
   const [globalFilesModal, setGlobalFilesModal] = useState({
     opened: false,
   });
+
+  const defaultVisibleColumns = {
+    // Basic info - always visible
+    nama_lengkap: true,
+    email: true,
+    nomor_whatsapp: true,
+    jenis_kelamin: true,
+    nik: true,
+    // Program info
+    program_terpilih: true,
+    instansi_pendidikan: true,
+    jenjang_pendidikan: true,
+    jurusan_pendidikan: true,
+    nim: false,
+    status_ijazah: true,
+    batch: true,
+    // Status info
+    screening_status: true,
+    review_status: true,
+    screening_remark: false,
+    review_remark: false,
+    // Personal info - birth details
+    tempat_lahir: false,
+    tanggal_lahir: false,
+    usia: false,
+    daerah_lahir: false,
+    provinsi_lahir: false,
+    // Physical info
+    tinggi_badan: false,
+    berat_badan: false,
+    // Domicile info
+    daerah_domisili: false,
+    provinsi_domisili: false,
+    kota_domisili: false,
+    alamat_domisili: false,
+    // Additional info
+    status_perkawinan: false,
+    melanjutkan_pendidikan: false,
+    ukuran_baju: false,
+    riwayat_penyakit: false,
+    // System info
+    created_at: true,
+    updated_at: false,
+  };
+
+  // Column visibility state - all available fields from API
+  const [visibleColumns, setVisibleColumns] =
+    useState<Record<string, boolean>>(defaultVisibleColumns);
+
+  // Column options for the visibility control
+  const columnOptions: ColumnOption[] = [
+    // Basic Information
+    { key: 'nama_lengkap', label: 'Full Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'nomor_whatsapp', label: 'WhatsApp' },
+    { key: 'jenis_kelamin', label: 'Gender' },
+    { key: 'nik', label: 'NIK' },
+    // Program Information
+    { key: 'program_terpilih', label: 'Program' },
+    { key: 'instansi_pendidikan', label: 'Institution' },
+    { key: 'jenjang_pendidikan', label: 'Education Level' },
+    { key: 'jurusan_pendidikan', label: 'Major' },
+    { key: 'nim', label: 'Student ID' },
+    { key: 'status_ijazah', label: 'Diploma Status' },
+    { key: 'batch', label: 'Batch' },
+    // Status Information
+    { key: 'screening_status', label: 'Screening Status' },
+    { key: 'review_status', label: 'Review Status' },
+    { key: 'screening_remark', label: 'Screening Remark' },
+    { key: 'review_remark', label: 'Review Remark' },
+    // Birth Information
+    { key: 'tempat_lahir', label: 'Birth Place' },
+    { key: 'tanggal_lahir', label: 'Birth Date' },
+    { key: 'usia', label: 'Age' },
+    { key: 'daerah_lahir', label: 'Birth Region' },
+    { key: 'provinsi_lahir', label: 'Birth Province' },
+    // Physical Information
+    { key: 'tinggi_badan', label: 'Height (cm)' },
+    { key: 'berat_badan', label: 'Weight (kg)' },
+    { key: 'ukuran_baju', label: 'Shirt Size' },
+    // Domicile Information
+    { key: 'daerah_domisili', label: 'Domicile Region' },
+    { key: 'provinsi_domisili', label: 'Domicile Province' },
+    { key: 'kota_domisili', label: 'Domicile City' },
+    { key: 'alamat_domisili', label: 'Domicile Address' },
+    // Additional Information
+    { key: 'status_perkawinan', label: 'Marital Status' },
+    { key: 'melanjutkan_pendidikan', label: 'Continue Education' },
+    { key: 'riwayat_penyakit', label: 'Medical History' },
+    // System Information
+    { key: 'created_at', label: 'Applied Date' },
+    { key: 'updated_at', label: 'Last Updated' },
+  ];
 
   // Use TanStack Query for data fetching
   const { data: queryData, isLoading, error, isError, refetch } = useApplicationsQuery(queryParams);
@@ -77,7 +186,7 @@ export function ApplicationsListScreen() {
     setDeleteModalOpened(true);
   };
 
-  const handleFormSubmit = async (data: Partial<ApplicantDataType>) => {
+  const handleFormSubmit = async (data: Partial<BaseApplicantDataType>) => {
     if (selectedApplication) {
       await updateApplicationMutation.mutateAsync({ id: selectedApplication.id, data });
     }
@@ -89,9 +198,106 @@ export function ApplicationsListScreen() {
     }
   };
 
-  // Header actions for generated files
+  // Column visibility handlers
+  const handleColumnToggle = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  const handleShowAllColumns = () => {
+    const allVisible = Object.keys(visibleColumns).reduce(
+      (acc, key) => {
+        acc[key] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
+    setVisibleColumns(allVisible);
+  };
+
+  const handleHideAllColumns = () => {
+    const allHidden = Object.keys(visibleColumns).reduce(
+      (acc, key) => {
+        acc[key] = false;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
+    setVisibleColumns(allHidden);
+  };
+
+  const handleDefaultColumns = () => {
+    setVisibleColumns(defaultVisibleColumns);
+  };
+
+  // Status badge component
+  const StatusBadge = ({ status, type }: { status: number; type: 'screening' | 'review' }) => {
+    const labels =
+      type === 'screening'
+        ? APPLICANT_DATA_SCREENING_STATUS_LABELS
+        : APPLICANT_DATA_REVIEW_STATUS_LABELS;
+    const getColor = (status: number, type: 'screening' | 'review') => {
+      if (type === 'screening') {
+        switch (status) {
+          case APPLICANT_DATA_SCREENING_STATUS.PENDING:
+            return 'yellow';
+          case APPLICANT_DATA_SCREENING_STATUS.STOP:
+            return 'red';
+          case APPLICANT_DATA_SCREENING_STATUS.NOT_YET:
+            return 'gray';
+          case APPLICANT_DATA_SCREENING_STATUS.PROCESS:
+            return 'blue';
+          case APPLICANT_DATA_SCREENING_STATUS.DONE:
+            return 'green';
+          default:
+            return 'gray';
+        }
+      } else {
+        switch (status) {
+          case APPLICANT_DATA_REVIEW_STATUS.PENDING:
+            return 'yellow';
+          case APPLICANT_DATA_REVIEW_STATUS.STOP:
+            return 'red';
+          case APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED:
+            return 'gray';
+          case APPLICANT_DATA_REVIEW_STATUS.REJECTED:
+            return 'red';
+          case APPLICANT_DATA_REVIEW_STATUS.ACCEPTED:
+            return 'green';
+          default:
+            return 'gray';
+        }
+      }
+    };
+
+    return (
+      <Badge
+        variant="light"
+        size="sm"
+        color={getColor(status, type)}
+        style={{ textTransform: 'capitalize' }}>
+        {labels[status as keyof typeof labels] || 'Unknown'}
+      </Badge>
+    );
+  };
+
+  // Header actions for generated files and column controls
   const headerActions = (
     <Group gap="sm">
+      {/* Column Visibility Control */}
+      <ColumnVisibilityControl
+        columns={columnOptions}
+        visibleColumns={visibleColumns}
+        onColumnToggle={handleColumnToggle}
+        onShowAll={handleShowAllColumns}
+        onHideAll={handleHideAllColumns}
+        onDefault={handleDefaultColumns}
+        triggerLabel="Columns"
+        maxHeight={400}
+      />
+
       {/* Generate Excel Button */}
       <Button
         variant="light"
@@ -116,8 +322,9 @@ export function ApplicationsListScreen() {
     </Group>
   );
 
-  // Filter options for the table
+  // Filter options for the table - all searchable fields
   const filterOptions: FilterOption[] = [
+    // Basic Information
     {
       column: 'nama_lengkap',
       label: 'Full Name',
@@ -144,6 +351,33 @@ export function ApplicationsListScreen() {
         { value: 'not_in', label: 'Not in list' },
       ],
     },
+    {
+      column: 'nomor_whatsapp',
+      label: 'WhatsApp',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'nik',
+      label: 'NIK',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    // Program Information
     {
       column: 'program_terpilih',
       label: 'Program',
@@ -183,10 +417,201 @@ export function ApplicationsListScreen() {
         { value: 'not_in', label: 'Not in list' },
       ],
     },
+    {
+      column: 'jurusan_pendidikan',
+      label: 'Major',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'nim',
+      label: 'Student ID',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'status_ijazah',
+      label: 'Diploma Status',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    // Birth Information
+    {
+      column: 'tempat_lahir',
+      label: 'Birth Place',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'daerah_lahir',
+      label: 'Birth Region',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'provinsi_lahir',
+      label: 'Birth Province',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    // Domicile Information
+    {
+      column: 'daerah_domisili',
+      label: 'Domicile Region',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'provinsi_domisili',
+      label: 'Domicile Province',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'kota_domisili',
+      label: 'Domicile City',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    // Additional Information
+    {
+      column: 'status_perkawinan',
+      label: 'Marital Status',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'ukuran_baju',
+      label: 'Shirt Size',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'riwayat_penyakit',
+      label: 'Medical History',
+      type: 'text',
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'like', label: 'Contains' },
+        { value: 'not_like', label: 'Does not contain' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    // Status Information
+    {
+      column: 'screening_status',
+      label: 'Screening Status',
+      type: 'select',
+      options: Object.entries(APPLICANT_DATA_SCREENING_STATUS_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
+      column: 'review_status',
+      label: 'Review Status',
+      type: 'select',
+      options: Object.entries(APPLICANT_DATA_REVIEW_STATUS_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
   ];
 
-  // Table columns configuration
-  const columns: TableColumn<ApplicantDataType>[] = [
+  // Table columns configuration - all available fields from API
+  const allColumns: TableColumn<ApplicantDataType>[] = [
+    // Basic Information
     {
       key: 'nama_lengkap',
       title: 'Full Name',
@@ -209,6 +634,29 @@ export function ApplicationsListScreen() {
       width: '150px',
     },
     {
+      key: 'jenis_kelamin',
+      title: 'Gender',
+      dataIndex: 'jenis_kelamin',
+      sortable: true,
+      width: '110px',
+      align: 'center',
+      render: (gender: unknown) => {
+        return (
+          <Badge variant="light" size="sm" color={gender === 'L' ? 'blue' : 'pink'}>
+            {gender === 'L' ? 'Male' : 'Female'}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: 'nik',
+      title: 'NIK',
+      dataIndex: 'nik',
+      sortable: true,
+      width: '150px',
+    },
+    // Program Information
+    {
       key: 'program_terpilih',
       title: 'Program',
       dataIndex: 'program_terpilih',
@@ -220,14 +668,35 @@ export function ApplicationsListScreen() {
       title: 'Institution',
       dataIndex: 'instansi_pendidikan',
       sortable: true,
-      width: '200px',
+      width: '300px',
     },
     {
       key: 'jenjang_pendidikan',
       title: 'Education Level',
       dataIndex: 'jenjang_pendidikan',
       sortable: true,
-      width: '150px',
+      width: '180px',
+    },
+    {
+      key: 'jurusan_pendidikan',
+      title: 'Major',
+      dataIndex: 'jurusan_pendidikan',
+      sortable: true,
+      width: '200px',
+    },
+    {
+      key: 'nim',
+      title: 'Student ID',
+      dataIndex: 'nim',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'status_ijazah',
+      title: 'Diploma Status',
+      dataIndex: 'status_ijazah',
+      sortable: true,
+      width: '190px',
     },
     {
       key: 'batch',
@@ -242,21 +711,225 @@ export function ApplicationsListScreen() {
       },
       width: '200px',
     },
+    // Status Information
     {
-      key: 'jenis_kelamin',
-      title: 'Gender',
-      dataIndex: 'jenis_kelamin',
+      key: 'screening_status',
+      title: 'Screening Status',
+      dataIndex: 'screening_status',
       sortable: true,
-      width: '100px',
+      width: '200px',
       align: 'center',
-      render: (gender: unknown) => {
+      render: (status: unknown) => {
+        return <StatusBadge status={status as number} type="screening" />;
+      },
+    },
+    {
+      key: 'review_status',
+      title: 'Review Status',
+      dataIndex: 'review_status',
+      sortable: true,
+      width: '180px',
+      align: 'center',
+      render: (status: unknown) => {
+        return <StatusBadge status={status as number} type="review" />;
+      },
+    },
+    {
+      key: 'screening_remark',
+      title: 'Screening Remark',
+      dataIndex: 'screening_remark',
+      sortable: false,
+      width: '200px',
+      render: (remark: unknown) => {
+        return remark ? (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {remark as string}
+          </Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            -
+          </Text>
+        );
+      },
+    },
+    {
+      key: 'review_remark',
+      title: 'Review Remark',
+      dataIndex: 'review_remark',
+      sortable: false,
+      width: '200px',
+      render: (remark: unknown) => {
+        return remark ? (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {remark as string}
+          </Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            -
+          </Text>
+        );
+      },
+    },
+    // Birth Information
+    {
+      key: 'tempat_lahir',
+      title: 'Birth Place',
+      dataIndex: 'tempat_lahir',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'tanggal_lahir',
+      title: 'Birth Date',
+      dataIndex: 'tanggal_lahir',
+      sortable: true,
+      width: '190px',
+      render: (date: unknown) => {
+        return date ? formatDefaultDate(date as string) : '-';
+      },
+    },
+    {
+      key: 'usia',
+      title: 'Age',
+      dataIndex: 'usia',
+      sortable: true,
+      width: '90px',
+      align: 'center',
+    },
+    {
+      key: 'daerah_lahir',
+      title: 'Birth Region',
+      dataIndex: 'daerah_lahir',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'provinsi_lahir',
+      title: 'Birth Province',
+      dataIndex: 'provinsi_lahir',
+      sortable: true,
+      width: '180px',
+    },
+    // Physical Information
+    {
+      key: 'tinggi_badan',
+      title: 'Height (cm)',
+      dataIndex: 'tinggi_badan',
+      sortable: true,
+      width: '160px',
+      align: 'center',
+    },
+    {
+      key: 'berat_badan',
+      title: 'Weight (kg)',
+      dataIndex: 'berat_badan',
+      sortable: true,
+      width: '160px',
+      align: 'center',
+    },
+    {
+      key: 'ukuran_baju',
+      title: 'Shirt Size',
+      dataIndex: 'ukuran_baju',
+      sortable: true,
+      width: '140px',
+      align: 'center',
+    },
+    // Domicile Information
+    {
+      key: 'daerah_domisili',
+      title: 'Domicile Region',
+      dataIndex: 'daerah_domisili',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'provinsi_domisili',
+      title: 'Domicile Province',
+      dataIndex: 'provinsi_domisili',
+      sortable: true,
+      width: '190px',
+    },
+    {
+      key: 'kota_domisili',
+      title: 'Domicile City',
+      dataIndex: 'kota_domisili',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'alamat_domisili',
+      title: 'Domicile Address',
+      dataIndex: 'alamat_domisili',
+      sortable: false,
+      width: '220px',
+      render: (address: unknown) => {
+        return address ? (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {address as string}
+          </Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            -
+          </Text>
+        );
+      },
+    },
+    // Additional Information
+    {
+      key: 'status_perkawinan',
+      title: 'Marital Status',
+      dataIndex: 'status_perkawinan',
+      sortable: true,
+      width: '180px',
+    },
+    {
+      key: 'melanjutkan_pendidikan',
+      title: 'Continue Education',
+      dataIndex: 'melanjutkan_pendidikan',
+      sortable: true,
+      width: '210px',
+      align: 'center',
+      render: (value: unknown) => {
+        const val = value as string;
         return (
-          <Badge variant="light" size="sm" color={gender === 'L' ? 'blue' : 'pink'}>
-            {gender === 'L' ? 'Male' : 'Female'}
+          <Badge variant="light" size="sm" color={val === 'Ya' ? 'green' : 'red'}>
+            {val === 'Ya' ? 'Yes' : 'No'}
           </Badge>
         );
       },
     },
+    {
+      key: 'riwayat_penyakit',
+      title: 'Medical History',
+      dataIndex: 'riwayat_penyakit',
+      sortable: false,
+      width: '180px',
+      render: (history: unknown) => {
+        return history ? (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{ maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {history as string}
+          </Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            -
+          </Text>
+        );
+      },
+    },
+    // System Information
     {
       key: 'created_at',
       title: 'Applied Date',
@@ -264,9 +937,20 @@ export function ApplicationsListScreen() {
       sortable: true,
       width: '150px',
       render: (date: unknown) => {
-        return new Date(date as string).toLocaleDateString();
+        return formatDefaultDate(date as string);
       },
     },
+    {
+      key: 'updated_at',
+      title: 'Last Updated',
+      dataIndex: 'updated_at',
+      sortable: true,
+      width: '150px',
+      render: (date: unknown) => {
+        return formatDefaultDate(date as string);
+      },
+    },
+    // Actions
     {
       key: 'actions',
       title: 'Actions',
@@ -295,9 +979,13 @@ export function ApplicationsListScreen() {
     },
   ];
 
+  // Filter columns based on visibility
+  const columns = allColumns.filter((column) => visibleColumns[column.key]);
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <DefaultTable
+        rowActionsTitle="nama_lengkap"
         columns={columns}
         data={data}
         loading={isLoading}
@@ -315,15 +1003,15 @@ export function ApplicationsListScreen() {
         onFilterRemove={handleFilterRemove}
         onFilterClear={handleFilterClear}
         onRefresh={() => refetch()}
-        searchPlaceholder="Search applications by name, email, or program..."
+        searchPlaceholder="Search applications by name, email, program, institution, birth place, domicile, or any other field..."
         emptyMessage="No applications found. Try adjusting your search or filters."
         title="Applications Management"
-        description="Manage and view all applications in the system"
+        description="Manage and view all applications with comprehensive data visibility controls."
         headerActions={(pagination?.total || 0) > 0 ? headerActions : undefined}
         showTotal
         pageSizeOptions={[5, 10, 15, 25, 50]}
         onPageSizeChange={handlePageSizeChange}
-        minTableWidth="1200px"
+        minTableWidth="2000px"
         responsive
         rowActions={[
           {

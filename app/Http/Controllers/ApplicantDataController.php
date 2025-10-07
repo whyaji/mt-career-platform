@@ -34,27 +34,22 @@ class ApplicantDataController extends Controller
                 'nik',
                 'instansi_pendidikan',
                 'program_terpilih',
-                'jurusan_pendidikan'
+                'jurusan_pendidikan',
+                'tempat_lahir',
+                'daerah_lahir',
+                'provinsi_lahir',
+                'daerah_domisili',
+                'provinsi_domisili',
+                'kota_domisili',
+                'nim',
+                'status_ijazah',
+                'status_perkawinan',
+                'ukuran_baju',
+                'riwayat_penyakit'
             ];
 
-            // Build query with batch relationship
-            $query = ApplicantData::with('batch')
-                ->select([
-                    'id',
-                    'nama_lengkap',
-                    'email',
-                    'nomor_whatsapp',
-                    'nik',
-                    'instansi_pendidikan',
-                    'program_terpilih',
-                    'jurusan_pendidikan',
-                    'jenjang_pendidikan',
-                    'jenis_kelamin',
-                    'status_ijazah',
-                    'batch_id',
-                    'created_at',
-                    'updated_at'
-                ]);
+            // Build query with batch relationship - return all fields
+            $query = ApplicantData::with('batch');
 
             // Apply pagination with search
             $result = $this->paginateQuery($query, $paginationParams, $searchableFields);

@@ -97,6 +97,7 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   responsive?: boolean;
   headerActions?: React.ReactNode;
   rowActions?: RowAction<T>[];
+  rowActionsTitle?: string;
   backButton?: React.ReactNode;
   withoutFilterHeader?: boolean;
 }
@@ -131,6 +132,7 @@ export function DefaultTable<T = Record<string, unknown>>({
   responsive = true,
   headerActions,
   rowActions = [],
+  rowActionsTitle = 'none',
   backButton,
   withoutFilterHeader = false,
 }: DefaultTableProps<T>) {
@@ -474,7 +476,7 @@ export function DefaultTable<T = Record<string, unknown>>({
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                         }}>
-                        {column.title}
+                        {column.title.toUpperCase()}
                       </Text>
                       {column.sortable && (
                         <Box style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -707,6 +709,26 @@ export function DefaultTable<T = Record<string, unknown>>({
             />
           </Menu.Target>
           <Menu.Dropdown>
+            {/* Title Row with Applicant Name */}
+            {selectedRecord && rowActionsTitle !== 'none' && (
+              <Box
+                style={{
+                  backgroundColor: 'var(--mantine-color-blue-6)',
+                  color: 'white',
+                  margin: '-4px -4px 8px -4px',
+                  padding: '4px',
+                  borderRadius: '6px 6px 0 0',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid var(--mantine-color-blue-7)',
+                }}>
+                {String((selectedRecord as Record<string, unknown>)[rowActionsTitle])}
+              </Box>
+            )}
+
             {selectedRecord &&
               rowActions.map((action, index) => {
                 const isHidden = action.hidden?.(selectedRecord) ?? false;
