@@ -40,6 +40,10 @@ class ApplicantData extends Model
         'ukuran_baju',
         'riwayat_penyakit',
         'batch_id',
+        'screening_status',
+        'screening_remark',
+        'review_status',
+        'review_remark',
     ];
 
     protected $casts = [

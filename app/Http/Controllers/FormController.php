@@ -8,6 +8,7 @@ use App\Services\SecurityService;
 use App\Services\TurnstileService;
 use App\Services\DynamicFormValidationService;
 use App\Services\ScoringService;
+use App\Jobs\ApplicantScreeningJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -184,9 +185,12 @@ class FormController extends Controller
             ];
 
             // Create applicant data
-            ApplicantData::create($applicantData);
+            $applicant = ApplicantData::create($applicantData);
 
             Log::info("Form submitted successfully by: {$applicantData['nama_lengkap']}");
+
+            // Trigger screening job
+            dispatch(new ApplicantScreeningJob($applicant->id));
 
             return response()->json([
                 'success' => true,

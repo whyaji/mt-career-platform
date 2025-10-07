@@ -161,6 +161,18 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/generated-file/{generatedFileId}/download', 'ScreeningApplicantController@downloadGeneratedFile');
         });
 
+        // Screening Management routes with JWT auth
+        $router->group(['prefix' => 'screening'], function () use ($router) {
+            $router->post('/trigger', 'ScreeningController@triggerScreening');
+            $router->post('/rescreen-all', 'ScreeningController@rescreenAll');
+            $router->get('/stats', 'ScreeningController@getScreeningStats');
+
+            // Job status routes
+            $router->get('/job-status/{jobId}', 'ScreeningController@getJobStatus');
+            $router->get('/job-statuses', 'ScreeningController@getJobStatuses');
+            $router->get('/job-stats', 'ScreeningController@getJobStats');
+        });
+
         // PDDIKTI routes with JWT auth
         $router->group(['prefix' => 'pddikti'], function () use ($router) {
             // Search routes
@@ -231,6 +243,12 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
 
             // Graduation status check
             $router->post('/check-status-kelulusan', 'PDDIKTIController@checkStatusKelulusan');
+        });
+
+        // Queue management routes (for shared hosting)
+        $router->group(['prefix' => 'queue'], function () use ($router) {
+            $router->get('/process', 'QueueController@processQueue');
+            $router->get('/status', 'QueueController@getQueueStatus');
         });
     });
 
