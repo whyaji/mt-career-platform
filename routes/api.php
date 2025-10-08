@@ -53,6 +53,8 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/{id}/with-questions', 'BatchController@getBatchByIdWithQuestions');
         });
 
+        $router->get('/batch-applications', 'BatchController@getBatchApplications');
+
         // Educational Institution routes with rate limiting for active endpoint
         $router->group(['prefix' => 'educational-institution'], function () use ($router) {
             $router->get('/active', 'EducationalInstitutionController@getActive');

@@ -195,3 +195,22 @@ export const bulkBatchQuestionOperations = async (
   );
   return response.json();
 };
+
+const talentHubBatchApplicationsUrl = `${baseApiUrl}/talenthub/batch-applications`;
+
+export const getBatchApplications = async (
+  params: PaginationParams = {}
+): Promise<PaginatedResponse<BatchType>> => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.append(key, value.toString());
+    }
+  });
+
+  const response = await authenticatedFetch(
+    `${talentHubBatchApplicationsUrl}?${searchParams.toString()}`
+  );
+  return response.json();
+};

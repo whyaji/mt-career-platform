@@ -4,7 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { DefaultTable, type TableColumn } from '@/components/DefaultTable';
-import { useOpenProgramsQuery } from '@/hooks/query/open-programs/useOpenProgramsQuery';
+import { useBatchApplicationsQuery } from '@/hooks/query/batch/useBatchApplicationsQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
 import { Route } from '@/routes/talenthub/_authenticated/applications';
 import type { BatchType } from '@/types/batch.type';
@@ -18,11 +18,11 @@ export function BatchApplicationListScreen() {
     usePaginationConfig({ search, navigate });
 
   const {
-    data: openProgramsResponse,
+    data: batchApplicationResponse,
     isLoading,
     error,
     refetch,
-  } = useOpenProgramsQuery(queryParams);
+  } = useBatchApplicationsQuery(queryParams);
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -37,6 +37,42 @@ export function BatchApplicationListScreen() {
   };
 
   const columns: TableColumn<BatchType>[] = [
+    {
+      key: 'number',
+      title: 'Batch Number',
+      dataIndex: 'number',
+      sortable: true,
+      width: '120px',
+      render: (value) => <strong>{String(value)}</strong>,
+    },
+    {
+      key: 'number_code',
+      title: 'Code',
+      dataIndex: 'number_code',
+      sortable: true,
+      width: '100px',
+    },
+    {
+      key: 'location',
+      title: 'Location',
+      dataIndex: 'location',
+      sortable: true,
+      width: '150px',
+    },
+    {
+      key: 'location_code',
+      title: 'Location Code',
+      dataIndex: 'location_code',
+      sortable: true,
+      width: '120px',
+    },
+    {
+      key: 'year',
+      title: 'Year',
+      dataIndex: 'year',
+      sortable: true,
+      width: '80px',
+    },
     {
       key: 'program_category',
       title: 'Program Category',
@@ -78,42 +114,6 @@ export function BatchApplicationListScreen() {
         }
         return <span style={{ fontWeight: 500 }}>{String(programCategory.code)}</span>;
       },
-    },
-    {
-      key: 'number',
-      title: 'Batch Number',
-      dataIndex: 'number',
-      sortable: true,
-      width: '120px',
-      render: (value) => <strong>{String(value)}</strong>,
-    },
-    {
-      key: 'number_code',
-      title: 'Code',
-      dataIndex: 'number_code',
-      sortable: true,
-      width: '100px',
-    },
-    {
-      key: 'location',
-      title: 'Location',
-      dataIndex: 'location',
-      sortable: true,
-      width: '150px',
-    },
-    {
-      key: 'location_code',
-      title: 'Location Code',
-      dataIndex: 'location_code',
-      sortable: true,
-      width: '120px',
-    },
-    {
-      key: 'year',
-      title: 'Year',
-      dataIndex: 'year',
-      sortable: true,
-      width: '80px',
     },
     {
       key: 'institutes',
@@ -192,10 +192,10 @@ export function BatchApplicationListScreen() {
         title="Batch Applications"
         description="Manage and view batch applications"
         columns={columns}
-        data={openProgramsResponse?.data || []}
+        data={batchApplicationResponse?.data || []}
         loading={isLoading}
         error={error?.message}
-        pagination={openProgramsResponse?.pagination}
+        pagination={batchApplicationResponse?.pagination}
         searchValue={tempSearch}
         onSearchChange={setTempSearch}
         onPageChange={handlePageChange}

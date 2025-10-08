@@ -93,6 +93,26 @@ class BatchController extends Controller
         }
     }
 
+    public function getBatchApplications(Request $request)
+    {
+        // in this controller, show the list batch with status active and has program category and it status active
+        try {
+            $paginationParams = $this->getPaginationParams($request);
+            $searchableFields = ['number', 'number_code', 'location', 'location_code', 'year', 'program_category_id'];
+
+            $query = Batch::batchApplications();
+
+            $result = $this->paginateQuery($query, $paginationParams, $searchableFields);
+            return $this->paginatedResponse($result, 'Batch applications retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error("Error getting batch applications: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
     public function getBatchByIdWithQuestions($id)
     {
         try {
@@ -145,8 +165,8 @@ class BatchController extends Controller
             $validator = Validator::make($request->all(), [
                 'number' => 'required|integer|min:1',
                 'number_code' => 'required|string|max:10',
-                'location' => 'required|string|max:255',
-                'location_code' => 'required|string|max:10',
+                'location' => 'required|string|max:64',
+                'location_code' => 'required|string|max:64',
                 'year' => 'required|integer|min:2000|max:2100',
                 'status' => 'required|integer|in:0,1',
                 'institutes' => 'nullable|array',
@@ -206,8 +226,8 @@ class BatchController extends Controller
             $validator = Validator::make($request->all(), [
                 'number' => 'sometimes|required|integer|min:1',
                 'number_code' => 'sometimes|required|string|max:10',
-                'location' => 'sometimes|required|string|max:255',
-                'location_code' => 'sometimes|required|string|max:10',
+                'location' => 'sometimes|required|string|max:64',
+                'location_code' => 'sometimes|required|string|max:64',
                 'year' => 'sometimes|required|integer|min:2000|max:2100',
                 'status' => 'sometimes|required|integer|in:0,1',
                 'institutes' => 'nullable|array',
