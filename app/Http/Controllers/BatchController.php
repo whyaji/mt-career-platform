@@ -49,7 +49,7 @@ class BatchController extends Controller
             $searchableFields = ['number', 'number_code', 'location', 'location_code', 'year', 'program_category_id'];
 
             // Build query
-            $query = Batch::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes', 'status', 'program_category_id')
+            $query = Batch::select('id', 'number', 'number_code', 'location', 'location_code', 'year', 'institutes', 'status', 'program_category_id', 'screening_config')
                 ->with('programCategory:id,code,name,description,status');
 
             // Apply pagination with search

@@ -26,6 +26,9 @@ storage/framework/views/*
 storage/app/public/*
 bootstrap/cache/*.php
 
+# Backup Storage
+storage/backup
+
 # IDE and Editor files
 .DS_Store
 Thumbs.db

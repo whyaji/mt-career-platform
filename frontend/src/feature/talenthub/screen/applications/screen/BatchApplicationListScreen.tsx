@@ -207,6 +207,8 @@ export function BatchApplicationListScreen() {
         searchPlaceholder="Search by batch number, location, year, or program category..."
         emptyMessage="No batch applications found"
         minTableWidth="1000px"
+        rowActionsTitle="location"
+        rowDoubleClickAction={handleViewApplicants}
       />
     </div>
   );

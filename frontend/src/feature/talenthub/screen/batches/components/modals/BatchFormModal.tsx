@@ -1,5 +1,6 @@
 import {
   Button,
+  Divider,
   Group,
   Modal,
   MultiSelect,
@@ -15,9 +16,11 @@ import { useEffect, useMemo } from 'react';
 
 import { useActiveEducationalInstitutionsQuery } from '@/hooks/query/educational-institution/useActiveEducationalInstitutionsQuery';
 import { useActiveProgramCategoriesQuery } from '@/hooks/query/program-category/useActiveProgramCategoriesQuery';
-import type { BatchType } from '@/types/batch.type';
+import type { BatchType, ScreeningConfigType } from '@/types/batch.type';
 import type { EducationalInstitutionType } from '@/types/educationalInstitution.type';
 import type { ProgramCategoryType } from '@/types/programCategory.type';
+
+import { ScreeningConfigSection } from '../ScreeningConfigSection';
 
 interface BatchFormModalProps {
   opened: boolean;
@@ -76,6 +79,7 @@ export function BatchFormModal({
       status: '1',
       institutes: [],
       program_category_id: null,
+      screening_config: null,
     },
     validate: {
       number: (value) => (value <= 0 ? 'Batch number must be greater than 0' : null),
@@ -103,6 +107,7 @@ export function BatchFormModal({
         status: batch.status.toString(),
         institutes: batch.institutes || [],
         program_category_id: batch.program_category_id,
+        screening_config: batch.screening_config || null,
       });
     } else {
       form.reset();
@@ -141,7 +146,7 @@ export function BatchFormModal({
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} size="md" radius="md" centered>
+    <Modal opened={opened} onClose={onClose} title={title} size="xl" radius="md" centered>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           <NumberInput
@@ -214,6 +219,15 @@ export function BatchFormModal({
             clearable
             disabled={isLoadingInstitutions}
             {...form.getInputProps('institutes')}
+          />
+
+          <Divider my="md" />
+
+          <ScreeningConfigSection
+            value={form.values.screening_config}
+            onChange={(config: ScreeningConfigType) =>
+              form.setFieldValue('screening_config', config)
+            }
           />
 
           <Group justify="flex-end" gap="sm" mt="md">

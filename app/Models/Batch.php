@@ -21,6 +21,7 @@ class Batch extends Model
         'status',
         'institutes',
         'program_category_id',
+        'screening_config',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class Batch extends Model
         'year' => 'integer',
         'status' => 'integer',
         'institutes' => 'array',
+        'screening_config' => 'array',
     ];
 
     const STATUS_INACTIVE = 0;

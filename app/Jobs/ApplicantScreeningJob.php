@@ -44,8 +44,8 @@ class ApplicantScreeningJob implements ShouldQueue
                 ['applicant_id' => $this->applicantDataId]
             );
 
-            // Get the applicant data
-            $applicant = ApplicantData::find($this->applicantDataId);
+            // Get the applicant data with batch
+            $applicant = ApplicantData::with('batch')->find($this->applicantDataId);
             if (!$applicant) {
                 Log::error("Applicant data not found: {$this->applicantDataId}");
 
@@ -61,6 +61,10 @@ class ApplicantScreeningJob implements ShouldQueue
                 return;
             }
 
+            // Get batch configuration
+            $batchConfig = $applicant->batch->screening_config ?? [];
+            Log::info("Using batch screening configuration", ['batch_id' => $applicant->batch_id, 'config' => $batchConfig]);
+
             // Update progress
             JobStatus::updateStatus(
                 $jobId,
@@ -72,7 +76,7 @@ class ApplicantScreeningJob implements ShouldQueue
             );
 
             // Perform screening checks
-            $screeningResult = $this->performScreening($applicant);
+            $screeningResult = $this->performScreening($applicant, $batchConfig);
 
             // Update progress
             JobStatus::updateStatus(
@@ -141,61 +145,76 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Perform the actual screening logic
      */
-    private function performScreening($applicant)
+    private function performScreening($applicant, $config = [])
     {
         $checks = [];
         $remarks = [];
 
-        // Age check based on tanggal_lahir
-        $ageCheck = $this->checkAge($applicant);
-        $checks['age'] = $ageCheck['passed'];
-        if (!$ageCheck['passed']) {
-            $remarks[] = $ageCheck['reason'];
+        // Age check based on tanggal_lahir (if enabled in config)
+        if (!isset($config['age']['enabled']) || $config['age']['enabled']) {
+            $ageCheck = $this->checkAge($applicant, $config['age'] ?? []);
+            $checks['age'] = $ageCheck['passed'];
+            if (!$ageCheck['passed']) {
+                $remarks[] = $ageCheck['reason'];
+            }
         }
 
-        // Physical attributes check
-        $physicalCheck = $this->checkPhysicalAttributes($applicant);
-        $checks['physical'] = $physicalCheck['passed'];
-        if (!$physicalCheck['passed']) {
-            $remarks[] = $physicalCheck['reason'];
+        // Physical attributes check (if enabled in config)
+        if (!isset($config['physical']['enabled']) || $config['physical']['enabled']) {
+            $physicalCheck = $this->checkPhysicalAttributes($applicant, $config['physical'] ?? []);
+            $checks['physical'] = $physicalCheck['passed'];
+            if (!$physicalCheck['passed']) {
+                $remarks[] = $physicalCheck['reason'];
+            }
         }
 
-        // Program-specific checks
-        $programCheck = $this->checkProgramRequirements($applicant);
-        $checks['program'] = $programCheck['passed'];
-        if (!$programCheck['passed']) {
-            $remarks[] = $programCheck['reason'];
+        // Program-specific checks (if enabled in config)
+        if (!isset($config['program']['enabled']) || $config['program']['enabled']) {
+            $programCheck = $this->checkProgramRequirements($applicant, $config['program'] ?? []);
+            $checks['program'] = $programCheck['passed'];
+            if (!$programCheck['passed']) {
+                $remarks[] = $programCheck['reason'];
+            }
         }
 
-        // Education checks
-        $educationCheck = $this->checkEducationRequirements($applicant);
-        $checks['education'] = $educationCheck['passed'];
-        if (!$educationCheck['passed']) {
-            $remarks[] = $educationCheck['reason'];
+        // Education checks (if enabled in config)
+        if (!isset($config['education']['enabled']) || $config['education']['enabled']) {
+            $educationCheck = $this->checkEducationRequirements($applicant, $config['education'] ?? []);
+            $checks['education'] = $educationCheck['passed'];
+            if (!$educationCheck['passed']) {
+                $remarks[] = $educationCheck['reason'];
+            }
         }
 
-        // Check university and certificate
-        $universityCheck = $this->checkUniversityAndCertificate($applicant);
-        Log::info("University check: " . json_encode($universityCheck));
-        $checks['university'] = $universityCheck['passed'];
-        if (!$universityCheck['passed']) {
-            $remarks[] = $universityCheck['reason'];
-        } else if ($universityCheck['reason']) {
-            $remarks[] = $universityCheck['reason'];
+        // Check university and certificate (if enabled in config)
+        $universityCheck = ['passed' => true, 'reason' => null];
+        if (!isset($config['university']['enabled']) || $config['university']['enabled']) {
+            $universityCheck = $this->checkUniversityAndCertificate($applicant, $config['university'] ?? []);
+            Log::info("University check: " . json_encode($universityCheck));
+            $checks['university'] = $universityCheck['passed'];
+            if (!$universityCheck['passed']) {
+                $remarks[] = $universityCheck['reason'];
+            } else if ($universityCheck['reason']) {
+                $remarks[] = $universityCheck['reason'];
+            }
         }
 
-        // Marital status check
-        $maritalCheck = $this->checkMaritalStatus($applicant);
-        $checks['marital'] = $maritalCheck['passed'];
-        if (!$maritalCheck['passed']) {
-            $remarks[] = $maritalCheck['reason'];
+        // Marital status check (if enabled in config)
+        if (!isset($config['marital']['enabled']) || $config['marital']['enabled']) {
+            $maritalCheck = $this->checkMaritalStatus($applicant, $config['marital'] ?? []);
+            $checks['marital'] = $maritalCheck['passed'];
+            if (!$maritalCheck['passed']) {
+                $remarks[] = $maritalCheck['reason'];
+            }
         }
 
-        // Continue education check
-        $continueEducationCheck = $this->checkContinueEducation($applicant);
-        $checks['continue_education'] = $continueEducationCheck['passed'];
-        if (!$continueEducationCheck['passed']) {
-            $remarks[] = $continueEducationCheck['reason'];
+        // Continue education check (if enabled in config)
+        if (!isset($config['continue_education']['enabled']) || $config['continue_education']['enabled']) {
+            $continueEducationCheck = $this->checkContinueEducation($applicant, $config['continue_education'] ?? []);
+            $checks['continue_education'] = $continueEducationCheck['passed'];
+            if (!$continueEducationCheck['passed']) {
+                $remarks[] = $continueEducationCheck['reason'];
+            }
         }
 
         // Determine overall status
@@ -215,16 +234,20 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check age requirements
      */
-    private function checkAge($applicant)
+    private function checkAge($applicant, $config = [])
     {
         $birthDate = Carbon::parse($applicant->tanggal_lahir);
         $age = $birthDate->age;
 
-        // Basic age range check (18-30 years old)
-        if ($age < 18 || $age > 30) {
+        // Get age range from config or use defaults
+        $minAge = $config['min_age'] ?? 18;
+        $maxAge = $config['max_age'] ?? 30;
+
+        // Age range check
+        if ($age < $minAge || $age > $maxAge) {
             return [
                 'passed' => false,
-                'reason' => "Age {$age} is outside acceptable range (18-30 years)"
+                'reason' => "Age {$age} is outside acceptable range ({$minAge}-{$maxAge} years)"
             ];
         }
 
@@ -234,24 +257,31 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check physical attributes
      */
-    private function checkPhysicalAttributes($applicant)
+    private function checkPhysicalAttributes($applicant, $config = [])
     {
         $height = $applicant->tinggi_badan;
         $weight = $applicant->berat_badan;
 
-        // Basic height check (minimum 150cm)
-        if ($height < 150) {
+        // Get height from config or use defaults
+        $minHeight = $config['min_height'] ?? 150;
+
+        // Height check
+        if ($height < $minHeight) {
             return [
                 'passed' => false,
-                'reason' => "Height {$height}cm is below minimum requirement (150cm)"
+                'reason' => "Height {$height}cm is below minimum requirement ({$minHeight}cm)"
             ];
         }
 
-        // Basic weight check (40-100kg)
-        if ($weight < 40 || $weight > 100) {
+        // Get weight range from config or use defaults
+        $minWeight = $config['min_weight'] ?? 40;
+        $maxWeight = $config['max_weight'] ?? 100;
+
+        // Weight check
+        if ($weight < $minWeight || $weight > $maxWeight) {
             return [
                 'passed' => false,
-                'reason' => "Weight {$weight}kg is outside acceptable range (40-100kg)"
+                'reason' => "Weight {$weight}kg is outside acceptable range ({$minWeight}-{$maxWeight}kg)"
             ];
         }
 
@@ -261,12 +291,26 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check program-specific requirements
      */
-    private function checkProgramRequirements($applicant)
+    private function checkProgramRequirements($applicant, $config = [])
     {
         $program = $applicant->program_terpilih;
         $educationLevel = $applicant->jenjang_pendidikan;
 
-        // Add specific program requirements here
+        // Get allowed education levels from config
+        $allowedLevels = $config['allowed_education_levels'] ?? [];
+
+        // If config has specific requirements, use them
+        if (!empty($allowedLevels)) {
+            if (!in_array($educationLevel, $allowedLevels)) {
+                return [
+                    'passed' => false,
+                    'reason' => "Education level {$educationLevel} is not allowed. Required: " . implode(', ', $allowedLevels)
+                ];
+            }
+            return ['passed' => true, 'reason' => null];
+        }
+
+        // Otherwise, use default program requirements
         switch ($program) {
             case 'pkpp-estate':
                 if (!in_array($educationLevel, ['D3', 'D4', 'S1', 'S2'])) {
@@ -275,7 +319,6 @@ class ApplicantScreeningJob implements ShouldQueue
                         'reason' => "Education level must be D3, D4, S1, or S2 for Estate program"
                     ];
                 }
-                // Estate-specific requirements
                 break;
             case 'pkpp-ktu':
                 if (!in_array($educationLevel, ['D3', 'D4', 'S1', 'S2'])) {
@@ -284,7 +327,6 @@ class ApplicantScreeningJob implements ShouldQueue
                         'reason' => "Education level must be D3, D4, S1, or S2 for KTU program"
                     ];
                 }
-                // KTU-specific requirements
                 break;
             case 'pkpp-mill':
                 if (!in_array($educationLevel, ['S1', 'S2'])) {
@@ -293,7 +335,6 @@ class ApplicantScreeningJob implements ShouldQueue
                         'reason' => "Education level must be S1 or S2 for Mill program"
                     ];
                 }
-                // Mill-specific requirements
                 break;
             default:
                 return [
@@ -308,22 +349,25 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check education requirements
      */
-    private function checkEducationRequirements($applicant)
+    private function checkEducationRequirements($applicant, $config = [])
     {
         $educationLevel = $applicant->jenjang_pendidikan;
         $diplomaStatus = $applicant->status_ijazah;
 
+        // Get valid education levels from config or use defaults
+        $validLevels = $config['valid_levels'] ?? ['D3', 'D4', 'S1', 'S2'];
+
         // Check education level
-        $validLevels = ['D3', 'D4', 'S1', 'S2'];
         if (!in_array($educationLevel, $validLevels)) {
             return [
                 'passed' => false,
-                'reason' => "Invalid education level: {$educationLevel}"
+                'reason' => "Invalid education level: {$educationLevel}. Allowed: " . implode(', ', $validLevels)
             ];
         }
 
-        // Check diploma status
-        if (empty($diplomaStatus)) {
+        // Check diploma status if required
+        $requireDiploma = $config['require_diploma'] ?? true;
+        if ($requireDiploma && empty($diplomaStatus)) {
             return [
                 'passed' => false,
                 'reason' => "Diploma status is required"
@@ -336,7 +380,7 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check university and certificate
      */
-    private function checkUniversityAndCertificate($applicant)
+    private function checkUniversityAndCertificate($applicant, $config = [])
     {
         $name = $applicant->nama_lengkap;
         $university = $applicant->instansi_pendidikan;
@@ -421,16 +465,18 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check marital status requirements
      */
-    private function checkMaritalStatus($applicant)
+    private function checkMaritalStatus($applicant, $config = [])
     {
         $maritalStatus = $applicant->status_perkawinan;
 
-        // Basic marital status check
-        $validStatuses = ['Lajang'];
+        // Get valid marital statuses from config or use defaults
+        $validStatuses = $config['valid_statuses'] ?? ['Lajang'];
+
+        // Marital status check
         if (!in_array($maritalStatus, $validStatuses)) {
             return [
                 'passed' => false,
-                'reason' => "Invalid marital status: {$maritalStatus}"
+                'reason' => "Invalid marital status: {$maritalStatus}. Allowed: " . implode(', ', $validStatuses)
             ];
         }
 
@@ -440,16 +486,18 @@ class ApplicantScreeningJob implements ShouldQueue
     /**
      * Check continue education requirements
      */
-    private function checkContinueEducation($applicant)
+    private function checkContinueEducation($applicant, $config = [])
     {
         $continueEducation = $applicant->melanjutkan_pendidikan;
 
-        // Basic continue education check
-        $validOptions = ['Tidak'];
+        // Get valid continue education options from config or use defaults
+        $validOptions = $config['valid_options'] ?? ['Tidak'];
+
+        // Continue education check
         if (!in_array($continueEducation, $validOptions)) {
             return [
                 'passed' => false,
-                'reason' => "Invalid continue education option: {$continueEducation}"
+                'reason' => "Invalid continue education option: {$continueEducation}. Allowed: " . implode(', ', $validOptions)
             ];
         }
 
