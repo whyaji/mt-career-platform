@@ -47,6 +47,7 @@ import {
   useGlobalGeneratedFilesQuery,
   useGlobalGeneratedFilesStatsQuery,
 } from '@/hooks/query/generated-files/useGlobalGeneratedFilesQuery';
+import { formatDefaultDate } from '@/utils/dateTimeFormatter';
 
 interface GlobalGeneratedFilesModalProps {
   opened: boolean;
@@ -246,17 +247,7 @@ export function GlobalGeneratedFilesModal({
       title: 'Created',
       dataIndex: 'created_at',
       width: '140px',
-      render: (value) => (
-        <Text size="sm">
-          {new Date(String(value)).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}
-        </Text>
-      ),
+      render: (value) => <Text size="sm">{formatDefaultDate(value as string)}</Text>,
     },
     {
       key: 'actions',
@@ -456,6 +447,7 @@ export function GlobalGeneratedFilesModal({
                 data={[
                   { value: 'screening-applicants-by-batch', label: 'Screening Applicants' },
                   { value: 'applications', label: 'Applications' },
+                  { value: 'applications-by-batch', label: 'Applications by Batch' },
                 ]}
                 value={filters?.type || ''}
                 onChange={(value) => setFilters((prev) => ({ ...prev, type: value || undefined }))}

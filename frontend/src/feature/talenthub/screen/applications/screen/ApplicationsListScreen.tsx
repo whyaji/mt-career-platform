@@ -4,6 +4,10 @@ import { useState } from 'react';
 
 import { type ColumnOption, ColumnVisibilityControl } from '@/components/ColumnVisibilityControl';
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
+import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
+import { ExcelExportMenu } from '@/components/ExcelExportMenu';
+import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
+import { PendingScreenComponent } from '@/components/PendingScreenComponent';
 import {
   APPLICANT_DATA_REVIEW_STATUS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
@@ -12,12 +16,14 @@ import {
 } from '@/constants/applicantDataStatus.enum';
 import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
 import { WindowApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/WindowApplicationDetailModal';
-import { useApplicationsQuery } from '@/hooks/query/applicant/useApplicationsQuery';
+import { useApplicationsByBatchQuery } from '@/hooks/query/applicant/useApplicationsByBatchQuery';
+import { useGenerateApplicationsExcelByBatchMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelByBatchMutation';
 import { useGenerateApplicationsExcelMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelMutation';
 import { useUpdateApplicationReviewStatusMutation } from '@/hooks/query/applicant/useUpdateApplicationReviewStatusMutation';
+import { useGetBatchByIdQuery } from '@/hooks/query/batch/useGetBatchByIdQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
 import { useUserStore } from '@/lib/store/userStore';
-import { Route } from '@/routes/talenthub/_authenticated/applications/index';
+import { Route } from '@/routes/talenthub/_authenticated/applications/$batchId/index';
 import type { ApplicantDataType as BaseApplicantDataType } from '@/types/applicantData.type';
 import { formatDefaultDate } from '@/utils/dateTimeFormatter';
 
@@ -31,8 +37,14 @@ type ApplicantDataType = BaseApplicantDataType & {
 
 export function ApplicationsListScreen() {
   const navigate = Route.useNavigate();
+  const { batchId } = Route.useParams();
   const search = Route.useSearch();
   const user = useUserStore((state) => state.user);
+
+  const { data: batchDetailData, isLoading: batchDetailLoading } = useGetBatchByIdQuery(batchId);
+
+  const batch =
+    batchDetailData?.success && 'data' in batchDetailData ? batchDetailData.data : undefined;
 
   const {
     tempSearch,
@@ -150,13 +162,37 @@ export function ApplicationsListScreen() {
   ];
 
   // Use TanStack Query for data fetching
-  const { data: queryData, isLoading, error, isError, refetch } = useApplicationsQuery(queryParams);
+  const {
+    data: queryData,
+    isLoading,
+    error,
+    isError,
+    refetch,
+  } = useApplicationsByBatchQuery(
+    batchId,
+    queryParams,
+    !(batch instanceof Error) && batch?.id !== undefined
+  );
 
   // Mutations
   // const updateApplicationMutation = useUpdateApplicationQuery();
   // const deleteApplicationMutation = useDeleteApplicationQuery();
   const generateExcelMutation = useGenerateApplicationsExcelMutation();
+  const generateExcelByBatchMutation = useGenerateApplicationsExcelByBatchMutation();
   const updateReviewStatusMutation = useUpdateApplicationReviewStatusMutation();
+
+  // Handle error case from loader
+  if (batch instanceof Error) {
+    return <ErrorScreenComponent />;
+  }
+
+  if (batchDetailLoading) {
+    return <PendingScreenComponent />;
+  }
+
+  if (!batch) {
+    return <NotFoundScreenComponent />;
+  }
 
   // Extract data from query response
   const data = queryData?.data || [];
@@ -279,6 +315,28 @@ export function ApplicationsListScreen() {
     );
   };
 
+  // Handler for Excel export options
+  const handleExportAll = () => {
+    if (batchId) {
+      generateExcelByBatchMutation.mutate({ batchId, filters: undefined });
+    } else {
+      generateExcelMutation.mutate(undefined);
+    }
+  };
+
+  const handleExportFiltered = () => {
+    if (batchId) {
+      generateExcelByBatchMutation.mutate({ batchId, filters: queryParams });
+    } else {
+      generateExcelMutation.mutate(queryParams);
+    }
+  };
+
+  // Check if there are active filters
+  const hasActiveFilters = Boolean(
+    queryParams.search || queryParams.filter || appliedFilters.length > 0
+  );
+
   // Header actions for generated files and column controls
   const headerActions = (
     <Group gap="sm">
@@ -294,17 +352,13 @@ export function ApplicationsListScreen() {
         maxHeight={400}
       />
 
-      {/* Generate Excel Button */}
-      <Button
-        variant="light"
-        color="green"
-        leftSection={<IconFileText size={16} />}
-        onClick={() => generateExcelMutation.mutate()}
-        loading={generateExcelMutation.isPending}
-        disabled={generateExcelMutation.isPending}
-        size="sm">
-        Generate Excel
-      </Button>
+      {/* Excel Export Menu */}
+      <ExcelExportMenu
+        onExportAll={handleExportAll}
+        onExportFiltered={handleExportFiltered}
+        hasActiveFilters={hasActiveFilters}
+        loading={generateExcelMutation.isPending || generateExcelByBatchMutation.isPending}
+      />
 
       {/* Generated Files Manager Button */}
       <Button
@@ -974,8 +1028,8 @@ export function ApplicationsListScreen() {
         onRefresh={() => refetch()}
         searchPlaceholder="Search applications by name, email, program, institution, birth place, domicile, or any other field..."
         emptyMessage="No applications found. Try adjusting your search or filters."
-        title="Applications Management"
-        description="Manage and view all applications with comprehensive data visibility controls."
+        title={`Applications Management - ${batch?.number} (${batch?.location})`}
+        description={`Batch: ${batch?.number_code} | Year: ${batch?.year} | Location: ${batch?.location}`}
         headerActions={(pagination?.total || 0) > 0 ? headerActions : undefined}
         showTotal
         pageSizeOptions={[5, 10, 15, 25, 50]}
@@ -1065,11 +1119,12 @@ export function ApplicationsListScreen() {
       <GlobalGeneratedFilesModal
         opened={globalFilesModal.opened}
         onClose={() => setGlobalFilesModal({ opened: false })}
-        title="Generated Files - Applications"
+        title={`Generated Files - ${batch?.number} (${batch?.location})`}
         defaultFilters={{
-          type: 'applications',
+          type: 'applications-by-batch',
+          model_id: batchId,
         }}
-        defaultSearch=""
+        defaultSearch={batchId || ''}
       />
     </div>
   );

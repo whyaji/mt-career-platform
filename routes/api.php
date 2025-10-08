@@ -90,6 +90,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
         // Application routes with JWT auth
         $router->group(['prefix' => 'applications'], function () use ($router) {
             $router->get('/', 'ApplicantDataController@getApplications');
+            $router->get('/batch/{batchId}', 'ApplicantDataController@getApplicationsByBatch');
             $router->get('/{id}', 'ApplicantDataController@getApplicationById');
             $router->put('/{id}', 'ApplicantDataController@updateApplication');
             $router->delete('/{id}', 'ApplicantDataController@deleteApplication');
@@ -97,8 +98,9 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             // Update application review status route
             $router->put('/{id}/review-status', 'ApplicantDataController@updateApplicationReviewStatus');
 
-            // Excel generation route
+            // Excel generation routes
             $router->post('/generate-excel', 'ApplicantDataController@generateExcel');
+            $router->post('/batch/{batchId}/generate-excel', 'ApplicantDataController@generateExcelByBatch');
         });
 
         // Question routes with rate limiting for active endpoint

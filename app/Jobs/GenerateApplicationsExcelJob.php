@@ -3,7 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\ApplicantData;
+use App\Models\ApplicantDataScreeningStatus;
+use App\Models\ApplicantDataReviewStatus;
 use App\Models\GeneratedFile;
+use App\Traits\PaginationTrait;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,13 +22,17 @@ use Carbon\Carbon;
 
 class GenerateApplicationsExcelJob implements ShouldQueue
 {
-    use InteractsWithQueue, Queueable, SerializesModels;
+    use InteractsWithQueue, Queueable, SerializesModels, PaginationTrait;
 
     protected $generatedFileId;
+    protected $filterParams;
+    protected $batchId;
 
-    public function __construct($generatedFileId)
+    public function __construct($generatedFileId, $filterParams = null, $batchId = null)
     {
         $this->generatedFileId = $generatedFileId;
+        $this->filterParams = $filterParams;
+        $this->batchId = $batchId;
     }
 
     public function handle()
@@ -40,10 +47,68 @@ class GenerateApplicationsExcelJob implements ShouldQueue
                 return;
             }
 
-            // Get all applications with batch relationship
-            $applications = ApplicantData::with('batch')
-                ->orderBy('created_at', 'desc')
-                ->get();
+            // Get applications with batch relationship, applying filters if provided
+            $query = ApplicantData::with('batch');
+
+            // Apply batch filter if batchId is provided
+            if ($this->batchId) {
+                $query->where('batch_id', $this->batchId);
+            }
+
+            // Apply filters if provided
+            if ($this->filterParams) {
+                // Define searchable fields (same as in controller)
+                $searchableFields = [
+                    'nama_lengkap',
+                    'email',
+                    'nomor_whatsapp',
+                    'nik',
+                    'instansi_pendidikan',
+                    'program_terpilih',
+                    'jurusan_pendidikan',
+                    'tempat_lahir',
+                    'daerah_lahir',
+                    'provinsi_lahir',
+                    'daerah_domisili',
+                    'provinsi_domisili',
+                    'kota_domisili',
+                    'nim',
+                    'status_ijazah',
+                    'status_perkawinan',
+                    'ukuran_baju',
+                    'riwayat_penyakit'
+                ];
+
+                // Apply regular filters first
+                if (!empty($this->filterParams['filters'])) {
+                    $this->applyFilters($query, $this->filterParams['filters']);
+                }
+
+                // Apply JSON filters
+                if (!empty($this->filterParams['json_filters'])) {
+                    $this->applyFilters($query, $this->filterParams['json_filters']);
+                }
+
+                // Apply search if provided
+                if (!empty($this->filterParams['search']) && !empty($searchableFields)) {
+                    $search = $this->filterParams['search'];
+                    $query->where(function ($q) use ($search, $searchableFields) {
+                        foreach ($searchableFields as $field) {
+                            $q->orWhere($field, 'LIKE', "%{$search}%");
+                        }
+                    });
+                }
+
+                // Apply sorting
+                $sortBy = $this->filterParams['sort_by'] ?? 'created_at';
+                $order = $this->filterParams['order'] ?? 'desc';
+                $query->orderBy($sortBy, $order);
+            } else {
+                // Default ordering when no filters
+                $query->orderBy('created_at', 'desc');
+            }
+
+            $applications = $query->get();
 
             // Create spreadsheet
             $spreadsheet = new Spreadsheet();
@@ -81,6 +146,10 @@ class GenerateApplicationsExcelJob implements ShouldQueue
                 'Continue Education',
                 'Clothing Size',
                 'Medical History',
+                'Screening Status',
+                'Screening Remark',
+                'Review Status',
+                'Review Remark',
                 'Batch',
                 'Applied Date',
             ];
@@ -197,6 +266,34 @@ class GenerateApplicationsExcelJob implements ShouldQueue
                 }
                 $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $medicalHistory ?? '-');
 
+                // Screening Status
+                $screeningStatus = $application->screening_status;
+                $screeningStatusDisplay = $screeningStatus ?
+                    "{$screeningStatus} (" . ApplicantDataScreeningStatus::getLabelByValue($screeningStatus) . ")" :
+                    '-';
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $screeningStatusDisplay);
+
+                // Screening Remark
+                $screeningRemark = $application->screening_remark;
+                if (is_string($screeningRemark) && strlen($screeningRemark) > 100) {
+                    $screeningRemark = substr($screeningRemark, 0, 100) . '...';
+                }
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $screeningRemark ?? '-');
+
+                // Review Status
+                $reviewStatus = $application->review_status;
+                $reviewStatusDisplay = $reviewStatus ?
+                    "{$reviewStatus} (" . ApplicantDataReviewStatus::getLabelByValue($reviewStatus) . ")" :
+                    '-';
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $reviewStatusDisplay);
+
+                // Review Remark
+                $reviewRemark = $application->review_remark;
+                if (is_string($reviewRemark) && strlen($reviewRemark) > 100) {
+                    $reviewRemark = substr($reviewRemark, 0, 100) . '...';
+                }
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $reviewRemark ?? '-');
+
                 // Batch
                 $batchInfo = $application->batch ?
                     "{$application->batch->number} - {$application->batch->location} ({$application->batch->year})" :
@@ -223,15 +320,25 @@ class GenerateApplicationsExcelJob implements ShouldQueue
             ]);
 
             // Create directory if it doesn't exist
-            $directory = "generated/applications";
+            if ($this->batchId) {
+                $directory = "generated/applications/{$this->batchId}";
+            } else {
+                $directory = "generated/applications";
+            }
             $fullDirectory = public_path($directory);
             if (!file_exists($fullDirectory)) {
                 mkdir($fullDirectory, 0755, true);
             }
 
-            // Generate filename
+            // Generate filename with batch and filter indicator
             $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
-            $filename = "applications-{$timestamp}.xlsx";
+            if ($this->batchId) {
+                $filterIndicator = $this->filterParams ? 'filtered' : 'all';
+                $filename = "applications-batch-{$this->batchId}-{$filterIndicator}-{$timestamp}.xlsx";
+            } else {
+                $filterIndicator = $this->filterParams ? 'filtered' : 'all';
+                $filename = "applications-{$filterIndicator}-{$timestamp}.xlsx";
+            }
             $filePath = "{$directory}/{$filename}";
 
             // Save file

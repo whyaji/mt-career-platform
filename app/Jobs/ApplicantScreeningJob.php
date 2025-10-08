@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\ApplicantData;
+use App\Models\ApplicantDataReviewStatus;
+use App\Models\ApplicantDataScreeningStatus;
 use App\Models\JobStatus;
 use App\Services\PDDIKTIService;
 use Illuminate\Bus\Queueable;
@@ -85,7 +87,11 @@ class ApplicantScreeningJob implements ShouldQueue
             // Update applicant data with screening results
             $applicant->update([
                 'screening_status' => $screeningResult['status'],
-                'screening_remark' => $screeningResult['remark']
+                'screening_remark' => $screeningResult['remark'],
+                'review_status' =>
+                $screeningResult['status'] == ApplicantDataScreeningStatus::DONE->value ? ApplicantDataReviewStatus::UNREVIEWED->value : ApplicantDataReviewStatus::STOP->value,
+                'review_remark' =>
+                $screeningResult['status'] == ApplicantDataScreeningStatus::DONE->value ? 'Need review by Admin' : 'Applicant not passed the screening process',
             ]);
 
             // Mark job as completed
@@ -125,7 +131,7 @@ class ApplicantScreeningJob implements ShouldQueue
             $applicant = ApplicantData::find($this->applicantDataId);
             if ($applicant) {
                 $applicant->update([
-                    'screening_status' => 2, // 2: stop
+                    'screening_status' => ApplicantDataScreeningStatus::PENDING->value,
                     'screening_remark' => 'Screening process failed: ' . $e->getMessage()
                 ]);
             }
@@ -174,6 +180,8 @@ class ApplicantScreeningJob implements ShouldQueue
         $checks['university'] = $universityCheck['passed'];
         if (!$universityCheck['passed']) {
             $remarks[] = $universityCheck['reason'];
+        } else if ($universityCheck['reason']) {
+            $remarks[] = $universityCheck['reason'];
         }
 
         // Marital status check
@@ -192,8 +200,10 @@ class ApplicantScreeningJob implements ShouldQueue
 
         // Determine overall status
         $allPassed = !in_array(false, $checks);
-        $status = $allPassed ? 3 : 2; // 3: not yet (screening ai), 2: stop
-        $remark = $allPassed ? 'Auto screening passed' : implode('; ', $remarks);
+        $status = $allPassed ? ApplicantDataScreeningStatus::DONE->value : ApplicantDataScreeningStatus::STOP->value; // 5: done (screening ai), 2: stop
+
+        $passedReason = $universityCheck['reason'] ? $universityCheck['reason'] : 'Auto screening passed';
+        $remark = $allPassed ? $passedReason : implode('; ', $remarks);
 
         return [
             'status' => $status,
@@ -374,35 +384,31 @@ class ApplicantScreeningJob implements ShouldQueue
 
             // validate name with result.results[i].nama, major with program_studi, university with universitas
             $foundedStudent = null;
+            $reason = null;
             foreach ($result['results'] as $resultStudent) {
                 if (
                     strtoupper($resultStudent['nama']) == strtoupper($name)
-                    && strtoupper($resultStudent['program_studi']) == strtoupper($major)
                     && strtoupper($resultStudent['universitas']) == strtoupper($university)
+                    && strtoupper($resultStudent['ijazah_verification']['status']) == 'GRADUATED'
                 ) {
                     $foundedStudent = $resultStudent;
-                    break;
+                    if (strtoupper($resultStudent['program_studi']) == strtoupper($major)) {
+                        $reason = null;
+                        break;
+                    } else {
+                        $reason = "major not match " . $resultStudent['program_studi'] . " not equal to " . $major;
+                    }
                 }
             }
 
             if (is_null($foundedStudent)) {
                 return [
                     'passed' => false,
-                    'reason' => "University and certificate are not valid"
+                    'reason' => "Graduated student status not found"
                 ];
             }
 
-            Log::info("Founded student: " . json_encode($foundedStudent));
-
-            // check status shoud be GRADUATED
-            if ($foundedStudent['ijazah_verification']['status'] != 'GRADUATED') {
-                return [
-                    'passed' => false,
-                    'reason' => "Status kelulusan harus LULUS"
-                ];
-            }
-
-            return ['passed' => true, 'reason' => null];
+            return ['passed' => true, 'reason' => $reason];
         } catch (\Exception $e) {
             // Log the PDDIKTI service error
             Log::error("PDDIKTI service error during university check for applicant {$this->applicantDataId}: {$e->getMessage()}");
@@ -474,7 +480,7 @@ class ApplicantScreeningJob implements ShouldQueue
         $applicant = ApplicantData::find($this->applicantDataId);
         if ($applicant) {
             $applicant->update([
-                'screening_status' => 2, // 2: stop
+                'screening_status' => ApplicantDataScreeningStatus::STOP->value, // 2: stop
                 'screening_remark' => 'Screening job failed: ' . $exception->getMessage()
             ]);
         }

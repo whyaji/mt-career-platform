@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApplicantData;
 use App\Models\GeneratedFile;
 use App\Jobs\GenerateApplicationsExcelJob;
+use App\Models\Batch;
 use App\Traits\PaginationTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -57,6 +58,57 @@ class ApplicantDataController extends Controller
             return $this->paginatedResponse($result, 'Applications retrieved successfully');
         } catch (\Exception $e) {
             Log::error("Error getting all applications: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
+    public function getApplicationsByBatch(Request $request, $batchId)
+    {
+        try {
+            // Verify batch exists
+            $batch = Batch::find($batchId);
+            if (!$batch) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'BATCH_NOT_FOUND'
+                ], 404);
+            }
+
+            // Get pagination parameters
+            $paginationParams = $this->getPaginationParams($request);
+
+            // Define searchable fields
+            $searchableFields = [
+                'nama_lengkap',
+                'email',
+                'nomor_whatsapp',
+                'nik',
+                'instansi_pendidikan',
+                'program_terpilih',
+                'jurusan_pendidikan',
+                'tempat_lahir',
+                'daerah_lahir',
+                'provinsi_lahir',
+                'daerah_domisili',
+                'provinsi_domisili',
+                'kota_domisili',
+                'nim',
+                'status_ijazah',
+                'status_perkawinan',
+                'ukuran_baju',
+                'riwayat_penyakit'
+            ];
+
+            $query = ApplicantData::where('batch_id', $batchId)->with('batch:id,number,location,year');
+
+            $result = $this->paginateQuery($query, $paginationParams, $searchableFields);
+
+            return $this->paginatedResponse($result, 'Applications retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error("Error getting applications by batch: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR'
@@ -232,6 +284,9 @@ class ApplicantDataController extends Controller
     public function generateExcel(Request $request)
     {
         try {
+            // Get pagination parameters to extract filters and search
+            $paginationParams = $this->getPaginationParams($request);
+
             // Create generated file record
             $generatedFile = GeneratedFile::create([
                 'type' => 'applications',
@@ -242,8 +297,8 @@ class ApplicantDataController extends Controller
                 'request_at' => Carbon::now(),
             ]);
 
-            // Dispatch the job
-            dispatch(new GenerateApplicationsExcelJob($generatedFile->id));
+            // Dispatch the job with filter parameters
+            dispatch(new GenerateApplicationsExcelJob($generatedFile->id, $paginationParams));
 
             return response()->json([
                 'success' => true,
@@ -255,6 +310,57 @@ class ApplicantDataController extends Controller
             ], 202);
         } catch (\Exception $e) {
             Log::error("Error starting applications Excel generation: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'message' => 'Error starting Excel generation'
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate Excel file for applications by batch
+     */
+    public function generateExcelByBatch(Request $request, $batchId)
+    {
+        try {
+            // Verify batch exists
+            $batch = Batch::find($batchId);
+            if (!$batch) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'BATCH_NOT_FOUND',
+                    'message' => 'Batch not found'
+                ], 404);
+            }
+
+            // Get pagination parameters to extract filters and search
+            $paginationParams = $this->getPaginationParams($request);
+
+            // Create generated file record
+            $generatedFile = GeneratedFile::create([
+                'type' => 'applications-by-batch',
+                'model_type' => 'batch',
+                'model_id' => $batchId,
+                'ext' => 'xlsx',
+                'path' => '', // Will be updated by the job
+                'request_at' => Carbon::now(),
+            ]);
+
+            // Dispatch the job with batch ID and filter parameters
+            dispatch(new GenerateApplicationsExcelJob($generatedFile->id, $paginationParams, $batchId));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Excel generation started',
+                'data' => [
+                    'generated_file_id' => $generatedFile->id,
+                    'batch_id' => $batchId,
+                    'status' => 'processing'
+                ]
+            ], 202);
+        } catch (\Exception $e) {
+            Log::error("Error starting applications Excel generation by batch: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR',

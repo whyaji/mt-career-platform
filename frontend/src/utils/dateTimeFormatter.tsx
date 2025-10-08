@@ -101,6 +101,6 @@ export function formatDate(
 export function formatDefaultDate(dateString: string) {
   return formatDate({
     date: new Date(dateString),
-    pattern: 'DD MMMM YYYY',
+    pattern: 'D MMMM YYYY',
   });
 }

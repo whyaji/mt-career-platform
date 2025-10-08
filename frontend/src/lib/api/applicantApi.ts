@@ -10,26 +10,29 @@ export const getApplications = async (
 ): Promise<PaginatedResponse<ApplicantDataType>> => {
   const searchParams = new URLSearchParams();
 
-  if (params.page) {
-    searchParams.append('page', params.page.toString());
-  }
-  if (params.limit) {
-    searchParams.append('limit', params.limit.toString());
-  }
-  if (params.search) {
-    searchParams.append('search', params.search);
-  }
-  if (params.sort_by) {
-    searchParams.append('sort_by', params.sort_by);
-  }
-  if (params.order) {
-    searchParams.append('order', params.order);
-  }
-  if (params.filter) {
-    searchParams.append('filter', params.filter);
-  }
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.append(key, value.toString());
+    }
+  });
 
   const response = await authenticatedFetch(`${talentHubApplicantUrl}?${searchParams.toString()}`);
+  return response.json();
+};
+
+export const getApplicationsByBatch = async (
+  batchId: string,
+  params: PaginationParams = {}
+): Promise<PaginatedResponse<ApplicantDataType>> => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.append(key, value.toString());
+    }
+  });
+  const response = await authenticatedFetch(
+    `${talentHubApplicantUrl}/batch/${batchId}?${searchParams.toString()}`
+  );
   return response.json();
 };
 
@@ -75,10 +78,72 @@ export const updateApplicationReviewStatus = async (
   return response.json();
 };
 
-export const generateApplicationsExcel = async (): Promise<
-  DefaultResponseType<{ generated_file_id: string; status: string }>
+export const generateApplicationsExcel = async (
+  filters?: PaginationParams
+): Promise<DefaultResponseType<{ generated_file_id: string; status: string }>> => {
+  const searchParams = new URLSearchParams();
+
+  // Add filter parameters if provided
+  if (filters) {
+    if (filters.search) {
+      searchParams.append('search', filters.search);
+    }
+    if (filters.sort_by) {
+      searchParams.append('sort_by', filters.sort_by);
+    }
+    if (filters.order) {
+      searchParams.append('order', filters.order);
+    }
+    if (filters.filter) {
+      searchParams.append('filter', filters.filter);
+    }
+    if (filters.json_filters) {
+      searchParams.append('json_filters', filters.json_filters);
+    }
+  }
+
+  const url = searchParams.toString()
+    ? `${talentHubApplicantUrl}/generate-excel?${searchParams.toString()}`
+    : `${talentHubApplicantUrl}/generate-excel`;
+
+  const response = await authenticatedFetch(url, {
+    method: 'POST',
+  });
+  return response.json();
+};
+
+export const generateApplicationsExcelByBatch = async (
+  batchId: string,
+  filters?: PaginationParams
+): Promise<
+  DefaultResponseType<{ generated_file_id: string; batch_id: string; status: string }>
 > => {
-  const response = await authenticatedFetch(`${talentHubApplicantUrl}/generate-excel`, {
+  const searchParams = new URLSearchParams();
+
+  // Add filter parameters if provided
+  if (filters) {
+    if (filters.search) {
+      searchParams.append('search', filters.search);
+    }
+    if (filters.sort_by) {
+      searchParams.append('sort_by', filters.sort_by);
+    }
+    if (filters.order) {
+      searchParams.append('order', filters.order);
+    }
+    if (filters.filter) {
+      searchParams.append('filter', filters.filter);
+    }
+    if (filters.json_filters) {
+      searchParams.append('json_filters', filters.json_filters);
+    }
+  }
+
+  const url = searchParams.toString()
+    ? `${talentHubApplicantUrl}/batch/${batchId}/generate-excel?${searchParams.toString()}`
+    : `${talentHubApplicantUrl}/batch/${batchId}/generate-excel`;
+
+  const response = await authenticatedFetch(url, {
     method: 'POST',
   });
   return response.json();

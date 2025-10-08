@@ -1,16 +1,17 @@
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { generateApplicationsExcel } from '@/lib/api/applicantApi';
+import { generateApplicationsExcelByBatch } from '@/lib/api/applicantApi';
 import type { PaginationParams } from '@/types/pagination.type';
 
-export function useGenerateApplicationsExcelMutation() {
+export function useGenerateApplicationsExcelByBatchMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (filters?: PaginationParams) => generateApplicationsExcel(filters),
-    onSuccess: (_, variables) => {
-      const isFiltered = variables && (variables.search || variables.filter);
+    mutationFn: ({ batchId, filters }: { batchId: string; filters?: PaginationParams }) =>
+      generateApplicationsExcelByBatch(batchId, filters),
+    onSuccess: (_, { batchId, filters }) => {
+      const isFiltered = filters && (filters.search || filters.filter || filters.json_filters);
       const message = isFiltered
         ? 'Your filtered Excel file is being generated. You can check the Files Manager for progress.'
         : 'Your Excel file is being generated. You can check the Files Manager for progress.';
@@ -24,6 +25,7 @@ export function useGenerateApplicationsExcelMutation() {
       // Invalidate related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['global-generated-files-stats'] });
       queryClient.invalidateQueries({ queryKey: ['global-generated-files'] });
+      queryClient.invalidateQueries({ queryKey: ['applications', 'batch', batchId] });
     },
     onError: () => {
       notifications.show({
