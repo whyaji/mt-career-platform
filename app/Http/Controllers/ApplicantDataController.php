@@ -155,6 +155,50 @@ class ApplicantDataController extends Controller
         }
     }
 
+    public function updateApplicationReviewStatus(Request $request, $id)
+    {
+        try {
+            $application = ApplicantData::find($id);
+
+            if (!$application) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'APPLICATION_NOT_FOUND'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'review_status' => 'required|integer|in:1,2,3,4,5',
+                'review_remark' => 'nullable|string|max:255'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => $validator->errors()->first()
+                ], 400);
+            }
+
+            $application->update([
+                'review_status' => $request->review_status,
+                'review_remark' => $request->review_remark
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $application->load('batch'),
+                'message' => 'Application review status updated successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error updating application review status: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
     public function deleteApplication($id)
     {
         try {

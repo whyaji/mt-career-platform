@@ -2,7 +2,7 @@ import { Alert, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconCheck, IconTrash } from '@tabler/icons-react';
 
-import type { ApplicantDataType } from '@/types/applicant.type';
+import type { ApplicantDataType } from '@/types/applicantData.type';
 
 interface ApplicationDeleteModalProps {
   opened: boolean;

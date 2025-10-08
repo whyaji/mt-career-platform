@@ -62,9 +62,10 @@ export interface RowAction<T = Record<string, unknown>> {
   label: string;
   icon?: React.ReactNode;
   color?: string;
-  onClick: (record: T) => void;
+  onClick?: (record: T) => void;
   disabled?: (record: T) => boolean;
   hidden?: (record: T) => boolean;
+  subActions?: RowAction<T>[];
 }
 
 export interface DefaultTableProps<T = Record<string, unknown>> {
@@ -692,7 +693,7 @@ export function DefaultTable<T = Record<string, unknown>>({
           onClose={() => setContextMenuOpened(false)}
           position="bottom-start"
           shadow="md"
-          width={200}
+          width={240}
           withinPortal
           zIndex={1000}>
           <Menu.Target>
@@ -713,14 +714,14 @@ export function DefaultTable<T = Record<string, unknown>>({
             {selectedRecord && rowActionsTitle !== 'none' && (
               <Box
                 style={{
-                  backgroundColor: 'var(--mantine-color-blue-6)',
+                  backgroundColor: 'var(--mantine-color-blue-8)',
                   color: 'white',
                   margin: '-4px -4px 8px -4px',
-                  padding: '4px',
+                  padding: '4px 8px',
                   borderRadius: '6px 6px 0 0',
                   fontWeight: 600,
                   fontSize: '12px',
-                  textAlign: 'center',
+                  textAlign: 'left',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   borderBottom: '1px solid var(--mantine-color-blue-7)',
@@ -738,6 +739,85 @@ export function DefaultTable<T = Record<string, unknown>>({
                   return null;
                 }
 
+                // Check if action has subActions
+                const hasSubActions = action.subActions && action.subActions.length > 0;
+
+                if (hasSubActions) {
+                  return (
+                    <Menu
+                      key={index}
+                      position="right-start"
+                      shadow="md"
+                      width={180}
+                      withinPortal
+                      zIndex={1001}
+                      trigger="hover"
+                      openDelay={100}
+                      closeDelay={300}
+                      closeOnItemClick={false}>
+                      <Menu.Target>
+                        <Menu.Item
+                          leftSection={action.icon}
+                          rightSection={<IconChevronRight size={14} />}
+                          color={action.color}
+                          disabled={isDisabled}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}>
+                          {action.label}
+                        </Menu.Item>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Box
+                          style={{
+                            backgroundColor: 'var(--mantine-color-blue-8)',
+                            color: 'white',
+                            margin: '-4px -4px 8px -4px',
+                            padding: '4px 8px',
+                            borderRadius: '6px 6px 0 0',
+                            fontWeight: 600,
+                            fontSize: '12px',
+                            textAlign: 'left',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '1px solid var(--mantine-color-blue-7)',
+                          }}>
+                          {action.label}
+                        </Box>
+                        {action.subActions?.map((subAction, subIndex) => {
+                          const isSubHidden = subAction.hidden?.(selectedRecord) ?? false;
+                          const isSubDisabled = subAction.disabled?.(selectedRecord) ?? false;
+
+                          if (isSubHidden) {
+                            return null;
+                          }
+
+                          return (
+                            <Menu.Item
+                              key={subIndex}
+                              leftSection={subAction.icon}
+                              color={subAction.color}
+                              disabled={isSubDisabled}
+                              onClick={() => {
+                                if (subAction.onClick !== undefined) {
+                                  subAction.onClick(selectedRecord);
+                                  setContextMenuOpened(false);
+                                }
+                              }}>
+                              {subAction.label}
+                            </Menu.Item>
+                          );
+                        })}
+                      </Menu.Dropdown>
+                    </Menu>
+                  );
+                }
+
                 return (
                   <Menu.Item
                     key={index}
@@ -745,8 +825,10 @@ export function DefaultTable<T = Record<string, unknown>>({
                     color={action.color}
                     disabled={isDisabled}
                     onClick={() => {
-                      action.onClick(selectedRecord);
-                      setContextMenuOpened(false);
+                      if (action.onClick !== undefined) {
+                        action.onClick(selectedRecord);
+                        setContextMenuOpened(false);
+                      }
                     }}>
                     {action.label}
                   </Menu.Item>

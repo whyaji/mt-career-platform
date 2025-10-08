@@ -48,6 +48,11 @@ export type ApplicantDataType = {
   };
 };
 
+export type ApplicantDataFormType = Omit<
+  ApplicantDataType,
+  'id' | 'created_at' | 'updated_at' | 'batch'
+>;
+
 export type ApplicantDataPostType = Omit<
   ApplicantDataType,
   'id' | 'created_at' | 'updated_at' | 'deleted_at'

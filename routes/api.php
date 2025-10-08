@@ -94,6 +94,9 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->put('/{id}', 'ApplicantDataController@updateApplication');
             $router->delete('/{id}', 'ApplicantDataController@deleteApplication');
 
+            // Update application review status route
+            $router->put('/{id}/review-status', 'ApplicantDataController@updateApplicationReviewStatus');
+
             // Excel generation route
             $router->post('/generate-excel', 'ApplicantDataController@generateExcel');
         });

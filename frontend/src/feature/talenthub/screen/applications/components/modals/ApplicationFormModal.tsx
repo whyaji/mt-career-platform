@@ -15,7 +15,7 @@ import { IconCheck } from '@tabler/icons-react';
 import { useEffect } from 'react';
 
 import { useBatchesQuery } from '@/hooks/query/batch/useBatchesQuery';
-import type { ApplicantDataFormType, ApplicantDataType } from '@/types/applicant.type';
+import type { ApplicantDataFormType, ApplicantDataType } from '@/types/applicantData.type';
 
 interface ApplicationFormModalProps {
   opened: boolean;
@@ -61,7 +61,7 @@ export function ApplicationFormModal({
       nomor_whatsapp: '',
       email: '',
       status_perkawinan: '',
-      melanjutkan_pendidikan: false,
+      melanjutkan_pendidikan: '',
       ukuran_baju: '',
       riwayat_penyakit: '',
       batch_id: '',
@@ -111,6 +111,7 @@ export function ApplicationFormModal({
     } else {
       form.reset();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [application, opened]);
 
   const handleSubmit = async (values: Partial<ApplicantDataFormType>) => {

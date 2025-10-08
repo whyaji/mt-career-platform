@@ -1,14 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { updateApplication } from '@/lib/api/applicantApi';
-import type { ApplicantDataFormType } from '@/types/applicantData.type';
+import { updateApplicationReviewStatus } from '@/lib/api/applicantApi';
 
-export const useUpdateApplicationQuery = () => {
+export const useUpdateApplicationReviewStatusMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ApplicantDataFormType> }) =>
-      updateApplication(id, data),
+    mutationFn: ({
+      id,
+      review_status,
+      review_remark,
+    }: {
+      id: string;
+      review_status: number;
+      review_remark?: string;
+    }) => updateApplicationReviewStatus(id, { review_status, review_remark }),
     onSuccess: (_, { id }) => {
       // Invalidate and refetch applications list and specific application
       queryClient.invalidateQueries({ queryKey: ['applications'] });

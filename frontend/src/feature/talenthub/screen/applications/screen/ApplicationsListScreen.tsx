@@ -1,5 +1,5 @@
-import { ActionIcon, Badge, Button, Group, Text, Tooltip } from '@mantine/core';
-import { IconEdit, IconEye, IconFileText, IconTrash } from '@tabler/icons-react';
+import { Badge, Button, Group, Text } from '@mantine/core';
+import { IconEdit, IconEye, IconFileText } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { type ColumnOption, ColumnVisibilityControl } from '@/components/ColumnVisibilityControl';
@@ -11,17 +11,14 @@ import {
   APPLICANT_DATA_SCREENING_STATUS_LABELS,
 } from '@/constants/applicantDataStatus.enum';
 import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
-import { ApplicationDeleteModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDeleteModal';
-import { ApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationDetailModal';
-import { ApplicationFormModal } from '@/feature/talenthub/screen/applications/components/modals/ApplicationFormModal';
+import { WindowApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/WindowApplicationDetailModal';
 import { useApplicationsQuery } from '@/hooks/query/applicant/useApplicationsQuery';
-import { useDeleteApplicationQuery } from '@/hooks/query/applicant/useDeleteApplicationQuery';
 import { useGenerateApplicationsExcelMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelMutation';
-import { useGetApplicationByIdQuery } from '@/hooks/query/applicant/useGetApplicationByIdQuery';
-import { useUpdateApplicationQuery } from '@/hooks/query/applicant/useUpdateApplicationQuery';
+import { useUpdateApplicationReviewStatusMutation } from '@/hooks/query/applicant/useUpdateApplicationReviewStatusMutation';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
+import { useUserStore } from '@/lib/store/userStore';
 import { Route } from '@/routes/talenthub/_authenticated/applications/index';
-import type { ApplicantDataType as BaseApplicantDataType } from '@/types/applicant.type';
+import type { ApplicantDataType as BaseApplicantDataType } from '@/types/applicantData.type';
 import { formatDefaultDate } from '@/utils/dateTimeFormatter';
 
 // Extended type to include status fields from API
@@ -35,6 +32,7 @@ type ApplicantDataType = BaseApplicantDataType & {
 export function ApplicationsListScreen() {
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
+  const user = useUserStore((state) => state.user);
 
   const {
     tempSearch,
@@ -49,11 +47,9 @@ export function ApplicationsListScreen() {
     handlePageSizeChange,
   } = usePaginationConfig({ search, navigate });
 
-  // Modal states
-  const [detailModalOpened, setDetailModalOpened] = useState(false);
-  const [formModalOpened, setFormModalOpened] = useState(false);
-  const [deleteModalOpened, setDeleteModalOpened] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState<ApplicantDataType | null>(null);
+  // Window states - support multiple windows
+  const [openWindows, setOpenWindows] = useState<Map<string, string>>(new Map());
+  const [focusedWindowId, setFocusedWindowId] = useState<string | null>(null);
 
   // Global generated files modal state
   const [globalFilesModal, setGlobalFilesModal] = useState({
@@ -157,13 +153,10 @@ export function ApplicationsListScreen() {
   const { data: queryData, isLoading, error, isError, refetch } = useApplicationsQuery(queryParams);
 
   // Mutations
-  const updateApplicationMutation = useUpdateApplicationQuery();
-  const deleteApplicationMutation = useDeleteApplicationQuery();
+  // const updateApplicationMutation = useUpdateApplicationQuery();
+  // const deleteApplicationMutation = useDeleteApplicationQuery();
   const generateExcelMutation = useGenerateApplicationsExcelMutation();
-
-  // Get application details query (only when needed)
-  const { data: applicationDetailData, isLoading: applicationDetailLoading } =
-    useGetApplicationByIdQuery(selectedApplication?.id || '');
+  const updateReviewStatusMutation = useUpdateApplicationReviewStatusMutation();
 
   // Extract data from query response
   const data = queryData?.data || [];
@@ -171,31 +164,34 @@ export function ApplicationsListScreen() {
   const errorMessage = isError ? (error as Error)?.message || 'An error occurred' : null;
 
   // Handler functions
-  const handleViewDetails = (application: ApplicantDataType) => {
-    setSelectedApplication(application);
-    setDetailModalOpened(true);
+  const handleViewDetailsInWindow = (application: ApplicantDataType) => {
+    const windowId = `modal-${application.id}`;
+    setOpenWindows((prev) => new Map(prev.set(windowId, application.id)));
   };
 
-  const handleEdit = (application: ApplicantDataType) => {
-    setSelectedApplication(application);
-    setFormModalOpened(true);
+  const handleCloseWindow = (windowId: string) => {
+    setOpenWindows((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(windowId);
+      return newMap;
+    });
   };
 
-  const handleDelete = (application: ApplicantDataType) => {
-    setSelectedApplication(application);
-    setDeleteModalOpened(true);
+  const handleWindowFocus = (windowId: string) => {
+    setFocusedWindowId(windowId);
   };
 
-  const handleFormSubmit = async (data: Partial<BaseApplicantDataType>) => {
-    if (selectedApplication) {
-      await updateApplicationMutation.mutateAsync({ id: selectedApplication.id, data });
-    }
-  };
+  // Handler for updating review status
+  const handleUpdateReviewStatus = (applicationId: string, reviewStatus: number) => {
+    const statusLabels = APPLICANT_DATA_REVIEW_STATUS_LABELS;
+    const statusLabel = statusLabels[reviewStatus as keyof typeof statusLabels];
+    const reviewRemark = `Status updated to "${statusLabel}" by ${user?.name || 'User'}`;
 
-  const handleDeleteConfirm = async () => {
-    if (selectedApplication) {
-      await deleteApplicationMutation.mutateAsync(selectedApplication.id);
-    }
+    updateReviewStatusMutation.mutate({
+      id: applicationId,
+      review_status: reviewStatus,
+      review_remark: reviewRemark,
+    });
   };
 
   // Column visibility handlers
@@ -950,33 +946,6 @@ export function ApplicationsListScreen() {
         return formatDefaultDate(date as string);
       },
     },
-    // Actions
-    {
-      key: 'actions',
-      title: 'Actions',
-      dataIndex: 'id',
-      render: (_id: unknown, record: ApplicantDataType) => (
-        <Group gap="xs">
-          <Tooltip label="View Details">
-            <ActionIcon variant="subtle" size="sm" onClick={() => handleViewDetails(record)}>
-              <IconEye size={16} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Edit">
-            <ActionIcon variant="subtle" size="sm" onClick={() => handleEdit(record)}>
-              <IconEdit size={16} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Delete">
-            <ActionIcon variant="subtle" size="sm" color="red" onClick={() => handleDelete(record)}>
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      ),
-      width: '120px',
-      align: 'center',
-    },
   ];
 
   // Filter columns based on visibility
@@ -1017,50 +986,80 @@ export function ApplicationsListScreen() {
           {
             label: 'View Details',
             icon: <IconEye size={16} />,
-            onClick: (application: ApplicantDataType) => handleViewDetails(application),
+            onClick: (application: ApplicantDataType) => handleViewDetailsInWindow(application),
           },
           {
-            label: 'Edit',
+            label: 'Update Review Status',
             icon: <IconEdit size={16} />,
-            onClick: (application: ApplicantDataType) => handleEdit(application),
-          },
-          {
-            label: 'Delete',
-            icon: <IconTrash size={16} />,
-            color: 'red',
-            onClick: (application: ApplicantDataType) => handleDelete(application),
+            subActions: [
+              {
+                label: 'Mark as Pending',
+                icon: <IconEdit size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.review_status === APPLICANT_DATA_REVIEW_STATUS.PENDING,
+                onClick: (application: ApplicantDataType) =>
+                  handleUpdateReviewStatus(application.id, APPLICANT_DATA_REVIEW_STATUS.PENDING),
+              },
+              {
+                label: 'Mark as Stopped',
+                icon: <IconEdit size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.review_status === APPLICANT_DATA_REVIEW_STATUS.STOP,
+                onClick: (application: ApplicantDataType) =>
+                  handleUpdateReviewStatus(application.id, APPLICANT_DATA_REVIEW_STATUS.STOP),
+              },
+              {
+                label: 'Mark as Unreviewed',
+                icon: <IconEdit size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.review_status === APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED,
+                onClick: (application: ApplicantDataType) =>
+                  handleUpdateReviewStatus(application.id, APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED),
+              },
+              {
+                label: 'Mark as Accepted',
+                icon: <IconEdit size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.review_status === APPLICANT_DATA_REVIEW_STATUS.ACCEPTED,
+                onClick: (application: ApplicantDataType) =>
+                  handleUpdateReviewStatus(application.id, APPLICANT_DATA_REVIEW_STATUS.ACCEPTED),
+              },
+              {
+                label: 'Mark as Rejected',
+                icon: <IconEdit size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.review_status === APPLICANT_DATA_REVIEW_STATUS.REJECTED,
+                onClick: (application: ApplicantDataType) =>
+                  handleUpdateReviewStatus(application.id, APPLICANT_DATA_REVIEW_STATUS.REJECTED),
+              },
+            ],
           },
         ]}
       />
 
-      {/* Modals */}
-      <ApplicationDetailModal
-        opened={detailModalOpened}
-        onClose={() => setDetailModalOpened(false)}
-        application={
-          applicationDetailData?.success && 'data' in applicationDetailData
-            ? (applicationDetailData.data ?? null)
-            : selectedApplication
-        }
-        loading={applicationDetailLoading}
-      />
+      {/* Multiple Desktop Windows */}
+      {Array.from(openWindows.entries()).map(([windowId, applicationId], index) => {
+        // Calculate z-index: focused window gets highest, others get base + index
+        const isFocused = focusedWindowId === windowId;
+        const baseZIndex = 1000;
+        const zIndex = isFocused ? baseZIndex + 1000 + index : baseZIndex + index;
 
-      <ApplicationFormModal
-        opened={formModalOpened}
-        onClose={() => setFormModalOpened(false)}
-        application={selectedApplication}
-        onSubmit={handleFormSubmit}
-        loading={updateApplicationMutation.isPending}
-        title="Edit Application"
-      />
-
-      <ApplicationDeleteModal
-        opened={deleteModalOpened}
-        onClose={() => setDeleteModalOpened(false)}
-        application={selectedApplication}
-        onConfirm={handleDeleteConfirm}
-        loading={deleteApplicationMutation.isPending}
-      />
+        return (
+          <WindowApplicationDetailModal
+            key={windowId}
+            opened
+            onClose={() => handleCloseWindow(windowId)}
+            applicationId={applicationId}
+            windowId={windowId}
+            defaultPosition={{
+              x: 100 + index * 50, // Offset each window slightly
+              y: 100 + index * 50,
+            }}
+            zIndex={zIndex}
+            onFocus={() => handleWindowFocus(windowId)}
+          />
+        );
+      })}
 
       {/* Global Generated Files Modal */}
       <GlobalGeneratedFilesModal
