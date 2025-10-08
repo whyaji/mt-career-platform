@@ -101,6 +101,8 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   rowActionsTitle?: string;
   backButton?: React.ReactNode;
   withoutFilterHeader?: boolean;
+  customFilterHeader?: React.ReactNode;
+  rowDoubleClickAction?: (record: T) => void;
 }
 
 export function DefaultTable<T = Record<string, unknown>>({
@@ -136,6 +138,8 @@ export function DefaultTable<T = Record<string, unknown>>({
   rowActionsTitle = 'none',
   backButton,
   withoutFilterHeader = false,
+  customFilterHeader,
+  rowDoubleClickAction,
 }: DefaultTableProps<T>) {
   const addPadding = useMediaQuery(`(max-width: ${em(480)})`);
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
@@ -354,6 +358,8 @@ export function DefaultTable<T = Record<string, unknown>>({
                   )}
                 </Group>
               )}
+
+              {customFilterHeader && customFilterHeader}
             </Group>
 
             {/* Applied Filters */}
@@ -521,7 +527,10 @@ export function DefaultTable<T = Record<string, unknown>>({
                   <Table.Tr
                     key={index}
                     onContextMenu={(e) => handleRowContextMenu(e, record)}
-                    style={{ cursor: rowActions.length > 0 ? 'context-menu' : 'default' }}>
+                    onDoubleClick={() => rowDoubleClickAction?.(record)}
+                    style={{
+                      cursor: rowActions.length > 0 || rowDoubleClickAction ? 'pointer' : 'default',
+                    }}>
                     {columns.map((column) => (
                       <Table.Td
                         key={column.key}

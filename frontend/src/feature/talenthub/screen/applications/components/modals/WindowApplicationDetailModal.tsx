@@ -1,4 +1,4 @@
-import { Alert, Badge, Box, Button, Divider, Group, ScrollArea, Stack, Text } from '@mantine/core';
+import { Alert, Badge, Box, Divider, Group, ScrollArea, Stack, Text } from '@mantine/core';
 import {
   IconAlertCircle,
   IconCalendar,
@@ -12,11 +12,12 @@ import {
 } from '@tabler/icons-react';
 
 import { DraggableWindow } from '@/components/DraggableWindow';
+import { StatusFilterPills } from '@/components/StatusFilterPills';
 import {
-  APPLICANT_DATA_REVIEW_STATUS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
-  APPLICANT_DATA_SCREENING_STATUS,
+  APPLICANT_DATA_REVIEW_STATUS_LIST,
   APPLICANT_DATA_SCREENING_STATUS_LABELS,
+  getApplicantDataStatusColor,
 } from '@/constants/applicantDataStatus.enum';
 import { useGetApplicationByIdQuery } from '@/hooks/query/applicant/useGetApplicationByIdQuery';
 import { useUpdateApplicationReviewStatusMutation } from '@/hooks/query/applicant/useUpdateApplicationReviewStatusMutation';
@@ -75,51 +76,26 @@ export function WindowApplicationDetailModal({
     });
   };
 
+  // Handler for status pill selection - prevent deselecting current status
+  const handleStatusPillSelect = (status: number | undefined) => {
+    // Only update if a status is selected and it's different from current
+    if (status !== undefined && status !== application?.review_status) {
+      handleUpdateReviewStatus(status);
+    }
+  };
+
   // Status badge component
   const StatusBadge = ({ status, type }: { status: number; type: 'screening' | 'review' }) => {
     const labels =
       type === 'screening'
         ? APPLICANT_DATA_SCREENING_STATUS_LABELS
         : APPLICANT_DATA_REVIEW_STATUS_LABELS;
-    const getColor = (status: number, type: 'screening' | 'review') => {
-      if (type === 'screening') {
-        switch (status) {
-          case APPLICANT_DATA_SCREENING_STATUS.PENDING:
-            return 'yellow';
-          case APPLICANT_DATA_SCREENING_STATUS.STOP:
-            return 'red';
-          case APPLICANT_DATA_SCREENING_STATUS.NOT_YET:
-            return 'gray';
-          case APPLICANT_DATA_SCREENING_STATUS.PROCESS:
-            return 'blue';
-          case APPLICANT_DATA_SCREENING_STATUS.DONE:
-            return 'green';
-          default:
-            return 'gray';
-        }
-      } else {
-        switch (status) {
-          case APPLICANT_DATA_REVIEW_STATUS.PENDING:
-            return 'yellow';
-          case APPLICANT_DATA_REVIEW_STATUS.STOP:
-            return 'red';
-          case APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED:
-            return 'gray';
-          case APPLICANT_DATA_REVIEW_STATUS.REJECTED:
-            return 'red';
-          case APPLICANT_DATA_REVIEW_STATUS.ACCEPTED:
-            return 'green';
-          default:
-            return 'gray';
-        }
-      }
-    };
 
     return (
       <Badge
         variant="light"
         size="sm"
-        color={getColor(status, type)}
+        color={getApplicantDataStatusColor(status, type)}
         style={{ textTransform: 'capitalize' }}>
         {labels[status as keyof typeof labels] || 'Unknown'}
       </Badge>
@@ -233,29 +209,17 @@ export function WindowApplicationDetailModal({
               </Group>
 
               {/* Review Status Update Buttons */}
-              <Group gap="xs" mt="sm">
-                <Text size="sm" c="dimmed" fw={500}>
+              <div>
+                <Text size="sm" c="dimmed" fw={500} mb="xs">
                   Update Review Status:
                 </Text>
-                <Group gap="xs">
-                  {Object.entries(APPLICANT_DATA_REVIEW_STATUS_LABELS).map(([value, label]) => {
-                    const statusValue = parseInt(value, 10);
-                    const isCurrentStatus = application.review_status === statusValue;
-                    return (
-                      <Button
-                        key={value}
-                        size="xs"
-                        variant={isCurrentStatus ? 'filled' : 'light'}
-                        color={isCurrentStatus ? 'blue' : 'gray'}
-                        disabled={isCurrentStatus || updateReviewStatusMutation.isPending}
-                        loading={updateReviewStatusMutation.isPending}
-                        onClick={() => handleUpdateReviewStatus(statusValue)}>
-                        {label}
-                      </Button>
-                    );
-                  })}
-                </Group>
-              </Group>
+                <StatusFilterPills
+                  statuses={APPLICANT_DATA_REVIEW_STATUS_LIST}
+                  selectedStatus={application.review_status}
+                  onStatusSelect={handleStatusPillSelect}
+                  loading={updateReviewStatusMutation.isPending}
+                />
+              </div>
             </Stack>
           </div>
 

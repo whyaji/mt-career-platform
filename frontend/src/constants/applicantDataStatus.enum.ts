@@ -29,3 +29,65 @@ export const APPLICANT_DATA_REVIEW_STATUS_LABELS = {
   [APPLICANT_DATA_REVIEW_STATUS.REJECTED]: 'Rejected',
   [APPLICANT_DATA_REVIEW_STATUS.ACCEPTED]: 'Accepted',
 };
+
+export const getApplicantDataStatusColor = (status: number, type: 'screening' | 'review') => {
+  if (type === 'screening') {
+    switch (status) {
+      case APPLICANT_DATA_SCREENING_STATUS.PENDING:
+        return 'yellow';
+      case APPLICANT_DATA_SCREENING_STATUS.STOP:
+        return 'red';
+      case APPLICANT_DATA_SCREENING_STATUS.NOT_YET:
+        return 'gray';
+      case APPLICANT_DATA_SCREENING_STATUS.PROCESS:
+        return 'blue';
+      case APPLICANT_DATA_SCREENING_STATUS.DONE:
+        return 'green';
+      default:
+        return 'gray';
+    }
+  } else {
+    switch (status) {
+      case APPLICANT_DATA_REVIEW_STATUS.PENDING:
+        return 'blue';
+      case APPLICANT_DATA_REVIEW_STATUS.STOP:
+        return 'gray';
+      case APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED:
+        return 'yellow';
+      case APPLICANT_DATA_REVIEW_STATUS.REJECTED:
+        return 'red';
+      case APPLICANT_DATA_REVIEW_STATUS.ACCEPTED:
+        return 'green';
+      default:
+        return 'gray';
+    }
+  }
+};
+
+export const APPLICANT_DATA_REVIEW_STATUS_LIST = [
+  {
+    value: APPLICANT_DATA_REVIEW_STATUS.PENDING,
+    label: 'Pending',
+    color: 'blue',
+  },
+  {
+    value: APPLICANT_DATA_REVIEW_STATUS.STOP,
+    label: 'Stop',
+    color: 'gray',
+  },
+  {
+    value: APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED,
+    label: 'Unreviewed',
+    color: 'yellow',
+  },
+  {
+    value: APPLICANT_DATA_REVIEW_STATUS.REJECTED,
+    label: 'Reject',
+    color: 'red',
+  },
+  {
+    value: APPLICANT_DATA_REVIEW_STATUS.ACCEPTED,
+    label: 'Accepted',
+    color: 'green',
+  },
+];

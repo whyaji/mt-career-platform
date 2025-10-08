@@ -1,7 +1,15 @@
 import { Badge, Group, Text } from '@mantine/core';
-import { IconEdit, IconEye, IconRefresh, IconReload } from '@tabler/icons-react';
-import { useState } from 'react';
+import {
+  IconEdit,
+  IconEye,
+  IconGenderMale,
+  IconRefresh,
+  IconReload,
+  IconRobot,
+} from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
 
+import { CheckboxFilter } from '@/components/CheckboxFilter';
 import { type ColumnOption, ColumnVisibilityControl } from '@/components/ColumnVisibilityControl';
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
 import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
@@ -10,11 +18,14 @@ import { FilesManagerButton } from '@/components/FilesManagerButton';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import { PendingScreenComponent } from '@/components/PendingScreenComponent';
 import { RescreenAllButton } from '@/components/RescreenAllButton';
+import { StatusFilterPills } from '@/components/StatusFilterPills';
 import {
   APPLICANT_DATA_REVIEW_STATUS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
+  APPLICANT_DATA_REVIEW_STATUS_LIST,
   APPLICANT_DATA_SCREENING_STATUS,
   APPLICANT_DATA_SCREENING_STATUS_LABELS,
+  getApplicantDataStatusColor,
 } from '@/constants/applicantDataStatus.enum';
 import { WindowApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/WindowApplicationDetailModal';
 import { useApplicationsByBatchQuery } from '@/hooks/query/applicant/useApplicationsByBatchQuery';
@@ -59,6 +70,7 @@ export function ApplicationsListScreen() {
     handleFilterAdd,
     handleFilterRemove,
     handleFilterClear,
+    handleFilterChange,
     handlePageSizeChange,
   } = usePaginationConfig({ search, navigate });
 
@@ -172,6 +184,29 @@ export function ApplicationsListScreen() {
     !(batch instanceof Error) && batch?.id !== undefined
   );
 
+  // Extract data from query response
+  const data = useMemo(() => queryData?.data || [], [queryData?.data]);
+  const pagination = queryData?.pagination;
+  const errorMessage = isError ? (error as Error)?.message || 'An error occurred' : null;
+
+  // Derive filter states from appliedFilters
+  const selectedReviewStatus = useMemo(() => {
+    const reviewStatusFilter = appliedFilters.find((filter) => filter.column === 'review_status');
+    return reviewStatusFilter ? Number(reviewStatusFilter.value) : undefined;
+  }, [appliedFilters]);
+
+  const selectedGenders = useMemo(() => {
+    const genderFilter = appliedFilters.find((filter) => filter.column === 'jenis_kelamin');
+    return genderFilter ? genderFilter.value.split(',') : [];
+  }, [appliedFilters]);
+
+  const selectedScreeningStatuses = useMemo(() => {
+    const screeningStatusFilter = appliedFilters.find(
+      (filter) => filter.column === 'screening_status'
+    );
+    return screeningStatusFilter ? screeningStatusFilter.value.split(',') : [];
+  }, [appliedFilters]);
+
   // Mutations
   // const updateApplicationMutation = useUpdateApplicationQuery();
   // const deleteApplicationMutation = useDeleteApplicationQuery();
@@ -194,10 +229,19 @@ export function ApplicationsListScreen() {
     return <NotFoundScreenComponent />;
   }
 
-  // Extract data from query response
-  const data = queryData?.data || [];
-  const pagination = queryData?.pagination;
-  const errorMessage = isError ? (error as Error)?.message || 'An error occurred' : null;
+  // Gender filter options
+  const genderOptions = [
+    { value: 'L', label: 'Laki-laki' },
+    { value: 'P', label: 'Perempuan' },
+  ];
+
+  // Screening status filter options
+  const screeningStatusOptions = Object.entries(APPLICANT_DATA_SCREENING_STATUS_LABELS).map(
+    ([value, label]) => ({
+      value,
+      label,
+    })
+  );
 
   // Handler functions
   const handleViewDetailsInWindow = (application: ApplicantDataType) => {
@@ -276,51 +320,34 @@ export function ApplicationsListScreen() {
     setVisibleColumns(defaultVisibleColumns);
   };
 
+  // Custom filter handlers
+  const handleReviewStatusSelect = (status: number | undefined) => {
+    // Apply filter to the table
+    handleFilterChange('review_status', status?.toString(), 'eq');
+  };
+
+  const handleGenderSelectionChange = (values: string[]) => {
+    // Apply filter to the table
+    handleFilterChange('jenis_kelamin', values.length > 0 ? values.join(',') : undefined, 'in');
+  };
+
+  const handleScreeningStatusSelectionChange = (values: string[]) => {
+    // Apply filter to the table
+    handleFilterChange('screening_status', values.length > 0 ? values.join(',') : undefined, 'in');
+  };
+
   // Status badge component
   const StatusBadge = ({ status, type }: { status: number; type: 'screening' | 'review' }) => {
     const labels =
       type === 'screening'
         ? APPLICANT_DATA_SCREENING_STATUS_LABELS
         : APPLICANT_DATA_REVIEW_STATUS_LABELS;
-    const getColor = (status: number, type: 'screening' | 'review') => {
-      if (type === 'screening') {
-        switch (status) {
-          case APPLICANT_DATA_SCREENING_STATUS.PENDING:
-            return 'yellow';
-          case APPLICANT_DATA_SCREENING_STATUS.STOP:
-            return 'red';
-          case APPLICANT_DATA_SCREENING_STATUS.NOT_YET:
-            return 'gray';
-          case APPLICANT_DATA_SCREENING_STATUS.PROCESS:
-            return 'blue';
-          case APPLICANT_DATA_SCREENING_STATUS.DONE:
-            return 'green';
-          default:
-            return 'gray';
-        }
-      } else {
-        switch (status) {
-          case APPLICANT_DATA_REVIEW_STATUS.PENDING:
-            return 'yellow';
-          case APPLICANT_DATA_REVIEW_STATUS.STOP:
-            return 'red';
-          case APPLICANT_DATA_REVIEW_STATUS.UNREVIEWED:
-            return 'gray';
-          case APPLICANT_DATA_REVIEW_STATUS.REJECTED:
-            return 'red';
-          case APPLICANT_DATA_REVIEW_STATUS.ACCEPTED:
-            return 'green';
-          default:
-            return 'gray';
-        }
-      }
-    };
 
     return (
       <Badge
         variant="light"
         size="sm"
-        color={getColor(status, type)}
+        color={getApplicantDataStatusColor(status, type)}
         style={{ textTransform: 'capitalize' }}>
         {labels[status as keyof typeof labels] || 'Unknown'}
       </Badge>
@@ -1025,6 +1052,42 @@ export function ApplicationsListScreen() {
   // Filter columns based on visibility
   const columns = allColumns.filter((column) => visibleColumns[column.key]);
 
+  // Custom filter header component
+  const customFilterHeader = (
+    <Group justify="space-between" wrap="wrap" gap="md">
+      {/* Status Filter Pills */}
+      <StatusFilterPills
+        statuses={APPLICANT_DATA_REVIEW_STATUS_LIST}
+        selectedStatus={selectedReviewStatus}
+        onStatusSelect={handleReviewStatusSelect}
+        loading={isLoading}
+      />
+
+      {/* Checkbox Filters */}
+      <Group gap="sm" wrap="wrap">
+        <CheckboxFilter
+          label="Jenis Kelamin"
+          icon={<IconGenderMale size={16} />}
+          options={genderOptions}
+          selectedValues={selectedGenders}
+          onSelectionChange={handleGenderSelectionChange}
+          onClear={() => handleGenderSelectionChange([])}
+          placeholder="Select gender"
+        />
+
+        <CheckboxFilter
+          label="Status Screening"
+          icon={<IconRobot size={16} />}
+          options={screeningStatusOptions}
+          selectedValues={selectedScreeningStatuses}
+          onSelectionChange={handleScreeningStatusSelectionChange}
+          onClear={() => handleScreeningStatusSelectionChange([])}
+          placeholder="Select screening status"
+        />
+      </Group>
+    </Group>
+  );
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <DefaultTable
@@ -1056,6 +1119,10 @@ export function ApplicationsListScreen() {
         onPageSizeChange={handlePageSizeChange}
         minTableWidth="2000px"
         responsive
+        customFilterHeader={customFilterHeader}
+        rowDoubleClickAction={(application: ApplicantDataType) =>
+          handleViewDetailsInWindow(application)
+        }
         rowActions={[
           {
             label: 'View Details',

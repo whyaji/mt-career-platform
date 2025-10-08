@@ -144,6 +144,33 @@ export const usePaginationConfig = ({
     });
   };
 
+  // Handle filter change - replaces all filters for a specific column
+  const handleFilterChange = (
+    column: string,
+    value: string | undefined,
+    condition: string = 'eq'
+  ) => {
+    // Remove all existing filters for this column
+    const filteredFilters = appliedFilters.filter((filter) => filter.column !== column);
+
+    // Add new filter if value is provided
+    if (value !== undefined && value !== '') {
+      const newFilters = [...filteredFilters, { column, value, condition }];
+      setAppliedFilters(newFilters);
+      updateSearchParams({
+        filter: buildFilterString(newFilters),
+        page: 1, // Reset to first page when filtering
+      });
+    } else {
+      // Just remove the filters without adding new ones
+      setAppliedFilters(filteredFilters);
+      updateSearchParams({
+        filter: filteredFilters.length > 0 ? buildFilterString(filteredFilters) : undefined,
+        page: 1, // Reset to first page when filtering
+      });
+    }
+  };
+
   // Handle json filter add
   const handleJsonFilterAdd = (filter: AppliedFilter) => {
     const newFilters = [...appliedJsonFilters, filter];
@@ -200,6 +227,7 @@ export const usePaginationConfig = ({
     handleFilterAdd,
     handleFilterRemove,
     handleFilterClear,
+    handleFilterChange,
     handleJsonFilterAdd,
     handleJsonFilterRemove,
     handleJsonFilterClear,
