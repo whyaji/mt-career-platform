@@ -148,3 +148,40 @@ export const generateApplicationsExcelByBatch = async (
   });
   return response.json();
 };
+
+export const triggerScreening = async (
+  applicationId: string
+): Promise<DefaultResponseType<{ triggered_count: number; total_requested: number }>> => {
+  const response = await authenticatedFetch(`${talentHubApplicantUrl}/screening/trigger`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ applicant_ids: [applicationId] }),
+  });
+  return response.json();
+};
+
+export const rescreenAllByBatch = async (
+  batchId: string,
+  statusFilter?: number[]
+): Promise<
+  DefaultResponseType<{
+    triggered_count: number;
+    total_found: number;
+    batch_id: string;
+    filters: { status_filter?: number[] };
+  }>
+> => {
+  const response = await authenticatedFetch(
+    `${talentHubApplicantUrl}/screening/rescreen-all-by-batch/${batchId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status_filter: statusFilter }),
+    }
+  );
+  return response.json();
+};

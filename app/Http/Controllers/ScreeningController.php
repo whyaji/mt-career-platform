@@ -113,21 +113,28 @@ class ScreeningController extends Controller
     }
 
     /**
-     * Trigger rescreening for all applicants
-     * POST /api/screening/rescreen-all
-     * Optional body: { "batch_id": "uuid", "status_filter": [1,2,3,4,5] }
+     * Trigger rescreening for all applicants in a batch
+     * POST /api/screening/rescreen-all-by-batch/{batchId}
+     * Optional body: { "status_filter": [1,2,3,4,5] }
      */
-    public function rescreenAll(Request $request)
+    public function rescreenAllByBatch(Request $request, $batchId)
     {
         try {
+            // Validate batch exists
+            $batch = \App\Models\Batch::find($batchId);
+            if (!$batch) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'BATCH_NOT_FOUND',
+                    'message' => 'Batch not found'
+                ], 404);
+            }
+
             // Validate optional filters
             $validator = Validator::make($request->all(), [
-                'batch_id' => 'nullable|uuid|exists:batch,id',
                 'status_filter' => 'nullable|array',
                 'status_filter.*' => 'integer|in:1,2,3,4,5'
             ], [
-                'batch_id.uuid' => 'Batch ID must be a valid UUID',
-                'batch_id.exists' => 'Batch ID does not exist',
                 'status_filter.array' => 'Status filter must be an array',
                 'status_filter.*.integer' => 'Each status filter must be an integer',
                 'status_filter.*.in' => 'Each status filter must be 1, 2, 3, 4, or 5'
@@ -142,16 +149,10 @@ class ScreeningController extends Controller
                 ], 400);
             }
 
-            $batchId = $request->input('batch_id');
             $statusFilter = $request->input('status_filter');
 
-            // Build query
-            $query = ApplicantData::query();
-
-            // Filter by batch if provided
-            if ($batchId) {
-                $query->where('batch_id', $batchId);
-            }
+            // Build query - filter by batch
+            $query = ApplicantData::where('batch_id', $batchId);
 
             // Filter by status if provided
             if ($statusFilter) {
@@ -178,7 +179,7 @@ class ScreeningController extends Controller
                     // Reset screening status to pending before triggering
                     $applicant->update([
                         'screening_status' => 1, // 1: pending
-                        'screening_remark' => 'Rescreening triggered'
+                        'screening_remark' => 'Rescreening triggered for batch'
                     ]);
 
                     // Dispatch screening job
@@ -191,7 +192,7 @@ class ScreeningController extends Controller
                 }
             }
 
-            Log::info("Rescreening triggered for {$triggeredCount} applicants");
+            Log::info("Rescreening triggered for {$triggeredCount} applicants in batch {$batchId}");
 
             $response = [
                 'success' => true,
@@ -199,8 +200,8 @@ class ScreeningController extends Controller
                 'data' => [
                     'triggered_count' => $triggeredCount,
                     'total_found' => $applicants->count(),
+                    'batch_id' => $batchId,
                     'filters' => [
-                        'batch_id' => $batchId,
                         'status_filter' => $statusFilter
                     ],
                     'errors' => $errors
@@ -225,7 +226,7 @@ class ScreeningController extends Controller
 
             return response()->json($response, 200);
         } catch (\Exception $e) {
-            Log::error("Error in rescreen all: {$e->getMessage()}");
+            Log::error("Error in rescreen all by batch: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
                 'error' => 'INTERNAL_SERVER_ERROR',

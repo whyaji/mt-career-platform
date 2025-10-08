@@ -1,24 +1,27 @@
-import { Badge, Button, Group, Text } from '@mantine/core';
-import { IconEdit, IconEye, IconFileText } from '@tabler/icons-react';
+import { Badge, Group, Text } from '@mantine/core';
+import { IconEdit, IconEye, IconRefresh, IconReload } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { type ColumnOption, ColumnVisibilityControl } from '@/components/ColumnVisibilityControl';
 import { DefaultTable, type FilterOption, type TableColumn } from '@/components/DefaultTable';
 import { ErrorScreenComponent } from '@/components/ErrorScreenComponent';
 import { ExcelExportMenu } from '@/components/ExcelExportMenu';
+import { FilesManagerButton } from '@/components/FilesManagerButton';
 import { NotFoundScreenComponent } from '@/components/NotFoundScreenComponent';
 import { PendingScreenComponent } from '@/components/PendingScreenComponent';
+import { RescreenAllButton } from '@/components/RescreenAllButton';
 import {
   APPLICANT_DATA_REVIEW_STATUS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
   APPLICANT_DATA_SCREENING_STATUS,
   APPLICANT_DATA_SCREENING_STATUS_LABELS,
 } from '@/constants/applicantDataStatus.enum';
-import { GlobalGeneratedFilesModal } from '@/feature/talenthub/components/modals/GlobalGeneratedFilesModal';
 import { WindowApplicationDetailModal } from '@/feature/talenthub/screen/applications/components/modals/WindowApplicationDetailModal';
 import { useApplicationsByBatchQuery } from '@/hooks/query/applicant/useApplicationsByBatchQuery';
 import { useGenerateApplicationsExcelByBatchMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelByBatchMutation';
 import { useGenerateApplicationsExcelMutation } from '@/hooks/query/applicant/useGenerateApplicationsExcelMutation';
+import { useRescreenAllByBatchMutation } from '@/hooks/query/applicant/useRescreenAllByBatchMutation';
+import { useTriggerScreeningMutation } from '@/hooks/query/applicant/useTriggerScreeningMutation';
 import { useUpdateApplicationReviewStatusMutation } from '@/hooks/query/applicant/useUpdateApplicationReviewStatusMutation';
 import { useGetBatchByIdQuery } from '@/hooks/query/batch/useGetBatchByIdQuery';
 import { usePaginationConfig } from '@/hooks/usePaginationConfig.hook';
@@ -62,11 +65,6 @@ export function ApplicationsListScreen() {
   // Window states - support multiple windows
   const [openWindows, setOpenWindows] = useState<Map<string, string>>(new Map());
   const [focusedWindowId, setFocusedWindowId] = useState<string | null>(null);
-
-  // Global generated files modal state
-  const [globalFilesModal, setGlobalFilesModal] = useState({
-    opened: false,
-  });
 
   const defaultVisibleColumns = {
     // Basic info - always visible
@@ -180,6 +178,8 @@ export function ApplicationsListScreen() {
   const generateExcelMutation = useGenerateApplicationsExcelMutation();
   const generateExcelByBatchMutation = useGenerateApplicationsExcelByBatchMutation();
   const updateReviewStatusMutation = useUpdateApplicationReviewStatusMutation();
+  const triggerScreeningMutation = useTriggerScreeningMutation();
+  const rescreenAllByBatchMutation = useRescreenAllByBatchMutation();
 
   // Handle error case from loader
   if (batch instanceof Error) {
@@ -228,6 +228,18 @@ export function ApplicationsListScreen() {
       review_status: reviewStatus,
       review_remark: reviewRemark,
     });
+  };
+
+  // Handler for triggering screening
+  const handleTriggerScreening = (applicationId: string) => {
+    triggerScreeningMutation.mutate(applicationId);
+  };
+
+  // Handler for rescreening all by batch
+  const handleRescreenAllByBatch = () => {
+    if (batchId) {
+      rescreenAllByBatchMutation.mutate({ batchId });
+    }
   };
 
   // Column visibility handlers
@@ -352,6 +364,14 @@ export function ApplicationsListScreen() {
         maxHeight={400}
       />
 
+      {/* Rescreen All Button */}
+      <RescreenAllButton
+        onRescreen={handleRescreenAllByBatch}
+        loading={rescreenAllByBatchMutation.isPending}
+        batchNumber={batch?.number?.toString()}
+        batchLocation={batch?.location}
+      />
+
       {/* Excel Export Menu */}
       <ExcelExportMenu
         onExportAll={handleExportAll}
@@ -361,14 +381,14 @@ export function ApplicationsListScreen() {
       />
 
       {/* Generated Files Manager Button */}
-      <Button
-        variant="light"
-        color="blue"
-        leftSection={<IconFileText size={16} />}
-        onClick={() => setGlobalFilesModal({ opened: true })}
-        size="sm">
-        Files Manager
-      </Button>
+      <FilesManagerButton
+        title={`Generated Files - Applications ${batch?.number} (${batch?.location})`}
+        defaultFilters={{
+          type: 'applications-by-batch',
+          model_id: batchId,
+        }}
+        defaultSearch={batchId || ''}
+      />
     </Group>
   );
 
@@ -1043,6 +1063,28 @@ export function ApplicationsListScreen() {
             onClick: (application: ApplicantDataType) => handleViewDetailsInWindow(application),
           },
           {
+            label: 'Screening',
+            icon: <IconRefresh size={16} />,
+            subActions: [
+              {
+                label: 'Run Screening',
+                icon: <IconRefresh size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.screening_status !== APPLICANT_DATA_SCREENING_STATUS.PENDING &&
+                  application.screening_status !== APPLICANT_DATA_SCREENING_STATUS.NOT_YET,
+                onClick: (application: ApplicantDataType) => handleTriggerScreening(application.id),
+              },
+              {
+                label: 'Run Re-screening',
+                icon: <IconReload size={16} />,
+                disabled: (application: ApplicantDataType) =>
+                  application.screening_status === APPLICANT_DATA_SCREENING_STATUS.PENDING ||
+                  application.screening_status === APPLICANT_DATA_SCREENING_STATUS.NOT_YET,
+                onClick: (application: ApplicantDataType) => handleTriggerScreening(application.id),
+              },
+            ],
+          },
+          {
             label: 'Update Review Status',
             icon: <IconEdit size={16} />,
             subActions: [
@@ -1114,18 +1156,6 @@ export function ApplicationsListScreen() {
           />
         );
       })}
-
-      {/* Global Generated Files Modal */}
-      <GlobalGeneratedFilesModal
-        opened={globalFilesModal.opened}
-        onClose={() => setGlobalFilesModal({ opened: false })}
-        title={`Generated Files - ${batch?.number} (${batch?.location})`}
-        defaultFilters={{
-          type: 'applications-by-batch',
-          model_id: batchId,
-        }}
-        defaultSearch={batchId || ''}
-      />
     </div>
   );
 }

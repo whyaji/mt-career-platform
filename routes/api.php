@@ -101,6 +101,18 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             // Excel generation routes
             $router->post('/generate-excel', 'ApplicantDataController@generateExcel');
             $router->post('/batch/{batchId}/generate-excel', 'ApplicantDataController@generateExcelByBatch');
+
+            // Screening Management routes with JWT auth
+            $router->group(['prefix' => 'screening'], function () use ($router) {
+                $router->post('/trigger', 'ScreeningController@triggerScreening');
+                $router->post('/rescreen-all-by-batch/{batchId}', 'ScreeningController@rescreenAllByBatch');
+                $router->get('/stats', 'ScreeningController@getScreeningStats');
+
+                // Job status routes
+                $router->get('/job-status/{jobId}', 'ScreeningController@getJobStatus');
+                $router->get('/job-statuses', 'ScreeningController@getJobStatuses');
+                $router->get('/job-stats', 'ScreeningController@getJobStats');
+            });
         });
 
         // Question routes with rate limiting for active endpoint
@@ -164,18 +176,6 @@ $router->group(['prefix' => 'api/v1', 'middleware' => ['security']], function ()
             $router->get('/batch/{batchId}/generated-files', 'ScreeningApplicantController@getGeneratedFilesByBatch');
             $router->get('/generated-file/{generatedFileId}/status', 'ScreeningApplicantController@getGeneratedFileStatus');
             $router->get('/generated-file/{generatedFileId}/download', 'ScreeningApplicantController@downloadGeneratedFile');
-        });
-
-        // Screening Management routes with JWT auth
-        $router->group(['prefix' => 'screening'], function () use ($router) {
-            $router->post('/trigger', 'ScreeningController@triggerScreening');
-            $router->post('/rescreen-all', 'ScreeningController@rescreenAll');
-            $router->get('/stats', 'ScreeningController@getScreeningStats');
-
-            // Job status routes
-            $router->get('/job-status/{jobId}', 'ScreeningController@getJobStatus');
-            $router->get('/job-statuses', 'ScreeningController@getJobStatuses');
-            $router->get('/job-stats', 'ScreeningController@getJobStats');
         });
 
         // PDDIKTI routes with JWT auth
