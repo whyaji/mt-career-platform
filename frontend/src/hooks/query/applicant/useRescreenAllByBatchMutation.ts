@@ -10,8 +10,8 @@ export function useRescreenAllByBatchMutation() {
     mutationFn: ({ batchId, statusFilter }: { batchId: string; statusFilter?: number[] }) =>
       rescreenAllByBatch(batchId, statusFilter),
     onSuccess: (data, { batchId }) => {
-      const triggeredCount = data.data?.triggered_count || 0;
-      const totalFound = data.data?.total_found || 0;
+      const triggeredCount = 'data' in data && data.data ? data.data.triggered_count : 0;
+      const totalFound = 'data' in data && data.data ? data.data.total_found : 0;
 
       notifications.show({
         title: 'Rescreening Started',

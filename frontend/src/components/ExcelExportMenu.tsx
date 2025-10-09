@@ -1,4 +1,4 @@
-import { Button, Divider, Group, Menu, Paper, Stack, Text } from '@mantine/core';
+import { Button, Group, Menu, Paper, Stack, Text } from '@mantine/core';
 import { IconChevronDown, IconFileText } from '@tabler/icons-react';
 
 export interface ExcelExportMenuProps {

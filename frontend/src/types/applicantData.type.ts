@@ -57,7 +57,17 @@ export type ApplicantDataFormType = Omit<
 
 export type ApplicantDataPostType = Omit<
   ApplicantDataType,
-  'id' | 'created_at' | 'updated_at' | 'deleted_at'
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'deleted_at'
+  | 'screening_status'
+  | 'screening_remark'
+  | 'graduation_status'
+  | 'graduation_remark'
+  | 'review_status'
+  | 'review_remark'
+  | 'batch'
 > & { agreement1: string; agreement2: string; agreement3: string; turnstileToken: string };
 
 export type ApplicantDataSubmitType = {
