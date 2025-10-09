@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\ApplicantData;
 use App\Models\ApplicantDataScreeningStatus;
+use App\Models\ApplicantDataGraduationStatus;
 use App\Models\ApplicantDataReviewStatus;
 use App\Models\GeneratedFile;
 use App\Traits\PaginationTrait;
@@ -148,6 +149,8 @@ class GenerateApplicationsExcelJob implements ShouldQueue
                 'Medical History',
                 'Screening Status',
                 'Screening Remark',
+                'Graduation Status',
+                'Graduation Remark',
                 'Review Status',
                 'Review Remark',
                 'Batch',
@@ -279,6 +282,20 @@ class GenerateApplicationsExcelJob implements ShouldQueue
                     $screeningRemark = substr($screeningRemark, 0, 100) . '...';
                 }
                 $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $screeningRemark ?? '-');
+
+                // Graduation Status
+                $graduationStatus = $application->graduation_status;
+                $graduationStatusDisplay = $graduationStatus ?
+                    "{$graduationStatus} (" . ApplicantDataGraduationStatus::getLabelByValue($graduationStatus) . ")" :
+                    '-';
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $graduationStatusDisplay);
+
+                // Graduation Remark
+                $graduationRemark = $application->graduation_remark;
+                if (is_string($graduationRemark) && strlen($graduationRemark) > 100) {
+                    $graduationRemark = substr($graduationRemark, 0, 100) . '...';
+                }
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex++) . $row, $graduationRemark ?? '-');
 
                 // Review Status
                 $reviewStatus = $application->review_status;

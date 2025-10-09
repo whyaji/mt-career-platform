@@ -70,6 +70,44 @@ enum ApplicantDataReviewStatus: int
     }
 }
 
+enum ApplicantDataGraduationStatus: int
+{
+    case PENDING = 1;
+    case ERROR = 2;
+    case NOT_FOUND = 3;
+    case DROPOUT = 4;
+    case ACTIVE = 5;
+    case NOT_MATCH = 6;
+    case GRADUATED = 7;
+
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::PENDING => 'Pending',
+            self::ERROR => 'Error',
+            self::NOT_FOUND => 'Not Found',
+            self::DROPOUT => 'Dropout',
+            self::ACTIVE => 'Active',
+            self::NOT_MATCH => 'Not Match',
+            self::GRADUATED => 'Graduated',
+        };
+    }
+
+    public static function getLabelByValue(int $value): string
+    {
+        return match ($value) {
+            self::PENDING->value => 'Pending',
+            self::ERROR->value => 'Error',
+            self::NOT_FOUND->value => 'Not Found',
+            self::DROPOUT->value => 'Dropout',
+            self::ACTIVE->value => 'Active',
+            self::NOT_MATCH->value => 'Not Match',
+            self::GRADUATED->value => 'Graduated',
+            default => 'Unknown',
+        };
+    }
+}
+
 class ApplicantData extends Model
 {
     use HasUuids, SoftDeletes;
@@ -106,6 +144,8 @@ class ApplicantData extends Model
         'batch_id',
         'screening_status',
         'screening_remark',
+        'graduation_status',
+        'graduation_remark',
         'review_status',
         'review_remark',
     ];

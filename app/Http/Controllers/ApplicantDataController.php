@@ -251,6 +251,50 @@ class ApplicantDataController extends Controller
         }
     }
 
+    public function updateApplicationGraduationStatus(Request $request, $id)
+    {
+        try {
+            $application = ApplicantData::find($id);
+
+            if (!$application) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'APPLICATION_NOT_FOUND'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'graduation_status' => 'required|integer|in:1,2,3,4,5,6,7',
+                'graduation_remark' => 'nullable|string|max:255'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => $validator->errors()->first()
+                ], 400);
+            }
+
+            $application->update([
+                'graduation_status' => $request->graduation_status,
+                'graduation_remark' => $request->graduation_remark
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $application->load('batch'),
+                'message' => 'Application graduation status updated successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error updating application graduation status: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'error' => 'INTERNAL_SERVER_ERROR'
+            ], 500);
+        }
+    }
+
     public function deleteApplication($id)
     {
         try {

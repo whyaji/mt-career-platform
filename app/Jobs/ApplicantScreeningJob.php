@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ApplicantData;
+use App\Models\ApplicantDataGraduationStatus;
 use App\Models\ApplicantDataReviewStatus;
 use App\Models\ApplicantDataScreeningStatus;
 use App\Models\JobStatus;
@@ -92,6 +93,8 @@ class ApplicantScreeningJob implements ShouldQueue
             $applicant->update([
                 'screening_status' => $screeningResult['status'],
                 'screening_remark' => $screeningResult['remark'],
+                'graduation_status' => $screeningResult['graduation_status'],
+                'graduation_remark' => $screeningResult['graduation_remark'],
                 'review_status' =>
                 $screeningResult['status'] == ApplicantDataScreeningStatus::DONE->value ? ApplicantDataReviewStatus::UNREVIEWED->value : ApplicantDataReviewStatus::STOP->value,
                 'review_remark' =>
@@ -186,19 +189,6 @@ class ApplicantScreeningJob implements ShouldQueue
             }
         }
 
-        // Check university and certificate (if enabled in config)
-        $universityCheck = ['passed' => true, 'reason' => null];
-        if (!isset($config['university']['enabled']) || $config['university']['enabled']) {
-            $universityCheck = $this->checkUniversityAndCertificate($applicant, $config['university'] ?? []);
-            Log::info("University check: " . json_encode($universityCheck));
-            $checks['university'] = $universityCheck['passed'];
-            if (!$universityCheck['passed']) {
-                $remarks[] = $universityCheck['reason'];
-            } else if ($universityCheck['reason']) {
-                $remarks[] = $universityCheck['reason'];
-            }
-        }
-
         // Marital status check (if enabled in config)
         if (!isset($config['marital']['enabled']) || $config['marital']['enabled']) {
             $maritalCheck = $this->checkMaritalStatus($applicant, $config['marital'] ?? []);
@@ -221,13 +211,24 @@ class ApplicantScreeningJob implements ShouldQueue
         $allPassed = !in_array(false, $checks);
         $status = $allPassed ? ApplicantDataScreeningStatus::DONE->value : ApplicantDataScreeningStatus::STOP->value; // 5: done (screening ai), 2: stop
 
-        $passedReason = $universityCheck['reason'] ? $universityCheck['reason'] : 'Auto screening passed';
-        $remark = $allPassed ? $passedReason : implode('; ', $remarks);
+        $remark = $allPassed ? 'Auto screening passed' : implode('; ', $remarks);
+
+        $graduationRemark = null;
+        // Check university and certificate (if enabled in config)
+        $universityCheck = ['status' => ApplicantDataGraduationStatus::PENDING->value, 'reason' => 'Not checked'];
+        if (!isset($config['university']['enabled']) || $config['university']['enabled']) {
+            $universityCheck = $this->checkUniversityAndCertificate($applicant, $config['university'] ?? []);
+        }
+
+        $graduationStatus = $universityCheck['status'];
+        $graduationRemark = $universityCheck['reason'];
 
         return [
             'status' => $status,
             'remark' => $remark,
-            'checks' => $checks
+            'checks' => $checks,
+            'graduation_status' => $graduationStatus,
+            'graduation_remark' => $graduationRemark,
         ];
     }
 
@@ -385,26 +386,25 @@ class ApplicantScreeningJob implements ShouldQueue
         $name = $applicant->nama_lengkap;
         $university = $applicant->instansi_pendidikan;
         $major = $applicant->jurusan_pendidikan;
-
         $certificate = $applicant->status_ijazah;
 
         // Check university and certificate
-        if (empty($university) || empty($certificate) || empty($name) || empty($major)) {
+        if (empty($university) || empty($name) || empty($major)) {
             return [
-                'passed' => false,
-                'reason' => "University, certificate, name, and major are required"
+                'status' => ApplicantDataGraduationStatus::NOT_FOUND->value,
+                'reason' => "University, name, and major are required"
             ];
         }
 
-        if (strtoupper($certificate) == 'TIDAK ADA') {
+        if (strtoupper($certificate) == 'TIDAK ADA' || empty($certificate)) {
             return [
-                'passed' => false,
+                'status' => ApplicantDataGraduationStatus::NOT_FOUND->value,
                 'reason' => "Certificate is required"
             ];
         }
 
         try {
-            // check status graduation using pddikti service
+            // Check status graduation using PDDIKTI service
             $result = $this->pddiktiService->checkStatusKelulusan([
                 'nama' => $name,
                 'program_studi' => $major,
@@ -418,47 +418,163 @@ class ApplicantScreeningJob implements ShouldQueue
                 throw new \Exception("PDDIKTI service error: {$errorMessage}");
             }
 
-            // check the result.results[0]
-            if (count($result['results']) == 0) {
-                return [
-                    'passed' => false,
-                    'reason' => "University and certificate are not found"
-                ];
+            // Check if no results found
+            if (empty($result['results']) || count($result['results']) == 0) {
+                // Check status graduation using PDDIKTI service without program studi and universitas
+                $result = $this->pddiktiService->checkStatusKelulusan([
+                    'nama' => $name,
+                ]);
+
+                // Check if the result indicates an error
+                if (isset($result['error']) || (isset($result['success']) && !$result['success'])) {
+                    $errorMessage = $result['error'] ?? $result['message'] ?? 'Unknown PDDIKTI service error';
+                    Log::error("PDDIKTI service error for applicant {$this->applicantDataId}: {$errorMessage}");
+                    throw new \Exception("PDDIKTI service error: {$errorMessage}");
+                }
+
+                if (empty($result['results']) || count($result['results']) == 0) {
+                    return [
+                        'status' => ApplicantDataGraduationStatus::NOT_FOUND->value,
+                        'reason' => "Student data not found in PDDIKTI database"
+                    ];
+                }
             }
 
-            // validate name with result.results[i].nama, major with program_studi, university with universitas
-            $foundedStudent = null;
-            $reason = null;
-            foreach ($result['results'] as $resultStudent) {
-                if (
-                    strtoupper($resultStudent['nama']) == strtoupper($name)
-                    && strtoupper($resultStudent['universitas']) == strtoupper($university)
-                    && strtoupper($resultStudent['ijazah_verification']['status']) == 'GRADUATED'
-                ) {
-                    $foundedStudent = $resultStudent;
-                    if (strtoupper($resultStudent['program_studi']) == strtoupper($major)) {
-                        $reason = null;
-                        break;
-                    } else {
-                        $reason = "major not match " . $resultStudent['program_studi'] . " not equal to " . $major;
+            // Find the best matching student from results
+            $bestMatch = null;
+            $majorMatch = false;
+            $universityMatch = false;
+
+            foreach ($result['results'] as $student) {
+                $verification = $student['ijazah_verification'] ?? null;
+
+                if (!$verification) {
+                    continue;
+                }
+
+                // Check if name and university match
+                $nameMatch = strtoupper($student['nama'] ?? '') == strtoupper($name);
+                $currentUniversityMatch = stripos($student['universitas'] ?? '', $university) !== false ||
+                    stripos($university, $student['universitas'] ?? '') !== false;
+
+                if ($nameMatch) {
+                    // Check if major matches
+                    $currentMajorMatch = stripos($student['program_studi'] ?? '', $major) !== false ||
+                        stripos($major, $student['program_studi'] ?? '') !== false;
+
+                    // Prioritize graduated students
+                    if ($verification['status'] === 'GRADUATED') {
+                        if ($currentUniversityMatch && $currentMajorMatch) {
+                            // Perfect match: graduated, university and major match
+                            $bestMatch = $student;
+                            $universityMatch = true;
+                            $majorMatch = true;
+                            break;
+                        } elseif ($currentUniversityMatch && !$currentMajorMatch) {
+                            // Good match: graduated, university matches but major doesn't
+                            if (!$bestMatch || !$universityMatch) {
+                                $bestMatch = $student;
+                                $universityMatch = true;
+                                $majorMatch = false;
+                            }
+                        } elseif (!$currentUniversityMatch && !$currentMajorMatch) {
+                            // University and major mismatch but graduated and name matches
+                            if (!$bestMatch) {
+                                $bestMatch = $student;
+                                $universityMatch = false;
+                                $majorMatch = false;
+                            }
+                        } elseif (!$currentMajorMatch) {
+                            // Major mismatch but graduated and name matches
+                            if (!$bestMatch) {
+                                $bestMatch = $student;
+                                $universityMatch = $currentUniversityMatch;
+                                $majorMatch = false;
+                            }
+                        } elseif (!$currentUniversityMatch) {
+                            // University mismatch but graduated and name matches
+                            if (!$bestMatch) {
+                                $bestMatch = $student;
+                                $universityMatch = false;
+                                $majorMatch = $currentMajorMatch;
+                            }
+                        }
+                    } elseif ($currentUniversityMatch && !$bestMatch) {
+                        // Fallback: not graduated but name and university match
+                        $bestMatch = $student;
+                        $universityMatch = true;
+                        $majorMatch = $currentMajorMatch;
+                    } elseif (!$currentUniversityMatch && !$currentMajorMatch && !$bestMatch) {
+                        // University and major mismatch but graduated and name matches
+                        $bestMatch = $student;
+                        $universityMatch = false;
+                        $majorMatch = false;
                     }
                 }
             }
 
-            if (is_null($foundedStudent)) {
+            // If no match found
+            if (!$bestMatch) {
                 return [
-                    'passed' => false,
-                    'reason' => "Graduated student status not found"
+                    'status' => ApplicantDataGraduationStatus::NOT_FOUND->value,
+                    'reason' => "No matching student found with name '{$name}' and university '{$university}'"
                 ];
             }
 
-            return ['passed' => true, 'reason' => $reason];
+            // Map PDDIKTI verification status to ApplicantDataGraduationStatus
+            $verification = $bestMatch['ijazah_verification'];
+            $verificationStatus = $verification['status'] ?? 'UNKNOWN';
+
+            switch ($verificationStatus) {
+                case 'GRADUATED':
+                    if ($universityMatch && $majorMatch) {
+                        $status = ApplicantDataGraduationStatus::GRADUATED->value;
+                        $reason = "Student graduated from {$bestMatch['program_studi']} at {$bestMatch['universitas']}";
+                    } elseif (!$universityMatch && !$majorMatch) {
+                        $status = ApplicantDataGraduationStatus::NOT_MATCH->value;
+                        $reason = "Student graduated but university and major does not match. Found: '{$bestMatch['program_studi']}' at {$bestMatch['universitas']}, Expected: '{$major}' at {$university}";
+                    } elseif (!$universityMatch) {
+                        $status = ApplicantDataGraduationStatus::NOT_MATCH->value;
+                        $reason = "Student university not match. Found: '{$bestMatch['universitas']}', Expected: '{$university}'";
+                    } elseif (!$majorMatch) {
+                        $status = ApplicantDataGraduationStatus::NOT_MATCH->value;
+                        $reason = "Student graduated but major does not match. Found: '{$bestMatch['program_studi']}', Expected: '{$major}'";
+                    }
+                    break;
+
+                case 'ACTIVE':
+                    $status = ApplicantDataGraduationStatus::ACTIVE->value;
+                    $currentStatus = $bestMatch['status_saat_ini'] ?? 'Unknown';
+                    $reason = "Student is still active (not yet graduated). Status: {$currentStatus}";
+                    break;
+
+                case 'DROPOUT':
+                    $status = ApplicantDataGraduationStatus::DROPOUT->value;
+                    $currentStatus = $bestMatch['status_saat_ini'] ?? 'Unknown';
+                    $reason = "Student has dropped out or is inactive. Status: {$currentStatus}";
+                    break;
+
+                default:
+                    $status = ApplicantDataGraduationStatus::ERROR->value;
+                    $currentStatus = $bestMatch['status_saat_ini'] ?? 'Unknown';
+                    $reason = "Unknown graduation status: {$verificationStatus}. Status: {$currentStatus}";
+                    break;
+            }
+
+            Log::info("Graduation check for applicant {$this->applicantDataId}: Status={$status}, Reason={$reason}");
+
+            return [
+                'status' => $status,
+                'reason' => $reason
+            ];
         } catch (\Exception $e) {
             // Log the PDDIKTI service error
             Log::error("PDDIKTI service error during university check for applicant {$this->applicantDataId}: {$e->getMessage()}");
 
-            // Re-throw the exception to make the job fail
-            throw new \Exception("PDDIKTI service error during university verification: {$e->getMessage()}");
+            return [
+                'status' => ApplicantDataGraduationStatus::ERROR->value,
+                'reason' => "PDDIKTI service error: {$e->getMessage()}"
+            ];
         }
     }
 
