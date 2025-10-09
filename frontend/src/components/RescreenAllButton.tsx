@@ -15,6 +15,7 @@ interface RescreenAllButtonProps {
   color?: string;
   confirmTitle?: string;
   confirmMessage?: string;
+  inDrawer?: boolean;
 }
 
 export function RescreenAllButton({
@@ -28,6 +29,7 @@ export function RescreenAllButton({
   color = 'orange',
   confirmTitle,
   confirmMessage,
+  inDrawer = false,
 }: RescreenAllButtonProps) {
   const [showDialog, setShowDialog] = useState(false);
 
@@ -66,6 +68,7 @@ export function RescreenAllButton({
         cancelLabel="Cancel"
         confirmColor={color}
         loading={loading}
+        zIndex={inDrawer ? 2000 : 200}
       />
     </>
   );

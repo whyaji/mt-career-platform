@@ -6,6 +6,7 @@ import {
   IconRefresh,
   IconReload,
   IconRobot,
+  IconSchool,
 } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 
@@ -20,6 +21,7 @@ import { PendingScreenComponent } from '@/components/PendingScreenComponent';
 import { RescreenAllButton } from '@/components/RescreenAllButton';
 import { StatusFilterPills } from '@/components/StatusFilterPills';
 import {
+  APPLICANT_DATA_GRADUATION_STATUS_LABELS,
   APPLICANT_DATA_REVIEW_STATUS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
   APPLICANT_DATA_REVIEW_STATUS_LIST,
@@ -45,6 +47,8 @@ import { formatDefaultDate } from '@/utils/dateTimeFormatter';
 type ApplicantDataType = BaseApplicantDataType & {
   screening_status?: number;
   screening_remark?: string | null;
+  graduation_status?: number;
+  graduation_remark?: string | null;
   review_status?: number;
   review_remark?: string | null;
 };
@@ -95,8 +99,10 @@ export function ApplicationsListScreen() {
     batch: true,
     // Status info
     screening_status: true,
+    graduation_status: true,
     review_status: true,
     screening_remark: false,
+    graduation_remark: false,
     review_remark: false,
     // Personal info - birth details
     tempat_lahir: false,
@@ -144,8 +150,10 @@ export function ApplicationsListScreen() {
     { key: 'batch', label: 'Batch' },
     // Status Information
     { key: 'screening_status', label: 'Screening Status' },
+    { key: 'graduation_status', label: 'Graduation Status' },
     { key: 'review_status', label: 'Review Status' },
     { key: 'screening_remark', label: 'Screening Remark' },
+    { key: 'graduation_remark', label: 'Graduation Remark' },
     { key: 'review_remark', label: 'Review Remark' },
     // Birth Information
     { key: 'tempat_lahir', label: 'Birth Place' },
@@ -207,6 +215,13 @@ export function ApplicationsListScreen() {
     return screeningStatusFilter ? screeningStatusFilter.value.split(',') : [];
   }, [appliedFilters]);
 
+  const selectedGraduationStatuses = useMemo(() => {
+    const graduationStatusFilter = appliedFilters.find(
+      (filter) => filter.column === 'graduation_status'
+    );
+    return graduationStatusFilter ? graduationStatusFilter.value.split(',') : [];
+  }, [appliedFilters]);
+
   // Mutations
   // const updateApplicationMutation = useUpdateApplicationQuery();
   // const deleteApplicationMutation = useDeleteApplicationQuery();
@@ -237,6 +252,14 @@ export function ApplicationsListScreen() {
 
   // Screening status filter options
   const screeningStatusOptions = Object.entries(APPLICANT_DATA_SCREENING_STATUS_LABELS).map(
+    ([value, label]) => ({
+      value,
+      label,
+    })
+  );
+
+  // Graduation status filter options
+  const graduationStatusOptions = Object.entries(APPLICANT_DATA_GRADUATION_STATUS_LABELS).map(
     ([value, label]) => ({
       value,
       label,
@@ -336,12 +359,25 @@ export function ApplicationsListScreen() {
     handleFilterChange('screening_status', values.length > 0 ? values.join(',') : undefined, 'in');
   };
 
+  const handleGraduationStatusSelectionChange = (values: string[]) => {
+    // Apply filter to the table
+    handleFilterChange('graduation_status', values.length > 0 ? values.join(',') : undefined, 'in');
+  };
+
   // Status badge component
-  const StatusBadge = ({ status, type }: { status: number; type: 'screening' | 'review' }) => {
+  const StatusBadge = ({
+    status,
+    type,
+  }: {
+    status: number;
+    type: 'screening' | 'review' | 'graduation';
+  }) => {
     const labels =
       type === 'screening'
         ? APPLICANT_DATA_SCREENING_STATUS_LABELS
-        : APPLICANT_DATA_REVIEW_STATUS_LABELS;
+        : type === 'review'
+          ? APPLICANT_DATA_REVIEW_STATUS_LABELS
+          : APPLICANT_DATA_GRADUATION_STATUS_LABELS;
 
     return (
       <Badge
@@ -376,48 +412,101 @@ export function ApplicationsListScreen() {
     queryParams.search || queryParams.filter || appliedFilters.length > 0
   );
 
-  // Header actions for generated files and column controls
-  const headerActions = (
-    <Group gap="sm">
-      {/* Column Visibility Control */}
-      <ColumnVisibilityControl
-        columns={columnOptions}
-        visibleColumns={visibleColumns}
-        onColumnToggle={handleColumnToggle}
-        onShowAll={handleShowAllColumns}
-        onHideAll={handleHideAllColumns}
-        onDefault={handleDefaultColumns}
-        triggerLabel="Columns"
-        maxHeight={400}
-      />
+  // Header actions render function to handle inDrawer prop
+  const renderHeaderActions = (inDrawer = false) => {
+    if (inDrawer) {
+      return (
+        <>
+          {/* Column Visibility Control */}
+          <ColumnVisibilityControl
+            columns={columnOptions}
+            visibleColumns={visibleColumns}
+            onColumnToggle={handleColumnToggle}
+            onShowAll={handleShowAllColumns}
+            onHideAll={handleHideAllColumns}
+            onDefault={handleDefaultColumns}
+            triggerLabel="Columns"
+            maxHeight={400}
+            inDrawer={inDrawer}
+          />
 
-      {/* Rescreen All Button */}
-      <RescreenAllButton
-        onRescreen={handleRescreenAllByBatch}
-        loading={rescreenAllByBatchMutation.isPending}
-        batchNumber={batch?.number?.toString()}
-        batchLocation={batch?.location}
-      />
+          {/* Rescreen All Button */}
+          <RescreenAllButton
+            onRescreen={handleRescreenAllByBatch}
+            loading={rescreenAllByBatchMutation.isPending}
+            batchNumber={batch?.number?.toString()}
+            batchLocation={batch?.location}
+            inDrawer={inDrawer}
+          />
 
-      {/* Excel Export Menu */}
-      <ExcelExportMenu
-        onExportAll={handleExportAll}
-        onExportFiltered={handleExportFiltered}
-        hasActiveFilters={hasActiveFilters}
-        loading={generateExcelMutation.isPending || generateExcelByBatchMutation.isPending}
-      />
+          {/* Excel Export Menu */}
+          <ExcelExportMenu
+            onExportAll={handleExportAll}
+            onExportFiltered={handleExportFiltered}
+            hasActiveFilters={hasActiveFilters}
+            loading={generateExcelMutation.isPending || generateExcelByBatchMutation.isPending}
+            inDrawer={inDrawer}
+          />
 
-      {/* Generated Files Manager Button */}
-      <FilesManagerButton
-        title={`Generated Files - Applications ${batch?.number} (${batch?.location})`}
-        defaultFilters={{
-          type: 'applications-by-batch',
-          model_id: batchId,
-        }}
-        defaultSearch={batchId || ''}
-      />
-    </Group>
-  );
+          {/* Generated Files Manager Button */}
+          <FilesManagerButton
+            title={`Generated Files - Applications ${batch?.number} (${batch?.location})`}
+            defaultFilters={{
+              type: 'applications-by-batch',
+              model_id: batchId,
+            }}
+            defaultSearch={batchId || ''}
+            inDrawer={inDrawer}
+          />
+        </>
+      );
+    }
+
+    return (
+      <Group gap="sm">
+        {/* Column Visibility Control */}
+        <ColumnVisibilityControl
+          columns={columnOptions}
+          visibleColumns={visibleColumns}
+          onColumnToggle={handleColumnToggle}
+          onShowAll={handleShowAllColumns}
+          onHideAll={handleHideAllColumns}
+          onDefault={handleDefaultColumns}
+          triggerLabel="Columns"
+          maxHeight={400}
+        />
+
+        {/* Rescreen All Button */}
+        <RescreenAllButton
+          onRescreen={handleRescreenAllByBatch}
+          loading={rescreenAllByBatchMutation.isPending}
+          batchNumber={batch?.number?.toString()}
+          batchLocation={batch?.location}
+        />
+
+        {/* Excel Export Menu */}
+        <ExcelExportMenu
+          onExportAll={handleExportAll}
+          onExportFiltered={handleExportFiltered}
+          hasActiveFilters={hasActiveFilters}
+          loading={generateExcelMutation.isPending || generateExcelByBatchMutation.isPending}
+        />
+
+        {/* Generated Files Manager Button */}
+        <FilesManagerButton
+          title={`Generated Files - Applications ${batch?.number} (${batch?.location})`}
+          defaultFilters={{
+            type: 'applications-by-batch',
+            model_id: batchId,
+          }}
+          defaultSearch={batchId || ''}
+        />
+      </Group>
+    );
+  };
+
+  const headerActions = renderHeaderActions(false);
+  const headerActionsInDrawer = renderHeaderActions(true);
 
   // Filter options for the table - all searchable fields
   const filterOptions: FilterOption[] = [
@@ -690,6 +779,21 @@ export function ApplicationsListScreen() {
       ],
     },
     {
+      column: 'graduation_status',
+      label: 'Graduation Status',
+      type: 'select',
+      options: Object.entries(APPLICANT_DATA_GRADUATION_STATUS_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+      conditions: [
+        { value: 'eq', label: 'Equals' },
+        { value: 'neq', label: 'Not equals' },
+        { value: 'in', label: 'In list' },
+        { value: 'not_in', label: 'Not in list' },
+      ],
+    },
+    {
       column: 'review_status',
       label: 'Review Status',
       type: 'select',
@@ -821,6 +925,17 @@ export function ApplicationsListScreen() {
       },
     },
     {
+      key: 'graduation_status',
+      title: 'Graduation Status',
+      dataIndex: 'graduation_status',
+      sortable: true,
+      width: '200px',
+      align: 'center',
+      render: (status: unknown) => {
+        return <StatusBadge status={status as number} type="graduation" />;
+      },
+    },
+    {
       key: 'review_status',
       title: 'Review Status',
       dataIndex: 'review_status',
@@ -835,6 +950,27 @@ export function ApplicationsListScreen() {
       key: 'screening_remark',
       title: 'Screening Remark',
       dataIndex: 'screening_remark',
+      sortable: false,
+      width: '200px',
+      render: (remark: unknown) => {
+        return remark ? (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {remark as string}
+          </Text>
+        ) : (
+          <Text size="sm" c="dimmed">
+            -
+          </Text>
+        );
+      },
+    },
+    {
+      key: 'graduation_remark',
+      title: 'Graduation Remark',
+      dataIndex: 'graduation_remark',
       sortable: false,
       width: '200px',
       render: (remark: unknown) => {
@@ -1052,41 +1188,107 @@ export function ApplicationsListScreen() {
   // Filter columns based on visibility
   const columns = allColumns.filter((column) => visibleColumns[column.key]);
 
-  // Custom filter header component
-  const customFilterHeader = (
-    <Group justify="space-between" wrap="wrap" gap="md">
-      {/* Status Filter Pills */}
-      <StatusFilterPills
-        statuses={APPLICANT_DATA_REVIEW_STATUS_LIST}
-        selectedStatus={selectedReviewStatus}
-        onStatusSelect={handleReviewStatusSelect}
-        loading={isLoading}
-      />
+  // Custom filter header component - render function to handle inDrawer prop
+  const renderCustomFilterHeader = (inDrawer = false) => {
+    if (inDrawer) {
+      return (
+        <>
+          {/* Status Filter Pills */}
+          <StatusFilterPills
+            statuses={APPLICANT_DATA_REVIEW_STATUS_LIST}
+            selectedStatus={selectedReviewStatus}
+            onStatusSelect={handleReviewStatusSelect}
+            loading={isLoading}
+          />
 
-      {/* Checkbox Filters */}
-      <Group gap="sm" wrap="wrap">
-        <CheckboxFilter
-          label="Jenis Kelamin"
-          icon={<IconGenderMale size={16} />}
-          options={genderOptions}
-          selectedValues={selectedGenders}
-          onSelectionChange={handleGenderSelectionChange}
-          onClear={() => handleGenderSelectionChange([])}
-          placeholder="Select gender"
+          {/* Checkbox Filters - Stacked in drawer */}
+          <CheckboxFilter
+            label="Jenis Kelamin"
+            icon={<IconGenderMale size={16} />}
+            options={genderOptions}
+            selectedValues={selectedGenders}
+            onSelectionChange={handleGenderSelectionChange}
+            onClear={() => handleGenderSelectionChange([])}
+            placeholder="Select gender"
+            inDrawer={inDrawer}
+          />
+
+          <CheckboxFilter
+            label="Status Screening"
+            icon={<IconRobot size={16} />}
+            options={screeningStatusOptions}
+            selectedValues={selectedScreeningStatuses}
+            onSelectionChange={handleScreeningStatusSelectionChange}
+            onClear={() => handleScreeningStatusSelectionChange([])}
+            placeholder="Select screening status"
+            inDrawer={inDrawer}
+          />
+
+          <CheckboxFilter
+            label="Status Graduation"
+            icon={<IconSchool size={16} />}
+            options={graduationStatusOptions}
+            selectedValues={selectedGraduationStatuses}
+            onSelectionChange={handleGraduationStatusSelectionChange}
+            onClear={() => handleGraduationStatusSelectionChange([])}
+            placeholder="Select graduation status"
+            inDrawer={inDrawer}
+          />
+        </>
+      );
+    }
+
+    return (
+      <Group justify="space-between" wrap="wrap" gap="md">
+        {/* Status Filter Pills */}
+        <StatusFilterPills
+          statuses={APPLICANT_DATA_REVIEW_STATUS_LIST}
+          selectedStatus={selectedReviewStatus}
+          onStatusSelect={handleReviewStatusSelect}
+          loading={isLoading}
         />
 
-        <CheckboxFilter
-          label="Status Screening"
-          icon={<IconRobot size={16} />}
-          options={screeningStatusOptions}
-          selectedValues={selectedScreeningStatuses}
-          onSelectionChange={handleScreeningStatusSelectionChange}
-          onClear={() => handleScreeningStatusSelectionChange([])}
-          placeholder="Select screening status"
-        />
+        {/* Checkbox Filters */}
+        <Group gap="sm" wrap="wrap">
+          <CheckboxFilter
+            label="Jenis Kelamin"
+            icon={<IconGenderMale size={16} />}
+            options={genderOptions}
+            selectedValues={selectedGenders}
+            onSelectionChange={handleGenderSelectionChange}
+            onClear={() => handleGenderSelectionChange([])}
+            placeholder="Select gender"
+            inDrawer={inDrawer}
+          />
+
+          <CheckboxFilter
+            label="Status Screening"
+            icon={<IconRobot size={16} />}
+            options={screeningStatusOptions}
+            selectedValues={selectedScreeningStatuses}
+            onSelectionChange={handleScreeningStatusSelectionChange}
+            onClear={() => handleScreeningStatusSelectionChange([])}
+            placeholder="Select screening status"
+            inDrawer={inDrawer}
+          />
+
+          <CheckboxFilter
+            label="Status Graduation"
+            icon={<IconSchool size={16} />}
+            options={graduationStatusOptions}
+            selectedValues={selectedGraduationStatuses}
+            onSelectionChange={handleGraduationStatusSelectionChange}
+            onClear={() => handleGraduationStatusSelectionChange([])}
+            placeholder="Select graduation status"
+            inDrawer={inDrawer}
+          />
+        </Group>
       </Group>
-    </Group>
-  );
+    );
+  };
+
+  const customFilterHeader = renderCustomFilterHeader(false);
+  const customFilterHeaderInDrawer = renderCustomFilterHeader(true);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -1114,12 +1316,14 @@ export function ApplicationsListScreen() {
         title={`Applications Management - ${batch?.number} (${batch?.location})`}
         description={`Batch: ${batch?.number_code} | Year: ${batch?.year} | Location: ${batch?.location}`}
         headerActions={(pagination?.total || 0) > 0 ? headerActions : undefined}
+        headerActionsInDrawer={(pagination?.total || 0) > 0 ? headerActionsInDrawer : undefined}
         showTotal
         pageSizeOptions={[5, 10, 15, 25, 50]}
         onPageSizeChange={handlePageSizeChange}
         minTableWidth="2000px"
         responsive
         customFilterHeader={customFilterHeader}
+        customFilterHeaderInDrawer={customFilterHeaderInDrawer}
         rowDoubleClickAction={(application: ApplicantDataType) =>
           handleViewDetailsInWindow(application)
         }

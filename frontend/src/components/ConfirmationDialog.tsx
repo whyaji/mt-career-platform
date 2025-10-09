@@ -12,6 +12,7 @@ interface ConfirmationDialogProps {
   confirmColor?: string;
   loading?: boolean;
   icon?: React.ReactNode;
+  zIndex?: number;
 }
 
 export function ConfirmationDialog({
@@ -25,6 +26,7 @@ export function ConfirmationDialog({
   confirmColor = 'red',
   loading = false,
   icon,
+  zIndex = 200,
 }: ConfirmationDialogProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -41,6 +43,7 @@ export function ConfirmationDialog({
       title={title}
       centered
       size="md"
+      zIndex={zIndex}
       closeOnClickOutside={!loading}
       closeOnEscape={!loading}
       withCloseButton={!loading}>

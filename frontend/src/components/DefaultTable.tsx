@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Divider,
+  Drawer,
   em,
   Flex,
   Group,
@@ -24,11 +25,13 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import {
+  IconAdjustments,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
   IconFilter,
+  IconLayoutGrid,
   IconRefresh,
   IconSearch,
   IconSortAscending,
@@ -97,11 +100,13 @@ export interface DefaultTableProps<T = Record<string, unknown>> {
   minTableWidth?: string;
   responsive?: boolean;
   headerActions?: React.ReactNode;
+  headerActionsInDrawer?: React.ReactNode;
   rowActions?: RowAction<T>[];
   rowActionsTitle?: string;
   backButton?: React.ReactNode;
   withoutFilterHeader?: boolean;
   customFilterHeader?: React.ReactNode;
+  customFilterHeaderInDrawer?: React.ReactNode;
   rowDoubleClickAction?: (record: T) => void;
 }
 
@@ -134,15 +139,20 @@ export function DefaultTable<T = Record<string, unknown>>({
   minTableWidth = '800px',
   responsive = true,
   headerActions,
+  headerActionsInDrawer,
   rowActions = [],
   rowActionsTitle = 'none',
   backButton,
   withoutFilterHeader = false,
   customFilterHeader,
+  customFilterHeaderInDrawer,
   rowDoubleClickAction,
 }: DefaultTableProps<T>) {
   const addPadding = useMediaQuery(`(max-width: ${em(480)})`);
+  const isMobile = useMediaQuery(`(max-width: ${em(768)})`);
   const [filterModalOpened, setFilterModalOpened] = React.useState(false);
+  const [customFiltersDrawerOpened, setCustomFiltersDrawerOpened] = React.useState(false);
+  const [headerActionsDrawerOpened, setHeaderActionsDrawerOpened] = React.useState(false);
   const [newFilter, setNewFilter] = React.useState<Partial<AppliedFilter>>({
     column: '',
     value: '',
@@ -277,16 +287,16 @@ export function DefaultTable<T = Record<string, unknown>>({
             zIndex: 10,
             backgroundColor: 'white',
             borderBottom: '1px solid var(--mantine-color-gray-3)',
-            padding: '1rem',
+            padding: isMobile ? '0.75rem' : '1rem',
           }}>
           <Group justify="flex-start" align="center">
             {backButton && <Box>{backButton}</Box>}
             {(title || description || headerActions) && (
               <Box mb="md" style={{ flex: 1 }}>
-                <Group justify="space-between" align="center" style={{ flex: 1 }}>
-                  <Box style={{ flex: 1 }}>
+                <Group justify="space-between" align="center" style={{ flex: 1 }} wrap="wrap">
+                  <Box style={{ flex: 1, minWidth: '200px' }}>
                     {title && (
-                      <Text size="xl" fw={600} mb={description ? 4 : 0}>
+                      <Text size={isMobile ? 'lg' : 'xl'} fw={600} mb={description ? 4 : 0}>
                         {title}
                       </Text>
                     )}
@@ -296,97 +306,196 @@ export function DefaultTable<T = Record<string, unknown>>({
                       </Text>
                     )}
                   </Box>
-                  {headerActions && <Box>{headerActions}</Box>}
+                  {headerActions && (
+                    <Box>
+                      {isMobile ? (
+                        <Button
+                          leftSection={<IconLayoutGrid size={16} />}
+                          variant="light"
+                          size="sm"
+                          onClick={() => setHeaderActionsDrawerOpened(true)}>
+                          Actions
+                        </Button>
+                      ) : (
+                        headerActions
+                      )}
+                    </Box>
+                  )}
                 </Group>
               </Box>
             )}
           </Group>
 
           {/* Search and Filter Bar */}
-          <Paper p="md" withBorder radius="md" bg="gray.0">
-            <Group justify="space-between" wrap="wrap">
-              <Group wrap="wrap">
+          <Paper p={isMobile ? 'sm' : 'md'} withBorder radius="md" bg="gray.0">
+            {isMobile ? (
+              <Stack gap="sm">
+                {/* Search Input - Full width on mobile */}
                 {onSearchChange && (
                   <TextInput
                     placeholder={searchPlaceholder}
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
                     leftSection={<IconSearch size={16} />}
-                    style={{ minWidth: 300 }}
+                    style={{ width: '100%' }}
                     size="sm"
                     radius="md"
                   />
                 )}
-                {filterOptions.length > 0 && onFilterAdd && (
-                  <Button
-                    leftSection={<IconFilter size={16} />}
-                    variant="light"
-                    size="sm"
-                    radius="md"
-                    onClick={() => setFilterModalOpened(true)}>
-                    Add Filter
-                  </Button>
-                )}
-                {onRefresh && (
-                  <Tooltip label="Refresh data">
-                    <ActionIcon
+
+                {/* Action Buttons Row */}
+                <Group justify="space-between" wrap="wrap" gap="xs">
+                  <Group gap="xs" wrap="wrap">
+                    {filterOptions.length > 0 && onFilterAdd && (
+                      <Button
+                        leftSection={<IconFilter size={16} />}
+                        variant="light"
+                        size="sm"
+                        radius="md"
+                        onClick={() => setFilterModalOpened(true)}>
+                        Filter
+                      </Button>
+                    )}
+                    {customFilterHeader && (
+                      <Button
+                        leftSection={<IconAdjustments size={16} />}
+                        variant="light"
+                        size="sm"
+                        radius="md"
+                        onClick={() => setCustomFiltersDrawerOpened(true)}
+                        rightSection={
+                          appliedFilters.length > 0 ? (
+                            <Badge size="xs" circle color="blue">
+                              {appliedFilters.length}
+                            </Badge>
+                          ) : undefined
+                        }>
+                        Filters
+                      </Button>
+                    )}
+                    {onRefresh && (
+                      <Tooltip label="Refresh data">
+                        <ActionIcon
+                          variant="light"
+                          size="lg"
+                          radius="md"
+                          onClick={onRefresh}
+                          loading={loading}>
+                          <IconRefresh size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </Group>
+              </Stack>
+            ) : (
+              <Group justify="space-between" wrap="wrap" gap="md">
+                {/* Left side: Search, Filters, Refresh */}
+                <Group gap="md" wrap="wrap" style={{ flex: 1 }}>
+                  {onSearchChange && (
+                    <TextInput
+                      placeholder={searchPlaceholder}
+                      value={searchValue}
+                      onChange={(e) => onSearchChange(e.target.value)}
+                      leftSection={<IconSearch size={16} />}
+                      style={{ minWidth: 300 }}
+                      size="sm"
+                      radius="md"
+                    />
+                  )}
+                  {filterOptions.length > 0 && onFilterAdd && (
+                    <Button
+                      leftSection={<IconFilter size={16} />}
                       variant="light"
                       size="sm"
                       radius="md"
-                      onClick={onRefresh}
-                      loading={loading}>
-                      <IconRefresh size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-              </Group>
-
-              {appliedFilters.length > 0 && (
-                <Group gap="xs">
-                  <Text size="sm" c="dimmed">
-                    {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
-                  </Text>
-                  {onFilterClear && (
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      radius="md"
-                      onClick={onFilterClear}
-                      color="red">
-                      Clear All
+                      onClick={() => setFilterModalOpened(true)}>
+                      Add Filter
                     </Button>
                   )}
+                  {onRefresh && (
+                    <Tooltip label="Refresh data">
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        radius="md"
+                        onClick={onRefresh}
+                        loading={loading}>
+                        <IconRefresh size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                  {customFilterHeader && <Box>{customFilterHeader}</Box>}
                 </Group>
-              )}
 
-              {customFilterHeader && customFilterHeader}
-            </Group>
+                {/* Right side: Applied filters counter */}
+                {appliedFilters.length > 0 && (
+                  <Group gap="xs">
+                    <Text size="sm" c="dimmed">
+                      {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
+                    </Text>
+                    {onFilterClear && (
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        radius="md"
+                        onClick={onFilterClear}
+                        color="red">
+                        Clear All
+                      </Button>
+                    )}
+                  </Group>
+                )}
+              </Group>
+            )}
 
             {/* Applied Filters */}
             <Transition mounted={appliedFilters.length > 0} transition="slide-down" duration={200}>
               {(styles) => (
-                <Group mt="md" gap="xs" style={styles}>
-                  {appliedFilters.map((filter, index) => (
-                    <Badge
-                      key={index}
-                      variant="light"
-                      color="blue"
-                      rightSection={
-                        onFilterRemove ? (
-                          <ActionIcon
-                            size="xs"
-                            variant="transparent"
-                            color="blue"
-                            onClick={() => onFilterRemove(index)}>
-                            <IconX size={10} />
-                          </ActionIcon>
-                        ) : null
-                      }
-                      radius="md">
-                      {filter.column}: {filter.value} ({filter.condition})
-                    </Badge>
-                  ))}
-                </Group>
+                <Box mt="md" style={styles}>
+                  {isMobile && appliedFilters.length > 0 && (
+                    <Group justify="space-between" mb="xs">
+                      <Text size="xs" c="dimmed" fw={500}>
+                        Active Filters ({appliedFilters.length})
+                      </Text>
+                      {onFilterClear && (
+                        <Button
+                          variant="subtle"
+                          size="xs"
+                          radius="md"
+                          onClick={onFilterClear}
+                          color="red"
+                          leftSection={<IconX size={12} />}>
+                          Clear
+                        </Button>
+                      )}
+                    </Group>
+                  )}
+                  <Group gap="xs" style={{ flexWrap: 'wrap' }}>
+                    {appliedFilters.map((filter, index) => (
+                      <Badge
+                        key={index}
+                        variant="light"
+                        color="blue"
+                        size={isMobile ? 'sm' : 'md'}
+                        rightSection={
+                          onFilterRemove ? (
+                            <ActionIcon
+                              size="xs"
+                              variant="transparent"
+                              color="blue"
+                              onClick={() => onFilterRemove(index)}>
+                              <IconX size={10} />
+                            </ActionIcon>
+                          ) : null
+                        }
+                        radius="md"
+                        style={{ maxWidth: isMobile ? '100%' : 'none' }}>
+                        {filter.column}: {filter.value} ({filter.condition})
+                      </Badge>
+                    ))}
+                  </Group>
+                </Box>
               )}
             </Transition>
           </Paper>
@@ -463,6 +572,7 @@ export function DefaultTable<T = Record<string, unknown>>({
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
+                      padding: isMobile ? '0.5rem 0.25rem' : '0.75rem 0.5rem',
                     }}
                     onClick={() => column.sortable && handleSort(column.dataIndex)}>
                     <Group
@@ -477,7 +587,7 @@ export function DefaultTable<T = Record<string, unknown>>({
                       style={{ minWidth: 0 }}>
                       <Text
                         fw={600}
-                        size="sm"
+                        size={isMobile ? 'xs' : 'sm'}
                         style={{
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -542,7 +652,8 @@ export function DefaultTable<T = Record<string, unknown>>({
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          padding: '0.75rem 0.5rem',
+                          padding: isMobile ? '0.5rem 0.25rem' : '0.75rem 0.5rem',
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
                         }}>
                         <Box
                           style={{
@@ -577,17 +688,17 @@ export function DefaultTable<T = Record<string, unknown>>({
             zIndex: 10,
             backgroundColor: 'white',
             borderTop: '1px solid var(--mantine-color-gray-3)',
-            padding: '1rem',
+            padding: isMobile ? '0.75rem' : '1rem',
           }}>
           <Paper withBorder radius="md">
-            <Group justify="space-between" wrap="wrap" p="md">
-              <Group gap="md">
+            <Group justify="space-between" wrap="wrap" p="md" gap="md">
+              <Group gap={isMobile ? 'xs' : 'md'} style={{ flex: isMobile ? '1 1 100%' : 'none' }}>
                 {showTotal && (
                   <Text size="sm" c="dimmed">
                     {getPaginationInfo()}
                   </Text>
                 )}
-                {onPageSizeChange && pageSizeOptions.length > 0 && (
+                {onPageSizeChange && pageSizeOptions.length > 0 && !isMobile && (
                   <Group gap="xs">
                     <Text size="sm" c="dimmed">
                       Show:
@@ -610,21 +721,60 @@ export function DefaultTable<T = Record<string, unknown>>({
                 )}
               </Group>
 
-              <Group gap="xs">
+              {appliedFilters.length > 0 && !isMobile && (
+                <Group gap="xs">
+                  <Text size="sm" c="dimmed">
+                    {appliedFilters.length} filter{appliedFilters.length !== 1 ? 's' : ''} applied
+                  </Text>
+                  {onFilterClear && (
+                    <Button
+                      variant="subtle"
+                      size="xs"
+                      radius="md"
+                      onClick={onFilterClear}
+                      color="red">
+                      Clear All
+                    </Button>
+                  )}
+                </Group>
+              )}
+
+              <Group
+                gap="xs"
+                style={{
+                  flex: isMobile ? '1 1 100%' : 'none',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                }}>
                 <Pagination
                   value={pagination.current_page}
                   onChange={onPageChange}
                   total={pagination.total_pages}
-                  size="sm"
+                  size={isMobile ? 'xs' : 'sm'}
                   radius="md"
-                  withEdges
-                  siblings={1}
-                  boundaries={1}
+                  withEdges={!isMobile}
+                  siblings={isMobile ? 0 : 1}
+                  boundaries={isMobile ? 0 : 1}
                   nextIcon={IconChevronRight}
                   previousIcon={IconChevronLeft}
                   firstIcon={IconChevronsLeft}
                   lastIcon={IconChevronsRight}
                 />
+                {onPageSizeChange && pageSizeOptions.length > 0 && isMobile && (
+                  <Select
+                    size="xs"
+                    value={pagination.per_page.toString()}
+                    onChange={(value) => {
+                      if (value) {
+                        onPageSizeChange(Number(value));
+                      }
+                    }}
+                    data={pageSizeOptions.map((size) => ({
+                      value: size.toString(),
+                      label: `${size}`,
+                    }))}
+                    style={{ width: 60 }}
+                  />
+                )}
               </Group>
             </Group>
           </Paper>
@@ -638,7 +788,8 @@ export function DefaultTable<T = Record<string, unknown>>({
         title="Add Filter"
         size="md"
         radius="md"
-        centered>
+        centered
+        fullScreen={isMobile}>
         <Stack gap="md">
           <Select
             label="Column"
@@ -846,6 +997,78 @@ export function DefaultTable<T = Record<string, unknown>>({
           </Menu.Dropdown>
         </Menu>
       )}
+
+      {/* Custom Filters Drawer for Mobile */}
+      <Drawer
+        opened={customFiltersDrawerOpened}
+        onClose={() => setCustomFiltersDrawerOpened(false)}
+        title={
+          <Group gap="xs">
+            <IconAdjustments size={20} />
+            <Text fw={600}>Filters</Text>
+          </Group>
+        }
+        position="bottom"
+        size="auto"
+        padding="lg"
+        zIndex={1000}
+        styles={{
+          body: {
+            overflowY: 'auto',
+          },
+        }}>
+        <Stack gap="md">
+          <Paper p="sm" withBorder radius="md" bg="blue.0">
+            <Text size="sm" c="blue.9" fw={500}>
+              Apply custom filters to narrow down your results
+            </Text>
+          </Paper>
+          <Divider />
+          <Stack gap="md">{customFilterHeaderInDrawer || customFilterHeader}</Stack>
+          <Divider />
+          <Group justify="flex-end">
+            <Button variant="light" size="sm" onClick={() => setCustomFiltersDrawerOpened(false)}>
+              Done
+            </Button>
+          </Group>
+        </Stack>
+      </Drawer>
+
+      {/* Header Actions Drawer for Mobile */}
+      <Drawer
+        opened={headerActionsDrawerOpened}
+        onClose={() => setHeaderActionsDrawerOpened(false)}
+        title={
+          <Group gap="xs">
+            <IconLayoutGrid size={20} />
+            <Text fw={600}>Actions</Text>
+          </Group>
+        }
+        position="bottom"
+        size="auto"
+        padding="lg"
+        zIndex={1000}
+        styles={{
+          body: {
+            overflowY: 'auto',
+          },
+        }}>
+        <Stack gap="md">
+          <Paper p="sm" withBorder radius="md" bg="blue.0">
+            <Text size="sm" c="blue.9" fw={500}>
+              Available actions for this table
+            </Text>
+          </Paper>
+          <Divider />
+          <Stack gap="md">{headerActionsInDrawer || headerActions}</Stack>
+          <Divider />
+          <Group justify="flex-end">
+            <Button variant="light" size="sm" onClick={() => setHeaderActionsDrawerOpened(false)}>
+              Done
+            </Button>
+          </Group>
+        </Stack>
+      </Drawer>
     </Box>
   );
 }

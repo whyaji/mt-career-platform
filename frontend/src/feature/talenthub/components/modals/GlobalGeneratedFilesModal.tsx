@@ -56,6 +56,7 @@ interface GlobalGeneratedFilesModalProps {
   title?: string;
   defaultFilters?: GeneratedFilesListParams['filters'];
   defaultSearch?: string;
+  zIndex?: number;
 }
 
 export function GlobalGeneratedFilesModal({
@@ -65,6 +66,7 @@ export function GlobalGeneratedFilesModal({
   title = 'Generated Files Manager',
   defaultFilters = {},
   defaultSearch = '',
+  zIndex = 200,
 }: GlobalGeneratedFilesModalProps) {
   const isFullWidthModal = useMediaQuery(`(max-width: ${em(1800)})`);
   const [searchQuery, setSearchQuery] = useState(defaultSearch);
@@ -331,6 +333,8 @@ export function GlobalGeneratedFilesModal({
       radius="md"
       centered
       size={isFullWidthModal ? '100%' : '80%'}
+      zIndex={zIndex}
+      closeOnClickOutside={false}
       styles={{
         header: { paddingBottom: '1rem' },
         body: { paddingTop: 0 },

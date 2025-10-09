@@ -14,6 +14,16 @@ export enum APPLICANT_DATA_REVIEW_STATUS {
   ACCEPTED = 5,
 }
 
+export enum APPLICANT_DATA_GRADUATION_STATUS {
+  PENDING = 1,
+  ERROR = 2,
+  NOT_FOUND = 3,
+  DROPOUT = 4,
+  ACTIVE = 5,
+  NOT_MATCH = 6,
+  GRADUATED = 7,
+}
+
 export const APPLICANT_DATA_SCREENING_STATUS_LABELS = {
   [APPLICANT_DATA_SCREENING_STATUS.PENDING]: 'Pending',
   [APPLICANT_DATA_SCREENING_STATUS.STOP]: 'Stop',
@@ -30,7 +40,20 @@ export const APPLICANT_DATA_REVIEW_STATUS_LABELS = {
   [APPLICANT_DATA_REVIEW_STATUS.ACCEPTED]: 'Accepted',
 };
 
-export const getApplicantDataStatusColor = (status: number, type: 'screening' | 'review') => {
+export const APPLICANT_DATA_GRADUATION_STATUS_LABELS = {
+  [APPLICANT_DATA_GRADUATION_STATUS.PENDING]: 'Pending',
+  [APPLICANT_DATA_GRADUATION_STATUS.ERROR]: 'Error',
+  [APPLICANT_DATA_GRADUATION_STATUS.NOT_FOUND]: 'Not Found',
+  [APPLICANT_DATA_GRADUATION_STATUS.DROPOUT]: 'Dropout',
+  [APPLICANT_DATA_GRADUATION_STATUS.ACTIVE]: 'Active',
+  [APPLICANT_DATA_GRADUATION_STATUS.NOT_MATCH]: 'Not Match',
+  [APPLICANT_DATA_GRADUATION_STATUS.GRADUATED]: 'Graduated',
+};
+
+export const getApplicantDataStatusColor = (
+  status: number,
+  type: 'screening' | 'review' | 'graduation'
+) => {
   if (type === 'screening') {
     switch (status) {
       case APPLICANT_DATA_SCREENING_STATUS.PENDING:
@@ -46,7 +69,7 @@ export const getApplicantDataStatusColor = (status: number, type: 'screening' | 
       default:
         return 'gray';
     }
-  } else {
+  } else if (type === 'review') {
     switch (status) {
       case APPLICANT_DATA_REVIEW_STATUS.PENDING:
         return 'blue';
@@ -57,6 +80,26 @@ export const getApplicantDataStatusColor = (status: number, type: 'screening' | 
       case APPLICANT_DATA_REVIEW_STATUS.REJECTED:
         return 'red';
       case APPLICANT_DATA_REVIEW_STATUS.ACCEPTED:
+        return 'green';
+      default:
+        return 'gray';
+    }
+  } else {
+    // graduation
+    switch (status) {
+      case APPLICANT_DATA_GRADUATION_STATUS.PENDING:
+        return 'yellow';
+      case APPLICANT_DATA_GRADUATION_STATUS.ERROR:
+        return 'red';
+      case APPLICANT_DATA_GRADUATION_STATUS.NOT_FOUND:
+        return 'orange';
+      case APPLICANT_DATA_GRADUATION_STATUS.DROPOUT:
+        return 'red';
+      case APPLICANT_DATA_GRADUATION_STATUS.ACTIVE:
+        return 'blue';
+      case APPLICANT_DATA_GRADUATION_STATUS.NOT_MATCH:
+        return 'cyan';
+      case APPLICANT_DATA_GRADUATION_STATUS.GRADUATED:
         return 'green';
       default:
         return 'gray';

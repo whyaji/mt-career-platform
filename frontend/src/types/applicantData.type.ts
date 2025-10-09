@@ -33,6 +33,8 @@ export type ApplicantDataType = {
   // Backend field names (these are what the API actually returns)
   screening_status: number;
   screening_remark: string | null;
+  graduation_status: number;
+  graduation_remark: string | null;
   review_status: number;
   review_remark: string | null;
   // Batch relationship

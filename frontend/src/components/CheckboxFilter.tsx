@@ -15,6 +15,7 @@ export interface CheckboxFilterProps {
   onSelectionChange: (values: string[]) => void;
   onClear: () => void;
   placeholder?: string;
+  inDrawer?: boolean;
 }
 
 export function CheckboxFilter({
@@ -25,6 +26,7 @@ export function CheckboxFilter({
   onSelectionChange,
   onClear,
   placeholder = 'Select options',
+  inDrawer = false,
 }: CheckboxFilterProps) {
   const [opened, setOpened] = useState(false);
 
@@ -47,6 +49,45 @@ export function CheckboxFilter({
     return `${selectedValues.length} selected`;
   };
 
+  // If in drawer, show expanded view directly
+  if (inDrawer) {
+    return (
+      <Paper p="md" withBorder radius="md" bg="white">
+        <Group justify="space-between" mb="sm">
+          <Group gap="xs">
+            {icon}
+            <Text size="sm" fw={600}>
+              {label}
+            </Text>
+            {selectedValues.length > 0 && (
+              <Text size="xs" c="blue" fw={500}>
+                ({selectedValues.length} selected)
+              </Text>
+            )}
+          </Group>
+          {selectedValues.length > 0 && (
+            <Button variant="subtle" size="xs" color="red" onClick={onClear}>
+              Clear
+            </Button>
+          )}
+        </Group>
+
+        <Stack gap="xs">
+          {options.map((option) => (
+            <Checkbox
+              key={option.value}
+              label={option.label}
+              checked={selectedValues.includes(option.value)}
+              onChange={(event) => handleCheckboxChange(option.value, event.currentTarget.checked)}
+              size="sm"
+            />
+          ))}
+        </Stack>
+      </Paper>
+    );
+  }
+
+  // Default dropdown view
   return (
     <Menu
       opened={opened}
@@ -54,7 +95,8 @@ export function CheckboxFilter({
       position="bottom-start"
       shadow="md"
       width={280}
-      withinPortal>
+      withinPortal
+      zIndex={2000}>
       <Menu.Target>
         <Button
           variant="light"

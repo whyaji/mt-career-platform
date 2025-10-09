@@ -15,6 +15,7 @@ interface FilesManagerButtonProps {
   variant?: 'filled' | 'light' | 'outline' | 'subtle' | 'default';
   color?: string;
   label?: string;
+  inDrawer?: boolean;
 }
 
 export function FilesManagerButton({
@@ -25,6 +26,7 @@ export function FilesManagerButton({
   variant = 'light',
   color = 'blue',
   label = 'Files Manager',
+  inDrawer = false,
 }: FilesManagerButtonProps) {
   const [opened, setOpened] = useState(false);
 
@@ -45,6 +47,7 @@ export function FilesManagerButton({
         title={title}
         defaultFilters={defaultFilters}
         defaultSearch={defaultSearch}
+        zIndex={inDrawer ? 2000 : 200}
       />
     </>
   );

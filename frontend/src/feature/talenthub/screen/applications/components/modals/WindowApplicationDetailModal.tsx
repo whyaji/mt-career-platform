@@ -14,6 +14,7 @@ import {
 import { DraggableWindow } from '@/components/DraggableWindow';
 import { StatusFilterPills } from '@/components/StatusFilterPills';
 import {
+  APPLICANT_DATA_GRADUATION_STATUS_LABELS,
   APPLICANT_DATA_REVIEW_STATUS_LABELS,
   APPLICANT_DATA_REVIEW_STATUS_LIST,
   APPLICANT_DATA_SCREENING_STATUS_LABELS,
@@ -85,11 +86,19 @@ export function WindowApplicationDetailModal({
   };
 
   // Status badge component
-  const StatusBadge = ({ status, type }: { status: number; type: 'screening' | 'review' }) => {
+  const StatusBadge = ({
+    status,
+    type,
+  }: {
+    status: number;
+    type: 'screening' | 'review' | 'graduation';
+  }) => {
     const labels =
       type === 'screening'
         ? APPLICANT_DATA_SCREENING_STATUS_LABELS
-        : APPLICANT_DATA_REVIEW_STATUS_LABELS;
+        : type === 'review'
+          ? APPLICANT_DATA_REVIEW_STATUS_LABELS
+          : APPLICANT_DATA_GRADUATION_STATUS_LABELS;
 
     return (
       <Badge
@@ -187,6 +196,23 @@ export function WindowApplicationDetailModal({
                 {application.screening_remark && (
                   <Text size="xs" c="dimmed" style={{ maxWidth: '200px', textAlign: 'right' }}>
                     {application.screening_remark}
+                  </Text>
+                )}
+              </Group>
+
+              <Group gap="sm" justify="space-between">
+                <Group gap="sm">
+                  <IconUser size={16} />
+                  <div>
+                    <Text size="sm" c="dimmed">
+                      Graduation Status
+                    </Text>
+                    <StatusBadge status={application.graduation_status} type="graduation" />
+                  </div>
+                </Group>
+                {application.graduation_remark && (
+                  <Text size="xs" c="dimmed" style={{ maxWidth: '200px', textAlign: 'right' }}>
+                    {application.graduation_remark}
                   </Text>
                 )}
               </Group>
