@@ -84,8 +84,8 @@ jobs:
             git reset --hard origin/main
 
             echo "==> 2. Rename project dir in worker commands..."
-            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh; do
-              sed -i "s|/Applications/MAMP/htdocs/mt-career-platform|${{ secrets.SSH_HOME_PROJECT }}|g" "$f"
+            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh cleanup-logs.sh; do
+              sed -i "s|/Applications/MAMP/htdocs/mt-career-platform|${{ secrets.SSH_FULL_HOME_PROJECT }}|g" "$f"
             done
 
             echo "==> 3. Installing Composer dependencies..."
@@ -95,11 +95,8 @@ jobs:
             php artisan migrate --force
 
             echo "==> 5. chmod +x worker commands..."
-            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh; do
+            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh cleanup-logs.sh; do
               chmod +x "$f"
             done
-
-            echo "==> 6. Restart queue workers..."
-
 
             echo "==> Deployment completed successfully! ✅"

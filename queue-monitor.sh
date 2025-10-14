@@ -57,5 +57,20 @@ if [ -f "$ALERT_LOG" ]; then
     tail -500 $ALERT_LOG > $ALERT_LOG.tmp && mv $ALERT_LOG.tmp $ALERT_LOG
 fi
 
+# Rotate worker logs daily (keep last 5000 lines to prevent huge files)
+WORKER_LOGS=("$PROJECT_DIR/storage/logs/queue-worker.log"
+             "$PROJECT_DIR/storage/logs/queue-reports.log"
+             "$PROJECT_DIR/storage/logs/queue-processing.log")
+
+for log in "${WORKER_LOGS[@]}"; do
+    if [ -f "$log" ]; then
+        # If log is larger than 10MB, rotate it
+        if [ $(stat -f%z "$log" 2>/dev/null || stat -c%s "$log" 2>/dev/null || echo 0) -gt 10485760 ]; then
+            tail -5000 "$log" > "$log.tmp" && mv "$log.tmp" "$log"
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Log rotated (was >10MB, kept last 5000 lines)" >> "$log"
+        fi
+    fi
+done
+
 exit 0
 

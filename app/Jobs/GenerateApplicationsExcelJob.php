@@ -34,6 +34,9 @@ class GenerateApplicationsExcelJob implements ShouldQueue
         $this->generatedFileId = $generatedFileId;
         $this->filterParams = $filterParams;
         $this->batchId = $batchId;
+
+        // Assign to reports queue (high priority - user-facing file generation)
+        $this->onQueue('reports');
     }
 
     public function handle()
