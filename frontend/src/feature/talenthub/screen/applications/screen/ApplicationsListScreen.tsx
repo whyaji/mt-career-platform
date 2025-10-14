@@ -1,4 +1,4 @@
-import { Badge, Group, Text } from '@mantine/core';
+import { Badge, Group, Text, Tooltip } from '@mantine/core';
 import {
   IconEdit,
   IconEye,
@@ -368,9 +368,11 @@ export function ApplicationsListScreen() {
   const StatusBadge = ({
     status,
     type,
+    remark,
   }: {
     status: number;
     type: 'screening' | 'review' | 'graduation';
+    remark?: string;
   }) => {
     const labels =
       type === 'screening'
@@ -379,7 +381,17 @@ export function ApplicationsListScreen() {
           ? APPLICANT_DATA_REVIEW_STATUS_LABELS
           : APPLICANT_DATA_GRADUATION_STATUS_LABELS;
 
-    return (
+    return remark ? (
+      <Tooltip label={remark}>
+        <Badge
+          variant="light"
+          size="sm"
+          color={getApplicantDataStatusColor(status, type)}
+          style={{ textTransform: 'capitalize' }}>
+          {labels[status as keyof typeof labels] || 'Unknown'}
+        </Badge>
+      </Tooltip>
+    ) : (
       <Badge
         variant="light"
         size="sm"
@@ -916,34 +928,40 @@ export function ApplicationsListScreen() {
     {
       key: 'screening_status',
       title: 'Screening Status',
+      additionalDataKey: 'screening_remark',
       dataIndex: 'screening_status',
       sortable: true,
       width: '200px',
       align: 'center',
-      render: (status: unknown) => {
-        return <StatusBadge status={status as number} type="screening" />;
+      additionalDataRender: (status: unknown, remark: unknown) => {
+        const remarkStr = remark ? (remark as string) : undefined;
+        return <StatusBadge status={status as number} type="screening" remark={remarkStr} />;
       },
     },
     {
       key: 'graduation_status',
       title: 'Graduation Status',
       dataIndex: 'graduation_status',
+      additionalDataKey: 'graduation_remark',
       sortable: true,
       width: '200px',
       align: 'center',
-      render: (status: unknown) => {
-        return <StatusBadge status={status as number} type="graduation" />;
+      additionalDataRender: (status: unknown, remark: unknown) => {
+        const remarkStr = remark ? (remark as string) : undefined;
+        return <StatusBadge status={status as number} type="graduation" remark={remarkStr} />;
       },
     },
     {
       key: 'review_status',
       title: 'Review Status',
       dataIndex: 'review_status',
+      additionalDataKey: 'review_remark',
       sortable: true,
       width: '180px',
       align: 'center',
-      render: (status: unknown) => {
-        return <StatusBadge status={status as number} type="review" />;
+      additionalDataRender: (status: unknown, remark: unknown) => {
+        const remarkStr = remark ? (remark as string) : undefined;
+        return <StatusBadge status={status as number} type="review" remark={remarkStr} />;
       },
     },
     {
@@ -951,13 +969,13 @@ export function ApplicationsListScreen() {
       title: 'Screening Remark',
       dataIndex: 'screening_remark',
       sortable: false,
-      width: '200px',
+      width: '300px',
       render: (remark: unknown) => {
         return remark ? (
           <Text
             size="sm"
             c="dimmed"
-            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {remark as string}
           </Text>
         ) : (
@@ -972,13 +990,13 @@ export function ApplicationsListScreen() {
       title: 'Graduation Remark',
       dataIndex: 'graduation_remark',
       sortable: false,
-      width: '200px',
+      width: '300px',
       render: (remark: unknown) => {
         return remark ? (
           <Text
             size="sm"
             c="dimmed"
-            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {remark as string}
           </Text>
         ) : (
@@ -993,13 +1011,13 @@ export function ApplicationsListScreen() {
       title: 'Review Remark',
       dataIndex: 'review_remark',
       sortable: false,
-      width: '200px',
+      width: '300px',
       render: (remark: unknown) => {
         return remark ? (
           <Text
             size="sm"
             c="dimmed"
-            style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {remark as string}
           </Text>
         ) : (

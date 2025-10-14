@@ -26,6 +26,9 @@ class ApplicantScreeningJob implements ShouldQueue
     {
         $this->applicantDataId = $applicantDataId;
         $this->pddiktiService = new PDDIKTIService();
+
+        // Assign to processing queue (background screening operations)
+        $this->onQueue('processing');
     }
 
     public function handle()
@@ -61,6 +64,12 @@ class ApplicantScreeningJob implements ShouldQueue
                 );
                 return;
             }
+
+            // Update applicant data to indicate screening in queue
+            $applicant->update([
+                'screening_status' => ApplicantDataScreeningStatus::IN_QUEUE->value,
+                'screening_remark' => 'Screening in queue',
+            ]);
 
             // Get batch configuration
             $batchConfig = $applicant->batch->screening_config ?? [];
@@ -543,9 +552,11 @@ class ApplicantScreeningJob implements ShouldQueue
                     break;
 
                 case 'ACTIVE':
-                    $status = ApplicantDataGraduationStatus::ACTIVE->value;
+                case 'NON_ACTIVE':
+                case 'NOT_GRADUATED':
+                    $status = ApplicantDataGraduationStatus::NOT_GRADUATED->value;
                     $currentStatus = $bestMatch['status_saat_ini'] ?? 'Unknown';
-                    $reason = "Student is still active (not yet graduated). Status: {$currentStatus}";
+                    $reason = "Student is not yet graduated. Status: {$currentStatus}";
                     break;
 
                 case 'DROPOUT':
@@ -555,7 +566,7 @@ class ApplicantScreeningJob implements ShouldQueue
                     break;
 
                 default:
-                    $status = ApplicantDataGraduationStatus::ERROR->value;
+                    $status = ApplicantDataGraduationStatus::NOT_MATCH->value;
                     $currentStatus = $bestMatch['status_saat_ini'] ?? 'Unknown';
                     $reason = "Unknown graduation status: {$verificationStatus}. Status: {$currentStatus}";
                     break;

@@ -49,6 +49,13 @@ export interface TableColumn<T = Record<string, unknown>> {
   dataIndex: string;
   render?: (value: unknown, record: T, index: number) => React.ReactNode;
   sortable?: boolean;
+  additionalDataKey?: string;
+  additionalDataRender?: (
+    value: unknown,
+    additionalData: unknown,
+    record: T,
+    index: number
+  ) => React.ReactNode;
   width?: string | number;
   align?: 'left' | 'center' | 'right';
 }
@@ -655,20 +662,38 @@ export function DefaultTable<T = Record<string, unknown>>({
                           padding: isMobile ? '0.5rem 0.25rem' : '0.75rem 0.5rem',
                           fontSize: isMobile ? '0.75rem' : '0.875rem',
                         }}>
-                        <Box
-                          style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                          {column.render
-                            ? column.render(
-                                (record as Record<string, unknown>)[column.dataIndex],
-                                record,
-                                index
-                              )
-                            : String((record as Record<string, unknown>)[column.dataIndex] || '')}
-                        </Box>
+                        {column.additionalDataKey && column.additionalDataRender ? (
+                          <Box
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                            {column.additionalDataRender
+                              ? column.additionalDataRender(
+                                  (record as Record<string, unknown>)[column.dataIndex],
+                                  (record as Record<string, unknown>)[column.additionalDataKey],
+                                  record,
+                                  index
+                                )
+                              : String((record as Record<string, unknown>)[column.dataIndex] || '')}
+                          </Box>
+                        ) : (
+                          <Box
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                            {column.render
+                              ? column.render(
+                                  (record as Record<string, unknown>)[column.dataIndex],
+                                  record,
+                                  index
+                                )
+                              : String((record as Record<string, unknown>)[column.dataIndex] || '')}
+                          </Box>
+                        )}
                       </Table.Td>
                     ))}
                   </Table.Tr>

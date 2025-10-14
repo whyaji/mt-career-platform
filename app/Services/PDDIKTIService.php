@@ -733,18 +733,24 @@ class PDDIKTIService
         }
 
         // Check for active student status
-        if (in_array($status, ['AKTIF', 'ACTIVE', 'MAHASISWA AKTIF'])) {
+        if (in_array($status, ['AKTIF', 'ACTIVE', 'MAHASISWA AKTIF', 'TIDAK AKTIF', 'NON-AKTIF'])) {
+            $status = 'NOT_GRADUATED';
+            if (in_array($status, ['TIDAK AKTIF', 'NON-AKTIF'])) {
+                $status = 'NON_ACTIVE';
+            } elseif (in_array($status, ['AKTIF', 'ACTIVE', 'MAHASISWA AKTIF'])) {
+                $status = 'ACTIVE';
+            }
             return [
-                'status' => 'ACTIVE',
+                'status' => $status,
                 'semester' => $semester,
                 'valid' => false,
-                'message' => 'Mahasiswa masih aktif (belum lulus)',
+                'message' => 'Mahasiswa masih belum lulus',
                 'icon' => '🟡'
             ];
         }
 
         // Check for dropout status
-        if (in_array($status, ['DO', 'DROPOUT', 'KELUAR', 'TIDAK AKTIF', 'NON-ACTIVE', 'MENGAJUKAN PENGUNDURAN DIRI', 'PENGUNDURAN DIRI', 'PENGUNDURAN DIRI DITERIMA'])) {
+        if (in_array($status, ['DO', 'DROPOUT', 'KELUAR', 'DIKELUARKAN', 'MENGAJUKAN PENGUNDURAN DIRI', 'PENGUNDURAN DIRI', 'PENGUNDURAN DIRI DITERIMA'])) {
             return [
                 'status' => 'DROPOUT',
                 'semester' => $semester,

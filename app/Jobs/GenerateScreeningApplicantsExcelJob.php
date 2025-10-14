@@ -29,6 +29,9 @@ class GenerateScreeningApplicantsExcelJob implements ShouldQueue
     {
         $this->batchId = $batchId;
         $this->generatedFileId = $generatedFileId;
+
+        // Assign to reports queue (high priority - user-facing file generation)
+        $this->onQueue('reports');
     }
 
     public function handle()

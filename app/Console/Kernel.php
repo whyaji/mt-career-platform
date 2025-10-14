@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\DailyApplicantScreeningCommand;
 
 class Kernel extends ConsoleKernel
 {
@@ -13,7 +14,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        DailyApplicantScreeningCommand::class,
     ];
 
     /**
@@ -24,6 +25,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //
+        // Run daily applicant screening at 01:00 AM
+        $schedule->command('applicants:daily-screening')
+            ->dailyAt('01:00')
+            ->timezone('Asia/Jakarta')
+            ->withoutOverlapping()
+            ->onOneServer();
     }
 }

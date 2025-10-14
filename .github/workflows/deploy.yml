@@ -83,10 +83,23 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "==> 2. Installing Composer dependencies..."
+            echo "==> 2. Rename project dir in worker commands..."
+            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh; do
+              sed -i "s|/Applications/MAMP/htdocs/mt-career-platform|${{ secrets.SSH_HOME_PROJECT }}|g" "$f"
+            done
+
+            echo "==> 3. Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
-            echo "==> 3. Running database migrations..."
+            echo "==> 4. Running database migrations..."
             php artisan migrate --force
+
+            echo "==> 5. chmod +x worker commands..."
+            for f in queue-worker.sh queue-worker-reports.sh queue-worker-processing.sh queue-monitor.sh; do
+              chmod +x "$f"
+            done
+
+            echo "==> 6. Restart queue workers..."
+
 
             echo "==> Deployment completed successfully! ✅"

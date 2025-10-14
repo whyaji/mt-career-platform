@@ -10,7 +10,7 @@ enum ApplicantDataScreeningStatus: int
 {
     case PENDING = 1;
     case STOP = 2;
-    case NOT_YET = 3;
+    case IN_QUEUE = 3;
     case PROCESS = 4;
     case DONE = 5;
 
@@ -19,7 +19,7 @@ enum ApplicantDataScreeningStatus: int
         return match ($this) {
             self::PENDING => 'Pending',
             self::STOP => 'Stop',
-            self::NOT_YET => 'Not Yet',
+            self::IN_QUEUE => 'In Queue',
             self::PROCESS => 'Process',
             self::DONE => 'Done',
         };
@@ -30,7 +30,7 @@ enum ApplicantDataScreeningStatus: int
         return match ($value) {
             self::PENDING->value => 'Pending',
             self::STOP->value => 'Stop',
-            self::NOT_YET->value => 'Not Yet',
+            self::IN_QUEUE->value => 'In Queue',
             self::PROCESS->value => 'Process',
             self::DONE->value => 'Done',
             default => 'Unknown',
@@ -76,7 +76,7 @@ enum ApplicantDataGraduationStatus: int
     case ERROR = 2;
     case NOT_FOUND = 3;
     case DROPOUT = 4;
-    case ACTIVE = 5;
+    case NOT_GRADUATED = 5;
     case NOT_MATCH = 6;
     case GRADUATED = 7;
 
@@ -87,7 +87,7 @@ enum ApplicantDataGraduationStatus: int
             self::ERROR => 'Error',
             self::NOT_FOUND => 'Not Found',
             self::DROPOUT => 'Dropout',
-            self::ACTIVE => 'Active',
+            self::NOT_GRADUATED => 'Not Graduated',
             self::NOT_MATCH => 'Not Match',
             self::GRADUATED => 'Graduated',
         };
@@ -100,7 +100,7 @@ enum ApplicantDataGraduationStatus: int
             self::ERROR->value => 'Error',
             self::NOT_FOUND->value => 'Not Found',
             self::DROPOUT->value => 'Dropout',
-            self::ACTIVE->value => 'Active',
+            self::NOT_GRADUATED->value => 'Not Graduated',
             self::NOT_MATCH->value => 'Not Match',
             self::GRADUATED->value => 'Graduated',
             default => 'Unknown',
