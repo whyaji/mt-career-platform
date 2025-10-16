@@ -126,7 +126,7 @@ class PDDIKTIService
     /**
      * Validate keyword parameter
      */
-    private function validateKeyword(string $keyword, int $maxLength = 100): void
+    private function validateKeyword(string $keyword, int $maxLength = 200): void
     {
         if (empty(trim($keyword))) {
             throw new Exception('Keyword cannot be empty');

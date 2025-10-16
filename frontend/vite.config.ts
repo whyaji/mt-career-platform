@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === 'development' || process.env.VITE_ENV === 'development';
 
   return {
+    base: '/assets/',
     plugins: [
       tanstackRouter({
         target: 'react',
